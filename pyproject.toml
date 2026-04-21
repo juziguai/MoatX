@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "moatx"
+version = "0.1.0"
+description = "MoatX - A股量化分析系统"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "MoatX"}
+]
+keywords = ["stock", "a-share", "quantitative", "analysis", "akshare", "trading"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "akshare>=1.12.0",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "requests>=2.31.0",
+    "lxml>=4.9.0",
+    "matplotlib>=3.7.0",
+    "scipy>=1.11.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/moatx/moatx"
+Documentation = "https://github.com/moatx/moatx#readme"
+
+[tool.setuptools]
+packages = ["modules"]
+package-dir = {"" = "modules"}
+
+[tool.setuptools.package-data]
+modules = ["*.md"]
