@@ -12,5 +12,10 @@ from .analyzer import MoatXAnalyzer
 from .charts import MoatXCharts
 from .screener import MoatXScreener
 from .rank_engine import RankEngine
+from .portfolio import Portfolio
+from .alerter import Alerter
 
-__all__ = ["StockData", "IndicatorEngine", "MoatXAnalyzer", "MoatXCharts", "MoatXScreener", "RankEngine"]
+__all__ = [
+    "StockData", "IndicatorEngine", "MoatXAnalyzer", "MoatXCharts",
+    "MoatXScreener", "RankEngine", "Portfolio", "Alerter"
+]
