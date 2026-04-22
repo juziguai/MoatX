@@ -65,15 +65,41 @@ class Alerter:
         except Exception as e:
             print(f"[Alerter] 飞书 Webhook 推送异常: {e}")
 
-    def _send_feishu_api(self, report: str):
+    def _get_feishu_credentials(self) -> tuple:
         """
-        通过飞书开放平台 API 推送（需要 App ID + App Secret）
-        需要设置环境变量 LARK_APP_ID 和 LARK_APP_SECRET
+        获取飞书凭证，优先级：
+        1. 环境变量 LARK_APP_ID / LARK_APP_SECRET
+        2. OpenClaw 配置文件 ~/.openclaw/openclaw.json
         """
         app_id = os.environ.get("LARK_APP_ID")
         app_secret = os.environ.get("LARK_APP_SECRET")
+        if app_id and app_secret:
+            return app_id, app_secret
+
+        # 从 OpenClaw 配置读取（复用已有飞书机器人凭证）
+        try:
+            import json
+            config_path = os.path.expanduser("~/.openclaw/openclaw.json")
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            feishu = cfg.get("channels", {}).get("feishu", {})
+            app_id = feishu.get("appId")
+            app_secret = feishu.get("appSecret")
+            if app_id and app_secret:
+                return app_id, app_secret
+        except Exception:
+            pass
+
+        return None, None
+
+    def _send_feishu_api(self, report: str):
+        """
+        通过飞书开放平台 API 推送
+        凭证读取顺序：环境变量 -> OpenClaw 配置
+        """
+        app_id, app_secret = self._get_feishu_credentials()
         if not app_id or not app_secret:
-            print("[Alerter] 缺少 LARK_APP_ID/LARK_APP_SECRET 环境变量，跳过飞书 API 推送")
+            print("[Alerter] 未找到飞书凭证（请设置 LARK_APP_ID/LARK_APP_SECRET 环境变量，或确保 OpenClaw 飞书插件已配置）")
             return
 
         try:
