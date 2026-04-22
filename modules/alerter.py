@@ -68,23 +68,26 @@ class Alerter:
     def _get_feishu_credentials(self) -> tuple:
         """
         获取飞书凭证，优先级：
-        1. 环境变量 LARK_APP_ID / LARK_APP_SECRET
-        2. OpenClaw 配置文件 ~/.openclaw/openclaw.json
+        1. 环境变量 FEISHU_APP_ID / FEISHU_APP_SECRET
+        2. Claude-Code-Feishu 配置 ~/.claude-code-feishu/config.yaml
         """
-        app_id = os.environ.get("LARK_APP_ID")
-        app_secret = os.environ.get("LARK_APP_SECRET")
+        app_id = os.environ.get("FEISHU_APP_ID")
+        app_secret = os.environ.get("FEISHU_APP_SECRET")
         if app_id and app_secret:
             return app_id, app_secret
 
-        # 从 OpenClaw 配置读取（复用已有飞书机器人凭证）
+        # 从 Claude-Code-Feishu 配置读取
         try:
-            import json
-            config_path = os.path.expanduser("~/.openclaw/openclaw.json")
+            import yaml
+            config_path = os.path.expanduser("~/.claude-code-feishu/config.yaml")
+            if not os.path.exists(config_path):
+                # 尝试旧路径
+                config_path = os.path.join(os.path.dirname(__file__), "..", "..", "Claude-Code-Feishu", "config.yaml")
             with open(config_path, "r", encoding="utf-8") as f:
-                cfg = json.load(f)
-            feishu = cfg.get("channels", {}).get("feishu", {})
-            app_id = feishu.get("appId")
-            app_secret = feishu.get("appSecret")
+                cfg = yaml.safe_load(f)
+            feishu = cfg.get("feishu", {})
+            app_id = feishu.get("app_id")
+            app_secret = feishu.get("app_secret")
             if app_id and app_secret:
                 return app_id, app_secret
         except Exception:

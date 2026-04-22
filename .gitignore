@@ -11,3 +11,7 @@ build/
 dist/
 *.egg-info/
 .eggs/
+
+# Claude-Code-Feishu 配置（含飞书凭证，禁止上传）
+C:/Users/juzi/Claude-Code-Feishu/config.yaml
+C:/Users/juzi/.claude-code-feishu/
