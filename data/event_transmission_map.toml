@@ -1,0 +1,259 @@
+# MoatX 宏观事件 → 资产/行业/概念传导配置
+
+[[events]]
+id = "hormuz_closure_risk"
+name = "霍尔木兹关闭风险"
+event_types = ["geopolitical_conflict", "energy_supply_risk"]
+keywords = ["霍尔木兹", "伊朗", "波斯湾", "油轮", "美军", "红海", "胡塞", "Hormuz", "Strait of Hormuz", "Iran", "Persian Gulf", "tanker", "U.S. military", "Red Sea", "Houthis"]
+actions = ["封锁", "威胁", "袭击", "部署", "禁运", "限制", "冲突", "升级", "close", "closure", "reopen", "threaten", "attack", "deploy", "embargo", "blockade", "escalate"]
+base_probability = 0.20
+
+[[events.effects]]
+target = "原油"
+target_type = "asset"
+direction = "bullish"
+impact = 0.90
+
+[[events.effects]]
+target = "石油行业"
+target_type = "sector"
+direction = "bullish"
+impact = 0.85
+
+[[events.effects]]
+target = "油服工程"
+target_type = "sector"
+direction = "bullish"
+impact = 0.75
+
+[[events.effects]]
+target = "天然气"
+target_type = "concept"
+direction = "bullish"
+impact = 0.70
+
+[[events.effects]]
+target = "贵金属"
+target_type = "sector"
+direction = "bullish"
+impact = 0.65
+
+[[events.effects]]
+target = "国防军工"
+target_type = "sector"
+direction = "bullish"
+impact = 0.60
+
+[[events.effects]]
+target = "航空运输"
+target_type = "sector"
+direction = "bearish"
+impact = 0.65
+
+[[events]]
+id = "middle_east_conflict_escalation"
+name = "中东冲突升级"
+event_types = ["geopolitical_conflict"]
+keywords = ["中东", "伊朗", "以色列", "美军", "波斯湾", "红海", "导弹", "空袭", "Middle East", "Iran", "Israel", "U.S. military", "Persian Gulf", "Red Sea", "missile", "airstrike"]
+actions = ["袭击", "报复", "升级", "部署", "制裁", "军演", "attack", "retaliate", "escalate", "deploy", "sanction", "drill"]
+base_probability = 0.18
+
+[[events.effects]]
+target = "国防军工"
+target_type = "sector"
+direction = "bullish"
+impact = 0.75
+
+[[events.effects]]
+target = "黄金"
+target_type = "concept"
+direction = "bullish"
+impact = 0.70
+
+[[events.effects]]
+target = "石油行业"
+target_type = "sector"
+direction = "bullish"
+impact = 0.60
+
+[[events]]
+id = "oil_supply_shock"
+name = "原油供给冲击"
+event_types = ["energy_supply_risk"]
+keywords = ["原油", "OPEC", "减产", "油价", "石油禁运", "供应中断", "crude", "oil", "Brent", "WTI", "production cut", "supply disruption", "fuel export"]
+actions = ["减产", "禁运", "中断", "飙升", "上调", "收紧", "cut", "embargo", "disrupt", "surge", "rise", "tighten"]
+base_probability = 0.22
+
+[[events.effects]]
+target = "石油行业"
+target_type = "sector"
+direction = "bullish"
+impact = 0.85
+
+[[events.effects]]
+target = "油服工程"
+target_type = "sector"
+direction = "bullish"
+impact = 0.72
+
+[[events.effects]]
+target = "化工行业"
+target_type = "sector"
+direction = "bearish"
+impact = 0.55
+
+[[events]]
+id = "gold_safe_haven"
+name = "黄金避险需求上升"
+event_types = ["safe_haven"]
+keywords = ["黄金", "避险", "地缘", "战争", "美元", "美债", "央行购金", "gold", "safe haven", "geopolitical", "war", "dollar", "treasury"]
+actions = ["上涨", "新高", "买入", "增持", "避险", "rise", "rises", "record high", "buy", "safe haven"]
+base_probability = 0.16
+
+[[events.effects]]
+target = "黄金"
+target_type = "concept"
+direction = "bullish"
+impact = 0.78
+
+[[events.effects]]
+target = "贵金属"
+target_type = "sector"
+direction = "bullish"
+impact = 0.78
+
+[[events]]
+id = "chip_sanction_escalation"
+name = "芯片/半导体制裁升级"
+event_types = ["trade_sanction", "technology_restriction"]
+keywords = ["芯片", "半导体", "出口管制", "实体清单", "光刻机", "先进制程", "制裁"]
+actions = ["限制", "制裁", "封锁", "禁售", "升级", "纳入"]
+base_probability = 0.20
+
+[[events.effects]]
+target = "半导体"
+target_type = "sector"
+direction = "bullish"
+impact = 0.70
+
+[[events.effects]]
+target = "芯片"
+target_type = "concept"
+direction = "bullish"
+impact = 0.72
+
+[[events.effects]]
+target = "信创"
+target_type = "concept"
+direction = "bullish"
+impact = 0.55
+
+[[events]]
+id = "domestic_monetary_easing"
+name = "国内货币宽松"
+event_types = ["monetary_easing", "policy_stimulus"]
+keywords = ["降准", "降息", "LPR", "MLF", "流动性", "货币政策", "稳增长"]
+actions = ["下调", "释放", "宽松", "加码", "支持"]
+base_probability = 0.25
+
+[[events.effects]]
+target = "证券"
+target_type = "sector"
+direction = "bullish"
+impact = 0.70
+
+[[events.effects]]
+target = "银行"
+target_type = "sector"
+direction = "bullish"
+impact = 0.55
+
+[[events.effects]]
+target = "房地产"
+target_type = "sector"
+direction = "bullish"
+impact = 0.50
+
+[[events]]
+id = "red_sea_shipping_disruption"
+name = "红海航运扰动"
+event_types = ["geopolitical_conflict", "shipping_disruption"]
+keywords = ["红海", "胡塞", "曼德海峡", "苏伊士", "航运", "绕航", "运费", "Red Sea", "Houthis", "Suez", "shipping", "freight", "reroute"]
+actions = ["袭击", "封锁", "绕行", "中断", "涨价", "attack", "blockade", "reroute", "disrupt", "surge"]
+base_probability = 0.18
+
+[[events.effects]]
+target = "航运港口"
+target_type = "sector"
+direction = "bullish"
+impact = 0.78
+
+[[events.effects]]
+target = "石油行业"
+target_type = "sector"
+direction = "bullish"
+impact = 0.45
+
+[[events.effects]]
+target = "航空运输"
+target_type = "sector"
+direction = "bearish"
+impact = 0.35
+
+[[events]]
+id = "russia_ukraine_escalation"
+name = "俄乌冲突升级"
+event_types = ["geopolitical_conflict", "energy_supply_risk"]
+keywords = ["俄乌", "俄罗斯", "乌克兰", "北约", "制裁俄罗斯", "天然气管道", "Russia", "Ukraine", "NATO", "Russian sanctions"]
+actions = ["袭击", "空袭", "制裁", "升级", "断供", "爆炸", "attack", "airstrike", "sanction", "escalate", "cut supply"]
+base_probability = 0.18
+
+[[events.effects]]
+target = "天然气"
+target_type = "concept"
+direction = "bullish"
+impact = 0.72
+
+[[events.effects]]
+target = "石油行业"
+target_type = "sector"
+direction = "bullish"
+impact = 0.55
+
+[[events.effects]]
+target = "黄金"
+target_type = "concept"
+direction = "bullish"
+impact = 0.55
+
+[[events.effects]]
+target = "国防军工"
+target_type = "sector"
+direction = "bullish"
+impact = 0.65
+
+[[events]]
+id = "trade_tariff_escalation"
+name = "贸易关税/制裁升级"
+event_types = ["trade_sanction", "policy_shock"]
+keywords = ["关税", "贸易战", "出口管制", "制裁", "实体清单", "tariff", "trade war", "export control", "entity list", "sanction"]
+actions = ["加征", "提高", "限制", "制裁", "反制", "raise", "increase", "restrict", "sanction", "retaliate"]
+base_probability = 0.18
+
+[[events.effects]]
+target = "半导体"
+target_type = "sector"
+direction = "bullish"
+impact = 0.55
+
+[[events.effects]]
+target = "信创"
+target_type = "concept"
+direction = "bullish"
+impact = 0.50
+
+[[events.effects]]
+target = "航运港口"
+target_type = "sector"
+direction = "bearish"
+impact = 0.40

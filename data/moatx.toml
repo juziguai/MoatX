@@ -1,0 +1,56 @@
+# MoatX 默认配置
+# 环境变量覆盖: 将 key 转为 MOATX_ 前缀的大写下划线格式
+# 例如 cache.spot_seconds → MOATX_CACHE_SPOT_SECONDS
+
+[cache]
+spot_seconds = 30           # 全市场快照缓存 TTL
+board_seconds = 300         # 行业板块缓存 TTL（5 分钟）
+concept_board_seconds = 300 # 概念板块缓存 TTL（5 分钟）
+fundflow_seconds = 600      # 资金流缓存 TTL（10 分钟）
+f10_seconds = 7200          # F10 数据缓存 TTL（2 小时）
+tencent_quote_seconds = 10  # 腾讯行情缓存 TTL
+sector_fallback_seconds = 300  # 板块备选源缓存
+
+[crawler]
+timeout = 10
+retries = 2
+# user_agent 使用默认值
+
+[datasource]
+primary = "sina"              # ??????????????????????????
+mode = "validate"            # ?????single=?????validate=??+???+???????
+validation = ["tencent"]      # ????????/??????
+supplement = ["eastmoney"]    # ??????????????????
+
+[thread_pool]
+sina_spot_workers = 8
+risk_check_workers = 20
+financial_risk_workers = 5
+
+[analysis]
+default_days = 120
+adjust = "qfq"
+
+[fees]
+commission_rate = 0.0003       # 佣金费率（万3）
+stamp_tax_rate = 0.001         # 印花税（千1）
+transfer_fee_rate = 0.00001    # 过户费（万0.1）
+min_commission = 5.0           # 最低佣金
+
+[risk_control]
+stop_loss_pct = 7.0           # 亏损 N% 触发止损预警
+stop_loss_action = "notify"    # notify | auto_sell（未来扩展）
+max_single_position_pct = 30.0 # 单只股票最大仓位占比（%）
+max_total_position_pct = 90.0   # 总仓位上限（%）
+max_daily_loss_pct = 5.0      # 单日亏损超过 N% 触发预警
+max_daily_loss_action = "notify" # notify | auto_sell（未来扩展）
+check_interval_minutes = 5     # 检查间隔（分钟）
+
+[event_intelligence]
+max_news_age_days = 14         # 事件抽取只处理最近 N 天新闻；空发布日期不拦截
+notify_probability_threshold = 0.55
+notify_opportunity_threshold = 75.0
+notify_cooldown_hours = 6
+notify_probability_delta = 0.10
+monitor_enabled = true
+monitor_top_events = 3

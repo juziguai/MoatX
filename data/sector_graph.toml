@@ -1,0 +1,484 @@
+version = "2026-04-27"
+
+[[nodes]]
+tag = "石油行业"
+type = "sector"
+aliases = ["石油", "油气", "石油行业", "原油"]
+upstream = ["油服工程"]
+downstream = ["化工行业", "航空运输"]
+related_events = ["hormuz_closure_risk", "oil_supply_shock", "middle_east_conflict_escalation", "russia_ukraine_escalation", "red_sea_shipping_disruption"]
+
+[[nodes.members]]
+code = "600028"
+name = "中国石化"
+[[nodes.members]]
+code = "601857"
+name = "中国石油"
+[[nodes.members]]
+code = "600938"
+name = "中国海油"
+[[nodes.members]]
+code = "600339"
+name = "中油工程"
+[[nodes.members]]
+code = "600583"
+name = "海油工程"
+[[nodes.members]]
+code = "002353"
+name = "杰瑞股份"
+
+[[nodes]]
+tag = "油服工程"
+type = "sector"
+aliases = ["油服", "油服工程", "油气服务"]
+upstream = ["石油行业"]
+downstream = []
+related_events = ["hormuz_closure_risk", "oil_supply_shock", "russia_ukraine_escalation"]
+
+[[nodes.members]]
+code = "600339"
+name = "中油工程"
+[[nodes.members]]
+code = "600583"
+name = "海油工程"
+[[nodes.members]]
+code = "002353"
+name = "杰瑞股份"
+[[nodes.members]]
+code = "002554"
+name = "惠博普"
+
+[[nodes]]
+tag = "天然气"
+type = "concept"
+aliases = ["天然气", "燃气", "油气"]
+upstream = ["石油行业"]
+downstream = ["公用事业"]
+related_events = ["hormuz_closure_risk", "oil_supply_shock", "russia_ukraine_escalation"]
+
+[[nodes.members]]
+code = "600803"
+name = "新奥股份"
+[[nodes.members]]
+code = "002267"
+name = "陕天然气"
+[[nodes.members]]
+code = "600917"
+name = "重庆燃气"
+[[nodes.members]]
+code = "600642"
+name = "申能股份"
+
+[[nodes]]
+tag = "黄金"
+type = "concept"
+aliases = ["黄金", "黄金概念", "贵金属"]
+upstream = []
+downstream = ["珠宝首饰"]
+related_events = ["gold_safe_haven", "middle_east_conflict_escalation", "hormuz_closure_risk", "russia_ukraine_escalation"]
+
+[[nodes.members]]
+code = "600547"
+name = "山东黄金"
+[[nodes.members]]
+code = "601899"
+name = "紫金矿业"
+[[nodes.members]]
+code = "600489"
+name = "中金黄金"
+[[nodes.members]]
+code = "000975"
+name = "山金国际"
+[[nodes.members]]
+code = "002155"
+name = "湖南黄金"
+[[nodes.members]]
+code = "600988"
+name = "赤峰黄金"
+
+[[nodes]]
+tag = "贵金属"
+type = "sector"
+aliases = ["贵金属", "黄金", "白银"]
+upstream = []
+downstream = ["珠宝首饰"]
+related_events = ["gold_safe_haven", "hormuz_closure_risk", "russia_ukraine_escalation"]
+
+[[nodes.members]]
+code = "600547"
+name = "山东黄金"
+[[nodes.members]]
+code = "601899"
+name = "紫金矿业"
+[[nodes.members]]
+code = "600489"
+name = "中金黄金"
+[[nodes.members]]
+code = "600988"
+name = "赤峰黄金"
+
+[[nodes]]
+tag = "国防军工"
+type = "sector"
+aliases = ["国防军工", "军工", "航空装备", "航天", "船舶制造"]
+upstream = ["半导体"]
+downstream = []
+related_events = ["hormuz_closure_risk", "middle_east_conflict_escalation", "russia_ukraine_escalation", "red_sea_shipping_disruption"]
+
+[[nodes.members]]
+code = "600760"
+name = "中航沈飞"
+[[nodes.members]]
+code = "000768"
+name = "中航西飞"
+[[nodes.members]]
+code = "600893"
+name = "航发动力"
+[[nodes.members]]
+code = "600150"
+name = "中国船舶"
+[[nodes.members]]
+code = "600372"
+name = "中航机载"
+
+[[nodes]]
+tag = "航运港口"
+type = "sector"
+aliases = ["航运", "航运港口", "港口航运"]
+upstream = ["石油行业"]
+downstream = ["物流"]
+related_events = ["hormuz_closure_risk", "middle_east_conflict_escalation", "red_sea_shipping_disruption", "trade_tariff_escalation"]
+
+[[nodes.members]]
+code = "601919"
+name = "中远海控"
+[[nodes.members]]
+code = "601872"
+name = "招商轮船"
+[[nodes.members]]
+code = "600026"
+name = "中远海能"
+[[nodes.members]]
+code = "601018"
+name = "宁波港"
+
+[[nodes]]
+tag = "航空运输"
+type = "sector"
+aliases = ["航空", "航空运输", "机场航空"]
+upstream = ["石油行业"]
+downstream = ["旅游酒店"]
+related_events = ["hormuz_closure_risk", "oil_supply_shock"]
+
+[[nodes.members]]
+code = "601111"
+name = "中国国航"
+[[nodes.members]]
+code = "600029"
+name = "南方航空"
+[[nodes.members]]
+code = "600115"
+name = "中国东航"
+[[nodes.members]]
+code = "601021"
+name = "春秋航空"
+
+[[nodes]]
+tag = "半导体"
+type = "sector"
+aliases = ["半导体", "半导体及元件", "芯片", "集成电路"]
+upstream = ["电子化学品"]
+downstream = ["消费电子", "人工智能"]
+related_events = ["chip_sanction_escalation", "trade_tariff_escalation"]
+
+[[nodes.members]]
+code = "688981"
+name = "中芯国际"
+[[nodes.members]]
+code = "603501"
+name = "韦尔股份"
+[[nodes.members]]
+code = "600584"
+name = "长电科技"
+[[nodes.members]]
+code = "002371"
+name = "北方华创"
+[[nodes.members]]
+code = "688012"
+name = "中微公司"
+[[nodes.members]]
+code = "688256"
+name = "寒武纪"
+
+[[nodes]]
+tag = "芯片"
+type = "concept"
+aliases = ["芯片", "半导体", "集成电路", "国产芯片"]
+upstream = ["半导体"]
+downstream = ["人工智能", "消费电子"]
+related_events = ["chip_sanction_escalation", "trade_tariff_escalation"]
+
+[[nodes.members]]
+code = "688981"
+name = "中芯国际"
+[[nodes.members]]
+code = "603501"
+name = "韦尔股份"
+[[nodes.members]]
+code = "002371"
+name = "北方华创"
+[[nodes.members]]
+code = "688012"
+name = "中微公司"
+
+[[nodes]]
+tag = "信创"
+type = "concept"
+aliases = ["信创", "国产软件", "操作系统", "信息安全"]
+upstream = ["半导体"]
+downstream = ["政务信息化"]
+related_events = ["chip_sanction_escalation", "trade_tariff_escalation"]
+
+[[nodes.members]]
+code = "600536"
+name = "中国软件"
+[[nodes.members]]
+code = "000066"
+name = "中国长城"
+[[nodes.members]]
+code = "002368"
+name = "太极股份"
+[[nodes.members]]
+code = "688111"
+name = "金山办公"
+
+[[nodes]]
+tag = "光伏"
+type = "concept"
+aliases = ["光伏", "光伏设备", "太阳能"]
+upstream = ["有色金属"]
+downstream = ["电力"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "601012"
+name = "隆基绿能"
+[[nodes.members]]
+code = "688223"
+name = "晶科能源"
+[[nodes.members]]
+code = "600438"
+name = "通威股份"
+[[nodes.members]]
+code = "002459"
+name = "晶澳科技"
+
+[[nodes]]
+tag = "储能"
+type = "concept"
+aliases = ["储能", "新型储能", "电池"]
+upstream = ["有色金属"]
+downstream = ["电力"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "300750"
+name = "宁德时代"
+[[nodes.members]]
+code = "300274"
+name = "阳光电源"
+[[nodes.members]]
+code = "002594"
+name = "比亚迪"
+
+[[nodes]]
+tag = "电力"
+type = "sector"
+aliases = ["电力", "绿电", "公用事业"]
+upstream = ["煤炭", "天然气"]
+downstream = []
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600900"
+name = "长江电力"
+[[nodes.members]]
+code = "600011"
+name = "华能国际"
+[[nodes.members]]
+code = "600905"
+name = "三峡能源"
+
+[[nodes]]
+tag = "煤炭"
+type = "sector"
+aliases = ["煤炭", "动力煤", "煤炭开采"]
+upstream = []
+downstream = ["电力", "钢铁"]
+related_events = ["oil_supply_shock", "russia_ukraine_escalation"]
+
+[[nodes.members]]
+code = "601088"
+name = "中国神华"
+[[nodes.members]]
+code = "601225"
+name = "陕西煤业"
+[[nodes.members]]
+code = "600188"
+name = "兖矿能源"
+
+[[nodes]]
+tag = "有色金属"
+type = "sector"
+aliases = ["有色", "有色金属", "铜", "铝", "锂"]
+upstream = []
+downstream = ["光伏", "储能", "汽车零部件"]
+related_events = ["gold_safe_haven", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "601899"
+name = "紫金矿业"
+[[nodes.members]]
+code = "603799"
+name = "华友钴业"
+[[nodes.members]]
+code = "002466"
+name = "天齐锂业"
+[[nodes.members]]
+code = "601600"
+name = "中国铝业"
+
+[[nodes]]
+tag = "化工行业"
+type = "sector"
+aliases = ["化工", "化工行业", "基础化工", "石油化工"]
+upstream = ["石油行业", "煤炭"]
+downstream = ["农业", "汽车零部件", "光伏"]
+related_events = ["oil_supply_shock", "hormuz_closure_risk", "russia_ukraine_escalation"]
+
+[[nodes.members]]
+code = "600309"
+name = "万华化学"
+[[nodes.members]]
+code = "600346"
+name = "恒力石化"
+[[nodes.members]]
+code = "002648"
+name = "卫星化学"
+[[nodes.members]]
+code = "000301"
+name = "东方盛虹"
+
+[[nodes]]
+tag = "钢铁"
+type = "sector"
+aliases = ["钢铁", "钢铁行业", "普钢", "特钢"]
+upstream = ["煤炭", "有色金属"]
+downstream = ["基建", "房地产", "汽车零部件"]
+related_events = ["domestic_monetary_easing", "trade_tariff_escalation"]
+
+[[nodes.members]]
+code = "600019"
+name = "宝钢股份"
+[[nodes.members]]
+code = "000932"
+name = "华菱钢铁"
+[[nodes.members]]
+code = "000708"
+name = "中信特钢"
+
+[[nodes]]
+tag = "证券"
+type = "sector"
+aliases = ["证券", "券商", "证券行业", "资本市场"]
+upstream = ["银行"]
+downstream = ["金融科技"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600030"
+name = "中信证券"
+[[nodes.members]]
+code = "300059"
+name = "东方财富"
+[[nodes.members]]
+code = "601688"
+name = "华泰证券"
+[[nodes.members]]
+code = "600837"
+name = "海通证券"
+
+[[nodes]]
+tag = "银行"
+type = "sector"
+aliases = ["银行", "银行业", "商业银行", "金融"]
+upstream = []
+downstream = ["房地产", "证券"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600036"
+name = "招商银行"
+[[nodes.members]]
+code = "601398"
+name = "工商银行"
+[[nodes.members]]
+code = "601288"
+name = "农业银行"
+[[nodes.members]]
+code = "601166"
+name = "兴业银行"
+
+[[nodes]]
+tag = "房地产"
+type = "sector"
+aliases = ["房地产", "地产", "房地产开发", "物业"]
+upstream = ["银行", "钢铁"]
+downstream = ["建筑材料", "家居"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "000002"
+name = "万科A"
+[[nodes.members]]
+code = "600048"
+name = "保利发展"
+[[nodes.members]]
+code = "001979"
+name = "招商蛇口"
+
+[[nodes]]
+tag = "稀土永磁"
+type = "concept"
+aliases = ["稀土", "稀土永磁", "小金属", "战略金属"]
+upstream = ["有色金属"]
+downstream = ["新能源汽车", "军工", "半导体"]
+related_events = ["trade_tariff_escalation", "chip_sanction_escalation", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600111"
+name = "北方稀土"
+[[nodes.members]]
+code = "000831"
+name = "中国稀土"
+[[nodes.members]]
+code = "600392"
+name = "盛和资源"
+
+[[nodes]]
+tag = "农业"
+type = "sector"
+aliases = ["农业", "农林牧渔", "粮食", "种业"]
+upstream = ["化工行业"]
+downstream = ["食品饮料"]
+related_events = ["russia_ukraine_escalation", "trade_tariff_escalation"]
+
+[[nodes.members]]
+code = "000998"
+name = "隆平高科"
+[[nodes.members]]
+code = "600598"
+name = "北大荒"
+[[nodes.members]]
+code = "000876"
+name = "新希望"

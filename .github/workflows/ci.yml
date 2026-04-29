@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # 每天 08:30 UTC（北京时间 16:30）跑集成测试
+    - cron: "30 8 * * *"
+  workflow_dispatch:
+    inputs:
+      integration_only:
+        description: "只跑集成测试"
+        required: false
+        default: "false"
+
+jobs:
+  # ── PR / Push：单元测试（快速） ──────────────────────────────
+  test-unit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: ruff check modules/
+
+      - name: Run pytest (unit tests only)
+        run: python -m pytest tests/ -m "not integration" --tb=short
+
+  # ── 定时/手动：集成测试（网络请求） ─────────────────────────
+  test-integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.integration_only == 'true'
+    # 每天最多跑一次，避免重复
+    concurrency:
+      group: integration-${{ github.repository }}-${{ github.ref }}
+      cancel-in-progress: true
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.12"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run integration tests
+        run: python -m pytest tests/test_integration.py -v --tb=short

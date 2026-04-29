@@ -6,16 +6,36 @@ MoatX - A-share Quantitative Analysis System
 __version__ = "0.1.0"
 __author__ = "MoatX"
 
-from .stock_data import StockData
-from .indicators import IndicatorEngine
-from .analyzer import MoatXAnalyzer
-from .charts import MoatXCharts
-from .screener import MoatXScreener
-from .rank_engine import RankEngine
-from .portfolio import Portfolio
-from .alerter import Alerter
-
 __all__ = [
     "StockData", "IndicatorEngine", "MoatXAnalyzer", "MoatXCharts",
     "MoatXScreener", "RankEngine", "Portfolio", "Alerter"
 ]
+
+
+def __getattr__(name):
+    """Lazy exports keep lightweight CLI commands from importing data providers."""
+    if name == "StockData":
+        from .stock_data import StockData
+        return StockData
+    if name == "IndicatorEngine":
+        from .indicators import IndicatorEngine
+        return IndicatorEngine
+    if name == "MoatXAnalyzer":
+        from .analyzer import MoatXAnalyzer
+        return MoatXAnalyzer
+    if name == "MoatXCharts":
+        from .charts import MoatXCharts
+        return MoatXCharts
+    if name == "MoatXScreener":
+        from .screener import MoatXScreener
+        return MoatXScreener
+    if name == "RankEngine":
+        from .rank_engine import RankEngine
+        return RankEngine
+    if name == "Portfolio":
+        from .portfolio import Portfolio
+        return Portfolio
+    if name == "Alerter":
+        from .alerter import Alerter
+        return Alerter
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

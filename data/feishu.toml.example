@@ -1,0 +1,9 @@
+# 飞书配置示例
+# 复制此文件为 data/feishu.toml 并填入真实凭证
+# 凭证获取优先级：环境变量 > 此文件
+# 推荐使用环境变量：FEISHU_APP_ID / FEISHU_APP_SECRET / LARK_APP_ID / LARK_APP_SECRET
+
+[feishu]
+webhook = ""      # 飞书群机器人 Webhook URL（可选，与 app_id/app_secret 二选一）
+chat_id = ""      # 飞书群会话 ID（可选）
+open_id = ""      # 飞书用户 open_id（可选，用于直接消息）

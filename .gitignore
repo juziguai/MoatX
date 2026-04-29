@@ -2,11 +2,39 @@ __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
-data/
+.pytest_tmp*/
+pytest-cache-files-*/
+# data/ 目录敏感文件
+data/feishu.toml
+data/moatx.toml
+data/*.db
+data/*.db-*
+data/.cache/
+data/image/
+data/alerts.log
+# 通配忽略 data/ 下所有其他文件（缓存、临时文件等）
+data/*
+# 但保留配置示例模板（可被 Git 跟踪）
+!data/*.example
+!data/moatx.toml
+!data/event_sources.toml
+!data/event_history.toml
+!data/event_sector_map.toml
+!data/event_transmission_map.toml
+!data/sector_graph.toml
+!data/schedule_config.toml
+
+# 图片
 *.png
 *.jpg
+
+# 环境变量（禁止提交含凭证的 .env）
 .env
+
+# 日志
 *.log
+
+# Python 构建产物
 build/
 dist/
 *.egg-info/

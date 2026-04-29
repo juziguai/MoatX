@@ -1,169 +1,213 @@
-# MoatX - A股量化分析系统
+# MoatX
 
-> 护城河量化分析系统 — 从数据到决策的A股技术分析工具
-
-## 功能特性
-
-- **数据获取** — akshare 实时/历史行情（东方财富主源 + 新浪财经备用）、财务数据、资金流向、龙虎榜、分红记录
-- **技术指标** — MACD、KDJ、RSI、布林带、CCI、DMI、ATR、OBV 等 20+ 指标
-- **信号系统** — 金叉/死叉、超买超卖、多头排列、均线背离
-- **K线图表** — 5面板可视化（K线+均线+MACD+KDJ+RSI+成交量），支持深色/浅色主题
-- **选股器** — 全市场按PE/PB/市值/换手率/涨幅过滤、千股千评、板块资金流、涨停股池
-- **综合评分** — 趋势（25%）+ 估值（25%）+ 资金（25%）+ 动量（25%）
-- **巴菲特视角** — 安全边际提醒、护城河自检、仓位原则
+A 股量化分析 CLI 工具，支持行情抓取、技术指标、选股筛选、持仓管理、风控预警、信号回测。
 
 ## 安装
 
-```bash
-cd D:/Tools/AI/Claude-code/MoatX
-pip install -r requirements.txt
+```powershell
+cd D:\Tools\AI\Claude-code\MoatX
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-## 快速使用
+依赖：akshare, pandas, numpy, requests, lxml, matplotlib, scipy, pyyaml, pytest, ruff
 
-```python
-from modules import MoatXAnalyzer, MoatXScreener
+## CLI 入口
 
-analyzer = MoatXAnalyzer()
-
-# 分析一只股票
-report = analyzer.analyze("600519")  # 贵州茅台
-print(analyzer.format_markdown(report))
-
-# 弹出K线图表
-analyzer.chart("600519", days=120, style="dark")
-
-# 选股器
-screener = MoatXScreener()
-r = screener.scan_all(pe_range=(0, 30), turnover_min=5.0, pct_change_min=3.0)
-print(screener.format_screening_result(r, "低PE高换手"))
+```powershell
+python -m modules.cli --help
 ```
+
+所有子命令通过 `python -m modules.cli <subcommand>` 调用。
+
+### 实时行情
+
+```powershell
+python -m modules.cli quote              # 自动读取持仓，多源校验
+python -m modules.cli quote 600519 000858 # 个股行情，多源校验
+python -m modules.cli market             # 大盘指数，多源校验
+python -m modules.cli market --breadth   # 全市场上涨/下跌/平盘家数
+python -m modules.cli market 科创50 沪深300 --json
+```
+
+### 持仓管理
+
+```powershell
+python -m modules.cli list                # 查看持仓
+python -m modules.cli config              # 查看/修改配置
+python -m modules.cli refresh             # 刷新持仓实时行情
+```
+
+### 预警与风控
+
+```powershell
+python -m modules.cli check               # 运行预警检测
+python -m modules.cli risk check          # 手动触发风控检查
+python -m modules.cli risk status         # 查看当前风控状态
+python -m modules.cli risk history        # 风控事件历史
+python -m modules.cli alerts --limit 50  # 预警历史
+```
+
+### 信号与模拟交易
+
+```powershell
+python -m modules.cli signal list         # 查看信号记录
+python -m modules.cli paper status        # 模拟账户状态
+python -m modules.cli paper holdings      # 模拟持仓
+python -m modules.cli paper trades        # 模拟交易记录
+```
+
+### 诊断工具
+
+```powershell
+python -m modules.cli diagnose            # 数据源诊断
+python -m modules.cli probe-api URL      # API 探测
+```
+
+### 宏观事件情报
+
+当前宏观事件情报模块约 95% 完成，已进入可用级收工状态：可持续采集新闻、抽取宏观事件、更新事件概率、映射 A 股机会、生成报告、执行推送冷却和调度任务；模块只输出情报与机会，不自动下单。
+
+```powershell
+python -m modules.cli tool event collect --json
+python -m modules.cli tool event ingest --title "伊朗威胁封锁霍尔木兹海峡" --summary "原油供给风险升高"
+python -m modules.cli tool event run --json --min-probability 1.0
+python -m modules.cli tool event summary --json         # 盘中宏观事件 Top3
+python -m modules.cli tool event notify --json          # dry-run，不发送
+python -m modules.cli tool event notify --send --json   # 显式发送
+python -m modules.cli tool event sources --json         # 查看源配置与质量
+python -m modules.cli tool event context --json         # 下游模型/交易/回测上下文
+python -m modules.cli tool event elasticity --event-id hormuz_closure_risk --windows 1,3,5,10 --json
+python -m modules.scheduler --list                      # 查看事件调度状态
+python -m modules.scheduler --daemon                    # 后台持续运行采集/抽取/推送
+python -m modules.scheduler --status                    # 查看后台调度器进程
+```
+
+事件新闻源已启用 BBC 中文、RFI 中文、DW 中文、OilPrice、中国新闻网国内/国际/财经 RSS、财联社 7x24 电报、央视网新闻 JSONP、证券时报要闻 HTML、中国人民银行新闻 HTML、国家发改委新闻/政策、国家统计局数据发布、上海证券报首页、期货日报首页等 16 个源；新华、新浪、凤凰、人民网、国家能源局、证监会、自定义 JSON 作为禁用模板保留。事件调度任务已启用，`--daemon` 可在 Windows/本机后台持续运行。推送阈值在 `data/moatx.toml` 的 `[event_intelligence]` 中配置，默认 `probability >= 0.55` 或 `opportunity_score >= 75` 提醒，冷却 6 小时。盘中模拟监控会附带“宏观事件 Top3 + 关联板块 + 机会标的”。源质量已按抓取量、错误率、命中率生成 `quality_score/reliability` 和 `source_recommendation` 治理建议，报告含最新证据链。规则 NLP 已区分传闻、升级、确认、否认、缓和；抽取层默认跳过发布日期超过 14 天的旧新闻，避免历史网页误触发当前事件。事件弹性回测使用日线窗口，已内置霍尔木兹、原油、黄金、红海、俄乌、芯片制裁、关税、国内宽松历史样本，不触发自动交易。
 
 ## 项目结构
 
+完整架构图、流程图、功能模块和数据流说明见 `docs/PROJECT_ARCHITECTURE.md`。
+
 ```
-MoatX/
-├── modules/
-│   ├── __init__.py       # 统一导出
-│   ├── stock_data.py     # 数据获取（akshare封装，自动代理容错）
-│   ├── indicators.py     # 技术指标引擎（20+指标）
-│   ├── analyzer.py       # 核心分析引擎 + 报告生成 + 选股入口
-│   ├── charts.py         # K线图表可视化（5面板）
-│   ├── screener.py       # 选股器（9种筛选维度）
-│   └── rank_engine.py    # 综合评分引擎
-├── skills/               # Claude Code Skill 定义
-├── data/                 # 数据缓存目录（预留）
-├── tests/               # 单元测试（预留）
-├── requirements.txt
-└── README.md
+modules/
+├── __init__.py              # 懒加载导出
+├── __main__.py              # python -m modules 入口
+├── config.py                 # 配置管理（moatx.toml + 环境变量）
+├── candidate.py              # 候选股管理
+├── stock_data.py             # 行情、财务、公告抓取
+├── datasource.py             # 个股行情多源校验聚合
+├── indicators.py             # 技术指标引擎（KDJ/RSI/BOLL/MACD 等）
+├── analyzer.py              # 单股分析 + Markdown 报告
+├── charts.py                 # K 线图渲染
+├── screener.py               # 选股器（全市场扫描）
+├── rank_engine.py            # 综合评分引擎
+├── portfolio.py              # 持仓/交易/快照管理
+├── alert_manager.py          # 预警检测逻辑
+├── alerter.py               # 飞书/文件/CLI 推送
+├── risk_controller.py        # 风控检测（止损/仓位/回撤）
+├── scheduler.py              # 定时任务调度器
+├── backtest/
+│   ├── engine.py             # 回测引擎
+│   ├── strategy.py           # 策略上下文
+│   ├── fees.py               # 手续费计算
+│   ├── metrics.py            # 回测指标
+│   └── datafeed.py           # 回测数据供给
+├── strategy/
+│   ├── base.py               # ParametrizedStrategy 基类
+│   ├── library.py            # 内置策略（MA Cross / MeanReversion / Breakout 等）
+│   ├── optimizer.py           # 参数网格优化
+│   ├── comparator.py          # 多策略对比
+│   └── walkforward.py         # Walk-Forward 分析
+├── signal/
+│   ├── engine.py             # 信号生成引擎
+│   ├── journal.py             # 信号日志
+│   └── paper_trader.py       # 模拟交易
+├── db/
+│   ├── __init__.py           # DatabaseManager 外观类
+│   ├── migrations.py         # Schema 迁移
+│   ├── price_store.py        # OHLCV 行情存储
+│   ├── backtest_store.py     # 回测记录存储
+│   ├── signal_store.py       # 信号/模拟交易存储
+│   └── task_log.py           # 调度任务日志
+└── cli/
+    ├── __init__.py           # CLI 入口（quote/list/check 等）
+    ├── __main__.py           # python -m modules.cli 入口
+    ├── alerter.py            # 飞书推送
+    ├── portfolio.py          # 持仓命令
+    ├── risk.py               # 风控命令
+    ├── scheduler_cli.py      # 调度命令
+    ├── quote.py              # 行情命令
+    └── tool/
+        ├── diagnose.py        # 诊断
+        ├── probe.py           # API 探测
+        ├── signal.py          # 信号
+        └── paper.py           # 模拟交易
+
+data/
+├── portfolio.db              # 主数据库（持仓/交易/预警）
+└── warehouse.db              # 数据仓库（行情/回测/信号/日志）
+
+tests/                        # 单元测试（pytest）
+scripts/                      # 辅助脚本
+docs/                         # 设计文档
 ```
 
-## 核心方法
+## 数据库
 
-### StockData — 数据获取
+| 数据库 | 路径 | 内容 |
+|--------|------|------|
+| 主库 | `data/portfolio.db` | 持仓、交易流水、快照、候选股、预警 |
+| 数据仓库 | `data/warehouse.db` | OHLCV 行情、回测记录、信号日志、任务日志 |
+
+## 数据源架构
+
+```
+业务层 (stock_data.get_realtime_quotes)
+    └─→ QuoteManager
+         ├─ Tencent   ── 查询
+         ├─ EastMoney ── 查询
+         └─ Sina      ── 查询
+              ↓
+          统一字段 → 交叉校验 → 聚合输出
+```
+
+默认多源查询并返回 `validation_status/source_quotes/sources` 等校验信息；单源失败时自动降级为剩余可用源。
+
+## 内置策略
 
 ```python
+from modules.strategy.library import MovingAverageCross, BreakoutStrategy
+
+strategy = MovingAverageCross()
+strategy.fast_period = 5
+strategy.slow_period = 20
+strategy.position_pct = 0.8
+```
+
+支持：MovingAverageCross、MeanReversion、TrendFollowing、BreakoutStrategy、MACrossWithVolume
+
+## Python API
+
+```python
+from modules.stock_data import StockData
+from modules.indicators import IndicatorEngine
+from modules.portfolio import Portfolio
+
 sd = StockData()
-df = sd.get_daily("600519", start_date="20240101")    # 日线（含双数据源自动容错）
-df = sd.get_realtime_quote("600519")                     # 实时行情
-d = sd.get_valuation("600519", current_price=1800)      # PE/PB/ROE估值
-d = sd.get_money_flow("600519")                         # 资金流向
-df = sd.get_limit_up()                                  # 今日涨停股池
-d = sd.get_stock_info("600519")                         # 股票基本信息
-l = sd.get_dividend("600519")                          # 历史分红
-l = sd.get_major_shareholders("600519")                 # 前十大股东
-d = sd.get_profit_sheet_summary("600519")              # 利润表摘要
-d = sd.get_cash_flow_summary("600519")                # 现金流量表
-```
+df = sd.get_daily("600519")
 
-### IndicatorEngine — 技术指标
-
-```python
 ind = IndicatorEngine()
-df = ind.all_in_one(raw_df)  # 一次计算MACD/KDJ/RSI/布林带/CCI/DMI/ATR/OBV等20+指标
+result = ind.all_in_one(df)
+
+pf = Portfolio()
+holdings = pf.list_holdings()
 ```
 
-### MoatXAnalyzer — 核心分析
+## 工程化
 
-```python
-analyzer = MoatXAnalyzer()
-
-report = analyzer.analyze("600519", days=120)
-# report 包含: symbol, name, price, pe, pb, roe, ma, trend, macd, kdj, rsi, boll,
-#              signals, valuation, money_flow, profit_sheet, cash_flow,
-#              dividend, profit_forecast, major_holders, buffett_view
-
-print(analyzer.format_markdown(report))  # Markdown报告
-analyzer.chart("600519")                  # 弹出K线图表
-
-# 选股
-result = analyzer.screen(
-    pe_range=(0, 30),
-    turnover_min=5.0,
-    pct_change_min=3.0,
-    sort_by="pct_change"
-)
-```
-
-### MoatXScreener — 选股器
-
-```python
-s = MoatXScreener()
-
-# 全市场过滤
-r = s.scan_all(pe_range=(0, 30), turnover_min=5.0, pct_change_min=3.0)
-
-# 资金流向排名
-r = s.money_flow_rank(period="今日", direction="in", limit=30)
-
-# 千股千评
-r = s.screen_by_comment(sort_by="综合得分", ascending=False, limit=20)
-
-# 热门板块
-r = s.screen_hot_sectors(limit=10)
-
-# 涨停股池
-r = s.screen_limit_up(limit=20)
-
-# 行业板块扫描
-r = s.scan_industry("银行", top_n=5)
-
-# 板块资金流
-r = s.screen_by_sector_fund_flow(period="今日", sector_type="行业资金流")
-
-# 市场关注度综合筛选
-r = s.screen_hot_stocks(min_institutional=0.5, sort_by="score")
-
-print(s.format_screening_result(r, "标题"))
-```
-
-### MoatXCharts — K线图表
-
-```python
-charts = MoatXCharts(df_with_indicators, symbol="600519")
-charts.plot(save_path="600519.png", style="dark")  # 深色/浅色主题
-```
-
-## 指标覆盖
-
-| 类别 | 指标 |
-|------|------|
-| 趋势 | MA5/10/20/60/120/250、多头排列判断 |
-| MACD系 | DIF、DEA、MACD柱、金叉死叉 |
-| KDJ系 | K、D、J值、超买超卖 |
-| RSI系 | RSI6/12/24、强势弱势判断 |
-| 布林带 | 上轨/中轨/下轨、当前位置 |
-| 成交量 | OBV、量能均线、缩量放量判断 |
-| 波动率 | ATR 平均真实波幅 |
-| 顺势 | CCI、DMI/ADX/ADXR |
-| 偏离率 | BIAS5/10/20 |
-
-## 数据源容错
-
-- 主数据源：东方财富（`stock_zh_a_hist`）
-- 备用数据源：新浪财经（`stock_zh_a_daily`）
-- 代理自动清除：初始化时自动清理 `HTTP_PROXY`/`HTTPS_PROXY` 环境变量
-
-## 免责声明
-
-本工具仅供学习研究，不构成任何投资建议。股市有风险，投资需谨慎。
+- **Lint**：ruff，0 警告
+- **类型注解**：核心模块完整（config/portfolio/alert_manager/candidate/risk_controller/indicators/db）
+- **CI**：GitHub Actions（Python 3.10/3.11/3.12 矩阵）
+- **风控**：止损/仓位/回撤检测 + 飞书预警
+- **回测**：BacktestEngine 支持多策略参数优化和 Walk-Forward 分析

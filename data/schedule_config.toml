@@ -1,0 +1,45 @@
+[tasks.scan_candidates]
+enabled = true
+schedule = "cron"
+hour = 9
+minute = 30
+day_of_week = "mon-fri"
+description = "开盘扫描候选股"
+
+[tasks.mark_pending]
+enabled = true
+schedule = "cron"
+hour = 14
+minute = 50
+day_of_week = "mon-fri"
+description = "标记待验证"
+
+[tasks.verify_close]
+enabled = true
+schedule = "cron"
+hour = 15
+minute = 10
+day_of_week = "mon-fri"
+description = "收盘验证涨跌"
+
+[tasks.reset_pending]
+enabled = true
+schedule = "cron"
+hour = 9
+minute = 20
+day_of_week = "mon-fri"
+description = "清除残留标记"
+
+[tasks.check_alerts]
+enabled = true
+schedule = "interval"
+minutes = 5
+description = "盘中预警检查"
+
+[tasks.snapshot_portfolio]
+enabled = true
+schedule = "cron"
+hour = 15
+minute = 30
+day_of_week = "mon-fri"
+description = "日终持仓快照"

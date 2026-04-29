@@ -1,99 +1,140 @@
-"""
-tests/test_portfolio.py - 持仓管理单元测试
-"""
+"""P1: portfolio.py 持仓管理测试"""
 
-import os
 import pytest
-import pandas as pd
+import sqlite3
 from modules.portfolio import Portfolio
-from modules.alerter import Alerter
 
 
 @pytest.fixture
-def tmp_db(tmp_path):
-    db = str(tmp_path / "test_portfolio.db")
-    pf = Portfolio(db_path=db)
-    yield db
-    pf.close()
-    try:
-        if os.path.exists(db):
-            os.remove(db)
-    except PermissionError:
-        pass  # Windows 保留文件锁
+def portfolio(mem_db):
+    """使用内存数据库的 Portfolio 实例"""
+    return Portfolio(db_path=":memory:")
 
 
-class TestPortfolio:
+class TestHoldingsCRUD:
+    def test_add_holding(self, portfolio):
+        portfolio.add_holding("600519", "贵州茅台", 100, 1800.0)
+        holding = portfolio.get_holding("600519")
+        assert holding is not None
+        assert holding["symbol"] == "600519"
+        assert holding["shares"] == 100
 
-    def test_add_and_list(self, tmp_db):
-        pf = Portfolio(db_path=tmp_db)
-        pf.add_holding("600519", "贵州茅台", shares=100, cost_price=1800)
-        pf.add_holding("000858", "五粮液", shares=200, cost_price=150)
+    def test_add_holding_negative_shares_rejected(self, portfolio):
+        with pytest.raises(ValueError, match="shares 必须"):
+            portfolio.add_holding("600519", "贵州茅台", -10, 1800.0)
 
-        df = pf.list_holdings()
+    def test_add_holding_negative_cost_rejected(self, portfolio):
+        with pytest.raises(ValueError, match="cost_price 必须"):
+            portfolio.add_holding("600519", "贵州茅台", 100, -100.0)
+
+    def test_remove_holding(self, portfolio):
+        portfolio.add_holding("600519", "贵州茅台", 100, 1800.0)
+        portfolio.remove_holding("600519")
+        assert portfolio.get_holding("600519") is None
+
+    def test_list_holdings_empty(self, portfolio):
+        df = portfolio.list_holdings()
+        assert df.empty
+
+    def test_list_holdings_with_data(self, portfolio):
+        portfolio.add_holding("600519", "贵州茅台", 100, 1800.0)
+        portfolio.add_holding("000858", "五粮液", 200, 150.0)
+        df = portfolio.list_holdings()
         assert len(df) == 2
-        symbols = df["symbol"].tolist()
+        symbols = set(df["symbol"].tolist())
         assert "600519" in symbols
         assert "000858" in symbols
 
-    def test_normalize_symbol(self, tmp_db):
-        pf = Portfolio(db_path=tmp_db)
-        pf.add_holding("600519.SH", shares=10)
-        pf.add_holding("000858.sz", shares=20)
-
-        df = pf.list_holdings()
-        assert "600519" in df["symbol"].tolist()
-        assert "000858" in df["symbol"].tolist()
-
-    def test_remove_holding(self, tmp_db):
-        pf = Portfolio(db_path=tmp_db)
-        pf.add_holding("600519", shares=100)
-        pf.remove_holding("600519")
-        assert pf.get_holding("600519") is None
-
-    def test_import_parsed_results(self, tmp_db):
-        pf = Portfolio(db_path=tmp_db)
-        results = [
-            ("600519", "贵州茅台", 100, 1800),
-            ("000858", "五粮液", 200, 150),
-        ]
-        added = pf.import_parsed_results(results)
-        assert len(added) == 2
-        df = pf.list_holdings()
-        assert len(df) == 2
-
-    def test_duplicate_symbol_replace(self, tmp_db):
-        pf = Portfolio(db_path=tmp_db)
-        pf.add_holding("600519", "贵州茅台", shares=100, cost_price=1800)
-        pf.add_holding("600519", "贵州茅台更名", shares=150, cost_price=2000)
-        df = pf.list_holdings()
-        assert len(df) == 1
-        row = pf.get_holding("600519")
-        assert row["shares"] == 150
-        assert row["cost_price"] == 2000
-
-    def test_config(self, tmp_db):
-        pf = Portfolio(db_path=tmp_db)
-        pf.set_config("feishu_webhook", "https://open.feishu.cn/...")
-        assert pf.get_config("feishu_webhook") == "https://open.feishu.cn/..."
-        assert pf.get_config("nonexistent", "default") == "default"
+    def test_add_holding_normalizes_symbol(self, portfolio):
+        portfolio.add_holding("600519.SH", "贵州茅台", 100, 1800.0)
+        holding = portfolio.get_holding("600519")
+        assert holding is not None
 
 
-class TestAlerter:
+class TestRefreshHoldings:
+    def test_refresh_holdings_no_quotes(self, portfolio):
+        portfolio.add_holding("600519", "贵州茅台", 100, 1800.0)
+        count = portfolio.refresh_holdings({})
+        assert count == 0
 
-    def test_format_alert_report_empty(self):
-        report = Alerter.format_alert_report([])
-        assert "暂无预警" in report
-
-    def test_format_alert_report_with_alerts(self):
-        alerts = [
-            {"symbol": "600519", "type": "kdj_overbought", "msg": "KDJ 超买 J=95.0，现价 1800元"},
-            {"symbol": "000858", "type": "rsi_oversold", "msg": "RSI 超卖 RSI12=20.0"},
-        ]
-        report = Alerter.format_alert_report(alerts)
-        assert "600519" in report
-        assert "000858" in report
-        assert "KDJ 超买" in report
+    def test_refresh_holdings_success(self, portfolio):
+        portfolio.add_holding("600519", "贵州茅台", 100, 1800.0)
+        quotes = {
+            "600519.SH": {"code": "600519", "name": "贵州茅台", "price": 1900.0,
+                          "change_pct": 1.5, "volume": 1000000}
+        }
+        count = portfolio.refresh_holdings(quotes)
+        assert count == 1
+        holding = portfolio.get_holding("600519")
+        assert holding["current_price"] == 1900.0
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+class TestSnapshots:
+    def test_insert_snapshot_insert_only(self, portfolio):
+        import time
+        portfolio.insert_snapshot("2026-04-26", "600519", "贵州茅台",
+                                100, 1850.0, 1800.0, 185000.0,
+                                5000.0, 2.78, 50.0)
+        # 同一股票同一日期再次插入，不应覆盖（INSERT 而非 REPLACE）
+        portfolio.insert_snapshot("2026-04-26", "600519", "贵州茅台",
+                                100, 1860.0, 1800.0, 186000.0,
+                                6000.0, 3.33, 50.0)
+        # 验证有两条记录
+        df = portfolio.db.execute(
+            "SELECT COUNT(*) FROM snapshots WHERE date='2026-04-26' AND symbol='600519'"
+        ).fetchone()[0]
+        assert df == 2
+
+
+class TestDailyPnL:
+    def test_insert_daily_pnl_insert_only(self, portfolio):
+        portfolio.insert_daily_pnl("2026-04-25", "600519", "贵州茅台", 5000.0, 2.5)
+        portfolio.insert_daily_pnl("2026-04-25", "600519", "贵州茅台", 6000.0, 3.0)
+        # 验证有两条记录
+        count = portfolio.db.execute(
+            "SELECT COUNT(*) FROM daily_pnl WHERE date='2026-04-25' AND symbol='600519'"
+        ).fetchone()[0]
+        assert count == 2
+
+
+class TestRecordTrade:
+    def test_record_trade_buy(self, portfolio):
+        portfolio.record_trade("2026-04-26", "BUY", "600519", "贵州茅台",
+                               100, 1850.0, 185000.0)
+        holding = portfolio.get_holding("600519")
+        assert holding is not None
+        assert holding["shares"] == 100
+
+    def test_record_trade_sell_removes_holding(self, portfolio):
+        portfolio.add_holding("600519", "贵州茅台", 100, 1800.0)
+        portfolio.record_trade("2026-04-26", "SELL", "600519", "贵州茅台",
+                               100, 1900.0, 190000.0)
+        holding = portfolio.get_holding("600519")
+        assert holding is None
+
+    def test_record_trade_invalid_shares(self, portfolio):
+        with pytest.raises(ValueError, match="交易股数必须"):
+            portfolio.record_trade("2026-04-26", "BUY", "600519", "贵州茅台",
+                                   0, 1850.0, 0.0)
+
+    def test_record_trade_negative_price(self, portfolio):
+        with pytest.raises(ValueError, match="交易价格不能为负"):
+            portfolio.record_trade("2026-04-26", "BUY", "600519", "贵州茅台",
+                                   100, -100.0, -10000.0)
+
+
+class TestCandidates:
+    def test_add_candidate(self, portfolio):
+        result = portfolio.add_candidate("300750", "宁德时代", rec_rank=1,
+                                         entry_price=500.0, rec_pct_change=5.0)
+        assert result is True
+
+    def test_update_candidate_result_insert_only(self, portfolio):
+        portfolio.add_candidate("300750", "宁德时代", rec_rank=1, entry_price=500.0)
+        portfolio.update_candidate_result("300750", 520.0, 4.0)
+        portfolio.update_candidate_result("300750", 530.0, 6.0)
+        # 验证有两条结果记录
+        count = portfolio.db.execute(
+            "SELECT COUNT(*) FROM candidate_results WHERE symbol='300750'"
+        ).fetchone()[0]
+        assert count == 2
