@@ -11,6 +11,7 @@ from modules.config import cfg
 from modules.db import DatabaseManager
 
 from .models import event_status_label, now_ts
+from .news_factors import NewsFactorEngine
 
 
 def build_event_monitor_summary(
@@ -49,6 +50,7 @@ def build_event_monitor_summary(
         states = event_store.list_states(limit=100)
         opportunities = event_store.list_opportunities(limit=500)
         notifications = event_store.list_notifications(limit=100)
+        news_factors = NewsFactorEngine(db=db).build(limit=100, min_score=55.0, top_n=top_n)
         rows = _top_events(
             states=states,
             opportunities=opportunities,
@@ -66,6 +68,8 @@ def build_event_monitor_summary(
             "stale": _is_stale(states),
             "latest_state_at": _latest_ts(states, "updated_at"),
             "notifications": _records(notifications.head(5) if not notifications.empty else notifications),
+            "news_factors": news_factors.get("factors", []),
+            "news_topics": news_factors.get("topic_summary", []),
             "top_events": rows,
         }
     finally:
@@ -97,6 +101,13 @@ def format_event_monitor_summary(summary: dict[str, Any]) -> list[str]:
             f"机会={float(item.get('opportunity_score') or 0):.1f} "
             f"[{mark}] | 板块：{sectors} | 标的：{stocks}"
         )
+    news_factors = summary.get("news_factors") or []
+    if news_factors:
+        factor_text = "；".join(
+            f"{row.get('sector')}({float(row.get('factor_score') or 0):+.1f}, {row.get('top_topic')})"
+            for row in news_factors[:3]
+        )
+        lines.append(f"新闻因子 Top{min(3, len(news_factors))}：{factor_text}")
     return lines
 
 

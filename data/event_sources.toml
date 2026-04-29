@@ -7,7 +7,7 @@ name = "BBC 中文 RSS"
 category = "geopolitics"
 type = "rss"
 url = "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml"
-enabled = true
+enabled = false
 weight = 0.80
 
 [sources.headers]
@@ -19,7 +19,7 @@ name = "RFI 中文 RSS"
 category = "geopolitics"
 type = "rss"
 url = "https://www.rfi.fr/cn/rss"
-enabled = true
+enabled = false
 weight = 0.85
 
 [sources.headers]
@@ -43,8 +43,44 @@ name = "德国之声中文 RSS"
 category = "geopolitics"
 type = "rss"
 url = "https://rss.dw.com/xml/rss-chi-all"
-enabled = true
+enabled = false
 weight = 0.75
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "xinhua_world_rss"
+name = "????? RSS"
+category = "geopolitics"
+type = "rss"
+url = "http://www.news.cn/world/news_world.xml"
+enabled = true
+weight = 0.82
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "xinhua_fortune_rss"
+name = "????? RSS"
+category = "finance"
+type = "rss"
+url = "http://www.news.cn/fortune/news_fortune.xml"
+enabled = true
+weight = 0.78
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "xinhua_politics_rss"
+name = "????? RSS"
+category = "policy"
+type = "rss"
+url = "http://www.news.cn/politics/news_politics.xml"
+enabled = true
+weight = 0.80
 
 [sources.headers]
 User-Agent = "MoatX/0.1 (+event-intelligence)"
@@ -233,7 +269,7 @@ name = "期货日报首页 HTML"
 category = "commodity"
 type = "html"
 url = "http://www.qhrb.com.cn/"
-enabled = true
+enabled = false
 weight = 0.72
 
 [sources.headers]

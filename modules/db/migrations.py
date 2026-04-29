@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 MIGRATIONS: dict[int, list[str]] = {
     1: [
@@ -268,6 +268,37 @@ MIGRATIONS: dict[int, list[str]] = {
            ADD COLUMN quality_score REAL DEFAULT 0""",
         """ALTER TABLE event_source_quality
            ADD COLUMN reliability TEXT DEFAULT 'unknown'""",
+    ],
+    11: [
+        """CREATE TABLE IF NOT EXISTS event_topic_memory (
+            topic TEXT PRIMARY KEY,
+            category TEXT DEFAULT '',
+            heat REAL DEFAULT 0,
+            previous_heat REAL DEFAULT 0,
+            momentum REAL DEFAULT 0,
+            insight_count INTEGER DEFAULT 0,
+            total_insight_count INTEGER DEFAULT 0,
+            first_seen_at TEXT NOT NULL,
+            last_seen_at TEXT NOT NULL,
+            sectors_json TEXT DEFAULT '[]',
+            top_titles_json TEXT DEFAULT '[]',
+            trend TEXT DEFAULT 'stable',
+            updated_at TEXT NOT NULL
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_event_topic_memory_heat
+           ON event_topic_memory(heat DESC, momentum DESC)""",
+        """CREATE TABLE IF NOT EXISTS event_topic_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            topic TEXT NOT NULL,
+            category TEXT DEFAULT '',
+            heat REAL DEFAULT 0,
+            insight_count INTEGER DEFAULT 0,
+            sectors_json TEXT DEFAULT '[]',
+            top_titles_json TEXT DEFAULT '[]',
+            created_at TEXT NOT NULL
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_event_topic_snapshots_topic
+           ON event_topic_snapshots(topic, created_at)""",
     ],
 }
 

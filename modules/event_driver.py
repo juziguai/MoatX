@@ -149,6 +149,14 @@ class EventDriver:
             _logger.info("事件 [%s] 命中: days=%d decay=%.1f impact=%.1f boost=%s penalty=%s",
                          name, days_ago, decay, impact, boost[:3], penalty[:3])
 
+        try:
+            from modules.event_intelligence.news_factors import NewsFactorEngine
+
+            for sector, score in NewsFactorEngine().sector_boosts().items():
+                sector_scores[sector] = sector_scores.get(sector, 0.0) + float(score)
+        except Exception as e:
+            _logger.debug("新闻因子评分加载失败: %s", e)
+
         return sector_scores
 
     def _check_keyword_in_news(self, keyword: str) -> tuple[bool, datetime | None]:

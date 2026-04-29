@@ -11,6 +11,8 @@ from modules.event_intelligence.context import EventContextBuilder
 from modules.event_intelligence.elasticity import EventElasticityBacktester
 from modules.event_intelligence.extractor import EventExtractor
 from modules.event_intelligence.manual_ingest import ingest_manual_news, ingest_news_file
+from modules.event_intelligence.news_factors import NewsFactorEngine
+from modules.event_intelligence.news_intelligence import NewsIntelligenceEngine
 from modules.event_intelligence.notifier import EventNotifier
 from modules.event_intelligence.opportunity import EventOpportunityScanner
 from modules.event_intelligence.probability import EventProbabilityEngine
@@ -18,6 +20,7 @@ from modules.event_intelligence.reporter import EventReporter
 from modules.event_intelligence.service import EventIntelligenceService
 from modules.event_intelligence.source_registry import SourceRegistry
 from modules.event_intelligence.summary import build_event_monitor_summary
+from modules.event_intelligence.topic_memory import TopicMemoryEngine
 
 
 def cmd_event(args) -> None:
@@ -49,6 +52,36 @@ def cmd_event(args) -> None:
         )
     elif action == "report":
         payload = EventReporter().report(limit=args.limit)
+    elif action == "news":
+        payload = NewsIntelligenceEngine().analyze(
+            limit=args.limit,
+            topic=args.topic or None,
+            min_score=args.min_score,
+        )
+    elif action == "news-report":
+        payload = NewsIntelligenceEngine().report(
+            limit=args.limit,
+            topic=args.topic or None,
+            min_score=args.min_score,
+        )
+    elif action == "news-factors":
+        payload = NewsFactorEngine().build(
+            limit=args.limit,
+            min_score=args.min_score,
+            top_n=args.top_events or 20,
+        )
+    elif action == "topics":
+        payload = TopicMemoryEngine().update(
+            limit=args.limit,
+            min_score=args.min_score,
+            top_n=args.top_events or 30,
+        )
+    elif action == "topic-snapshots":
+        payload = {
+            "engine": "topic_memory_v1",
+            "topic": args.topic or "",
+            "snapshots": TopicMemoryEngine().snapshots(topic=args.topic or "", limit=args.limit),
+        }
     elif action == "sources":
         payload = _source_snapshot(limit=args.limit)
     elif action == "notify":

@@ -12,7 +12,10 @@ from modules.sector_tags import SectorTagProvider
 
 from .history import EventHistoryRegistry
 from .models import now_ts
+from .news_factors import NewsFactorEngine
+from .news_intelligence import NewsIntelligenceEngine
 from .source_quality import source_recommendation
+from .topic_memory import TopicMemoryEngine
 
 
 class EventContextBuilder:
@@ -35,6 +38,10 @@ class EventContextBuilder:
         elasticity_runs = event_store.list_elasticity_runs(limit=5)
         history_registry = EventHistoryRegistry()
         history = history_registry.list(limit=limit)
+        news_scan_limit = max(100, limit)
+        news_intelligence = NewsIntelligenceEngine(db=self._db).analyze(limit=news_scan_limit, min_score=45.0)
+        news_factors = NewsFactorEngine(db=self._db).build(limit=news_scan_limit, min_score=55.0, top_n=20)
+        topic_memory = TopicMemoryEngine(db=self._db).list(limit=limit)
 
         return {
             "schema_version": self.SCHEMA_VERSION,
@@ -45,6 +52,9 @@ class EventContextBuilder:
             "notifications": self._records(notifications),
             "source_quality": self._source_quality_records(source_quality),
             "signal_evidence": self._records(signal_evidence),
+            "news_intelligence": news_intelligence,
+            "news_sector_factors": news_factors,
+            "topic_memory": topic_memory,
             "elasticity_summary": self._records(elasticity_runs),
             "historical_events": history,
             "historical_event_count": history_registry.count(),
@@ -56,7 +66,7 @@ class EventContextBuilder:
                 },
                 "external_llm": {
                     "status": "prepared_disabled",
-                    "contract": "send latest_news/states to a user-approved model adapter",
+                    "contract": "send latest_news/news_intelligence/states to a user-approved model adapter",
                 },
                 "complex_nlp": {
                     "status": "prepared_disabled",

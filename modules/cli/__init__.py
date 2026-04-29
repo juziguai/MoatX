@@ -279,6 +279,11 @@ def _build_event_parser(p_event):
             "states",
             "opportunities",
             "report",
+            "news",
+            "news-report",
+            "news-factors",
+            "topics",
+            "topic-snapshots",
             "sources",
             "notify",
             "context",
@@ -286,9 +291,11 @@ def _build_event_parser(p_event):
             "elasticity",
             "run",
         ],
-        help="collect/ingest/extract/states/opportunities/report/sources/notify/context/summary/elasticity/run",
+        help="collect/ingest/extract/states/opportunities/report/news/news-report/news-factors/topics/topic-snapshots/sources/notify/context/summary/elasticity/run",
     )
     p_event.add_argument("--limit", type=int, default=200, help="news/report limit")
+    p_event.add_argument("--topic", default="", help="news intelligence topic/category filter")
+    p_event.add_argument("--min-score", type=float, default=45.0, help="minimum news value score")
     p_event.add_argument("--json", dest="as_json", action="store_true", help="output JSON")
     p_event.add_argument("--output", help="write output to UTF-8 file")
     p_event.add_argument("--title", help="manual ingest title")

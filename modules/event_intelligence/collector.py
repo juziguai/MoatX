@@ -240,18 +240,20 @@ class EventNewsCollector:
     def _get(source: EventSource) -> requests.Response:
         """Fetch a source with a small retry budget for flaky news hosts."""
         last_error: Exception | None = None
-        for attempt in range(3):
+        retries = max(1, int(source.field_map.get("retries") or 1))
+        timeout = max(3, int(source.field_map.get("timeout") or cfg().crawler.timeout))
+        for attempt in range(retries):
             try:
                 session = requests.Session()
                 session.trust_env = False
                 return session.get(
                     source.url,
                     headers=source.headers or None,
-                    timeout=cfg().crawler.timeout,
+                    timeout=timeout,
                 )
             except requests.RequestException as exc:
                 last_error = exc
-                if attempt < 2:
+                if attempt < retries - 1:
                     time.sleep(0.5 * (attempt + 1))
         assert last_error is not None
         raise last_error
