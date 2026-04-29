@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from modules.config import tomllib
+
 from .models import EventDefinition, TransmissionEffect
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -26,8 +28,6 @@ class EventTransmissionMap:
         if not self._path.exists():
             self._events = []
             return self._events
-
-        import tomllib
 
         raw = tomllib.loads(self._path.read_text(encoding="utf-8"))
         events = [self._parse_event(item) for item in raw.get("events", [])]

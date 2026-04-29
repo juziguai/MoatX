@@ -22,7 +22,7 @@ from typing import Any
 
 import requests
 
-from modules.config import cfg
+from modules.config import cfg, tomllib
 from modules.sector_tags import SectorTagProvider
 
 _logger = logging.getLogger("moatx.event_driver")
@@ -271,7 +271,6 @@ class EventDriver:
     def _load_event_map(self) -> list[dict[str, Any]]:
         """Load event → sector mapping from TOML config."""
         try:
-            import tomllib
             with _EVENT_MAP_PATH.open("rb") as f:
                 raw = tomllib.load(f)
             return raw.get("events", [])

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from modules.config import tomllib
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 _DEFAULT_PATH = _PROJECT_ROOT / "data" / "event_history.toml"
@@ -24,8 +25,6 @@ class EventHistoryRegistry:
         if not self._path.exists():
             self._events = []
             return self._events
-
-        import tomllib
 
         raw = tomllib.loads(self._path.read_text(encoding="utf-8"))
         events: list[dict[str, Any]] = []

@@ -14,6 +14,7 @@ from typing import Any
 
 import pandas as pd
 
+from modules.config import tomllib
 from modules.utils import _clear_all_proxy
 
 _logger = logging.getLogger("moatx.sector_tags")
@@ -376,8 +377,6 @@ class SectorTagProvider:
         if not self._graph_path.exists():
             self._graph_cache = {"version": "", "nodes": []}
             return self._graph_cache
-        import tomllib
-
         self._graph_cache = tomllib.loads(self._graph_path.read_text(encoding="utf-8"))
         return self._graph_cache
 
@@ -389,8 +388,6 @@ class SectorTagProvider:
         if not path.exists():
             cls._graph_cache = {"version": "", "nodes": []}
             return cls._graph_cache
-        import tomllib
-
         cls._graph_cache = tomllib.loads(path.read_text(encoding="utf-8"))
         return cls._graph_cache
 
