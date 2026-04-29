@@ -10,7 +10,7 @@ import pandas as pd
 from modules.config import cfg
 from modules.db import DatabaseManager
 
-from .models import now_ts
+from .models import event_status_label, now_ts
 
 
 def build_event_monitor_summary(
@@ -92,6 +92,7 @@ def format_event_monitor_summary(summary: dict[str, Any]) -> list[str]:
         mark = "提醒" if item.get("alert") else "观察"
         lines.append(
             f"{idx}. {item.get('name') or item.get('event_id')} "
+            f"状态={item.get('status_label') or event_status_label(item.get('status'))} "
             f"P={float(item.get('probability') or 0):.2f} "
             f"机会={float(item.get('opportunity_score') or 0):.1f} "
             f"[{mark}] | 板块：{sectors} | 标的：{stocks}"
@@ -151,6 +152,7 @@ def _top_events(
                 "probability": probability,
                 "impact_strength": float(row.get("impact_strength") or 0.0),
                 "status": str(row.get("status") or ""),
+                "status_label": event_status_label(row.get("status")),
                 "evidence_count": int(row.get("evidence_count") or 0),
                 "sources_count": int(row.get("sources_count") or 0),
                 "last_signal_at": str(row.get("last_signal_at") or ""),

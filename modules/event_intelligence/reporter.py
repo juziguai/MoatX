@@ -8,6 +8,7 @@ from modules.config import cfg
 from modules.db import DatabaseManager
 
 from .history import EventHistoryRegistry
+from .models import event_status_label
 from .source_quality import source_recommendation
 
 
@@ -38,7 +39,7 @@ class EventReporter:
             for _, row in states.iterrows():
                 lines.append(
                     f"| {row['name']} | {float(row['probability']):.0%} | "
-                    f"{float(row['impact_strength']):.0%} | {row['status']} | "
+                    f"{float(row['impact_strength']):.0%} | {event_status_label(row.get('status'))} | "
                     f"{int(row['evidence_count'])} | {row['updated_at']} |"
                 )
             lines.append("")
@@ -93,7 +94,7 @@ class EventReporter:
                 entities = self._json_dict(row.get("entities_json"))
                 title = str(row.get("title") or "")[:42]
                 lines.append(
-                    f"| {row.get('event_id', '')} | {entities.get('stage', '')} | "
+                    f"| {row.get('event_id', '')} | {event_status_label(entities.get('stage'))} | "
                     f"{entities.get('time_sensitivity', '')} | {entities.get('intensity', '')} | "
                     f"{row.get('source', '')} | {title} |"
                 )

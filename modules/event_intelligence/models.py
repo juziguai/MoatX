@@ -11,6 +11,23 @@ Direction = Literal["bullish", "bearish", "neutral"]
 EventStatus = Literal["watching", "escalating", "confirmed", "pricing", "resolved", "expired"]
 SourceType = Literal["http_json", "rss", "html", "api", "jsonp"]
 
+EVENT_STATUS_LABELS = {
+    "confirmed": "已确认",
+    "escalating": "升级中",
+    "watching": "观察中",
+    "pricing": "定价中",
+    "resolved": "已缓和",
+    "expired": "已过期",
+    "rumor": "传闻",
+    "denied": "已否认",
+}
+
+
+def event_status_label(status: str | None) -> str:
+    """Return a user-facing Chinese label for an internal event status/stage."""
+    value = str(status or "").strip()
+    return EVENT_STATUS_LABELS.get(value, value)
+
 
 def now_ts() -> str:
     """Return local timestamp in the format used by the warehouse."""
