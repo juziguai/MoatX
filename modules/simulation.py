@@ -14,7 +14,6 @@ from modules.scoring_engine import ScoringEngine
 from modules.screener import MoatXScreener
 from modules.signal.paper_trader import PaperTrader
 from modules.sell_signal import SellSignalEngine
-from modules.stock_data import StockData
 
 _logger = logging.getLogger("moatx.simulation")
 
@@ -48,7 +47,7 @@ def scan_and_buy() -> dict[str, Any]:
     scored = engine.score_batch(candidates, list(existing_symbols))
 
     # Filter: only buy stocks with total >= 41 and not vetoed
-    buyable = scored[(scored["total"] >= 41) & (scored["vetoed"] == False)]
+    buyable = scored[(scored["total"] >= 41) & (~scored["vetoed"].astype(bool))]
     if buyable.empty:
         return {"scanned": len(candidates), "bought": 0, "skipped": [], "errors": []}
 
@@ -96,7 +95,6 @@ def scan_and_buy() -> dict[str, Any]:
         price = float(row.get("price") or 0)
         score = row.get("total", 0)
         quality = row.get("quality", 0)
-        veto_reason = row.get("veto_reason", "")
 
         if price <= 0:
             errors.append(f"{sym}: no valid price")
@@ -217,15 +215,6 @@ def execute_signals() -> dict[str, Any]:
             skipped += 1
             continue
 
-        from modules.signal.engine import Signal
-        sig = Signal(
-            symbol=sym,
-            signal_type="sell",
-            price=current_price,
-            reason=sig_row["reason"],
-            strategy_name=sig_row.get("strategy_name", "sell_signal"),
-            confidence=100.0,
-        )
         try:
             result = trader._sell(sym, current_price, sig_row["reason"], 0)
             if result:
@@ -260,7 +249,6 @@ def daily_report() -> str:
     Returns:
         Markdown formatted report string
     """
-    from modules.cli.tool.monitor import _check_data_sources
     db = DatabaseManager(_cfg().data.warehouse_path)
     trader = PaperTrader(db=db)
 

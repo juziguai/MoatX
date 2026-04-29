@@ -101,7 +101,6 @@ class PaperTrader:
         """Take a daily snapshot of the paper trading account."""
         from datetime import datetime
         date_str = snapshot_date or datetime.now().strftime("%Y-%m-%d")
-        h = self.holdings
         positions = self.positions_detail()
         market_value = sum(p["market_value"] for p in positions)
         total = self.cash + market_value

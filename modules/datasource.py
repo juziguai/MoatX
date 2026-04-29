@@ -13,7 +13,7 @@ from typing import Literal
 import requests
 
 from modules.config import cfg
-from modules.utils import normalize_symbol, to_eastmoney_secid, to_full_code, to_sina_code
+from modules.utils import to_eastmoney_secid, to_full_code, to_sina_code
 
 logger = logging.getLogger("moatx.datasource")
 logger.setLevel(logging.WARNING)

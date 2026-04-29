@@ -10,13 +10,13 @@ from typing import Optional, Literal, Any, TypedDict, NotRequired
 import pandas as pd
 import numpy as np
 
-_logger = logging.getLogger("moatx.analyzer")
-
 from .stock_data import StockData
 from .indicators import IndicatorEngine
 from .charts import MoatXCharts
 from .screener import MoatXScreener
 from .calendar import is_trading_day
+
+_logger = logging.getLogger("moatx.analyzer")
 
 
 # ------------------------------------------------------------------

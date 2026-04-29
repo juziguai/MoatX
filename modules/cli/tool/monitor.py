@@ -62,7 +62,7 @@ def cmd_monitor(args):
         if alert_log.exists():
             lines = alert_log.read_text(encoding="utf-8").strip().split("\n")
             if lines:
-                recent = [l for l in lines if l.strip()][-3:]
+                recent = [entry for entry in lines if entry.strip()][-3:]
                 print(f"近期预警: {len(recent)} 条")
                 for line in recent:
                     print(f"  {line[:80]}")
@@ -77,7 +77,6 @@ def cmd_monitor(args):
         stats = get_push_stats()
         total = stats.get("total", 0)
         success = stats.get("success", 0)
-        fail = stats.get("fail", 0)
         if total > 0:
             rate = success / total * 100
             print(f"飞书推送: {success}/{total} 成功 ({rate:.0f}%)")

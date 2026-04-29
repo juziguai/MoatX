@@ -215,7 +215,6 @@ def sim_daily_snapshot(*args, **kwargs) -> _SubprocessResult:
 
 def sim_daily_report(*args, **kwargs) -> _SubprocessResult:
     """15:30 每日交易报告（飞书推送）"""
-    import json
     from modules.simulation import daily_report
     from modules.alerter import Alerter
     try:

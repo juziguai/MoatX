@@ -8,7 +8,7 @@ from dataclasses import asdict
 from datetime import datetime
 
 from modules.config import cfg
-from modules.market_index import DEFAULT_INDEX_CODES, MarketBreadth, MarketIndexQuoteManager
+from modules.market_index import DEFAULT_INDEX_CODES, MarketIndexQuoteManager
 
 
 def cmd_market(args) -> None:

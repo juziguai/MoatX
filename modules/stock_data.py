@@ -4,7 +4,6 @@ stock_data.py - A股数据获取模块
 """
 
 import json
-import os
 import time as _time
 import requests
 import logging
@@ -15,7 +14,6 @@ from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Dict, List, Literal, Optional
 
-from modules.crawler import tencent as _tencent_crawler
 from modules.crawler.eastmoney import fetch_stock_info as _em_stock_info
 from modules.crawler.fundflow import get_money_flow_summary
 from modules.config import cfg

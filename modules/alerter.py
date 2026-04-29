@@ -350,7 +350,7 @@ class Alerter:
                     _logger.warning("信号飞书推送失败（webhook 已脱敏）")
                     return False
             return True
-        except Exception as e:
+        except Exception:
             _logger.warning("信号飞书推送异常（webhook 已脱敏）")
             return False
 

@@ -21,7 +21,6 @@ import pathlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -62,7 +61,6 @@ class ScoringFeedback:
     """
 
     def __init__(self, data_dir: str | None = None):
-        import pathlib
         from modules.config import cfg
         self._path = pathlib.Path(data_dir or cfg().data.warehouse_path).parent / "scoring_feedback.json"
         self._trades: list[dict] = []
@@ -294,7 +292,8 @@ class ScoringEngine:
         df = self._score_quality_batch(df, regime)
 
         # Remove vetoed stocks
-        active = df[df["vetoed"] == False].copy()
+        veto_mask = df["vetoed"].astype(bool)
+        active = df[~veto_mask].copy()
         if active.empty:
             return self._attach_action_columns(self._finalize_score_output(df))
 
@@ -322,9 +321,10 @@ class ScoringEngine:
         active = self._apply_concentration_penalty(active, existing_holdings)
 
         # Merge back, set vetoed total to 0 for stable sort
-        df.loc[df["vetoed"] == True, "total"] = 0.0
+        veto_mask = df["vetoed"].astype(bool)
+        df.loc[veto_mask, "total"] = 0.0
         final = pd.concat(
-            [df[df["vetoed"] == True], active], ignore_index=True
+            [df[veto_mask], active], ignore_index=True
         ).sort_values("total", ascending=False, na_position="last")
 
         final = self._finalize_score_output(final)
@@ -377,10 +377,8 @@ class ScoringEngine:
         try:
             q = self._sd.get_realtime_quote(symbol)
             price = float(q.get("price") or 0)
-            name = q.get("name", symbol)
         except Exception:
             price = 0.0
-            name = symbol
 
         regime = self._detect_regime()
         weights = self._regime_weights(regime)
@@ -509,7 +507,6 @@ class ScoringEngine:
             spot = self._sd.get_spot()
             spot_pe = spot["pe"].where(lambda x: (x > 0) & pd.notna(x))
             spot_pb = spot["pb"].where(lambda x: (x > 0) & pd.notna(x))
-            candidate_codes = df.loc[active_mask, "code"].tolist()
             spot_index = {str(c): i for i, c in enumerate(spot["code"].astype(str))}
         except Exception:
             spot = None
