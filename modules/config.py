@@ -12,10 +12,14 @@ from __future__ import annotations
 import os
 import re
 import threading
-import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10 compatibility
+    import tomli as tomllib
 
 _CONFIG_DIR: Path = Path(__file__).resolve().parent.parent / "data"
 _DEFAULT_CONFIG_PATH: Path = _CONFIG_DIR / "moatx.toml"

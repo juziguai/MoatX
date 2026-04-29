@@ -31,6 +31,7 @@ dependencies = [
     "matplotlib>=3.7.0,<3.9.0",
     "scipy>=1.11.0,<1.14.0",
     "APScheduler>=3.10.0,<3.11.0",
+    "tomli>=2.0.0,<3.0.0",
 ]
 
 [project.optional-dependencies]
