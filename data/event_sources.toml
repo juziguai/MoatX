@@ -1,0 +1,390 @@
+# MoatX 宏观事件新闻源配置
+# 已启用低频 RSS 真实源；如遇访问限制，可先将对应源 enabled 改为 false。
+
+[[sources]]
+id = "bbc_chinese_rss"
+name = "BBC 中文 RSS"
+category = "geopolitics"
+type = "rss"
+url = "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml"
+enabled = true
+weight = 0.80
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "rfi_chinese_rss"
+name = "RFI 中文 RSS"
+category = "geopolitics"
+type = "rss"
+url = "https://www.rfi.fr/cn/rss"
+enabled = true
+weight = 0.85
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "oilprice_main_rss"
+name = "OilPrice 能源 RSS"
+category = "energy"
+type = "rss"
+url = "https://oilprice.com/rss/main"
+enabled = true
+weight = 0.90
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "dw_chinese_rss"
+name = "德国之声中文 RSS"
+category = "geopolitics"
+type = "rss"
+url = "https://rss.dw.com/xml/rss-chi-all"
+enabled = true
+weight = 0.75
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "chinanews_china_rss"
+name = "中国新闻网国内 RSS"
+category = "policy"
+type = "rss"
+url = "https://www.chinanews.com.cn/rss/china.xml"
+enabled = true
+weight = 0.82
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "chinanews_world_rss"
+name = "中国新闻网国际 RSS"
+category = "geopolitics"
+type = "rss"
+url = "https://www.chinanews.com.cn/rss/world.xml"
+enabled = true
+weight = 0.82
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "chinanews_finance_rss"
+name = "中国新闻网财经 RSS"
+category = "finance"
+type = "rss"
+url = "https://www.chinanews.com.cn/rss/finance.xml"
+enabled = true
+weight = 0.78
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "cls_telegraph_json"
+name = "财联社 7x24 电报"
+category = "finance"
+type = "http_json"
+url = "https://www.cls.cn/nodeapi/telegraphList?app=CailianpressWeb&os=web&refresh_type=1&rn=30&sv=8.4.6"
+enabled = true
+weight = 0.92
+record_path = "data.roll_data"
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+Referer = "https://www.cls.cn/"
+
+[sources.field_map]
+title = "title"
+summary = "content"
+url = "shareurl"
+published_at = "ctime"
+
+[[sources]]
+id = "cctv_news_jsonp"
+name = "央视网新闻 JSONP"
+category = "policy"
+type = "jsonp"
+url = "https://news.cctv.com/2019/07/gaiban/cmsdatainterface/page/news_1.jsonp"
+enabled = true
+weight = 0.82
+record_path = "data.list"
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+Referer = "https://news.cctv.com/"
+
+[sources.field_map]
+title = "title"
+summary = "brief"
+url = "url"
+published_at = "focus_date"
+
+[[sources]]
+id = "stcn_yw_html"
+name = "证券时报要闻 HTML"
+category = "finance"
+type = "html"
+url = "https://www.stcn.com/article/list/yw.html"
+enabled = true
+weight = 0.78
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "https://www.stcn.com/"
+link_contains = "/article/detail/"
+max_items = 30
+
+[[sources]]
+id = "pbc_news_html"
+name = "中国人民银行新闻 HTML"
+category = "policy"
+type = "html"
+url = "http://www.pbc.gov.cn/goutongjiaoliu/113456/113469/index.html"
+enabled = true
+weight = 0.88
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "http://www.pbc.gov.cn/"
+link_contains = "/goutongjiaoliu/113456/113469/"
+max_items = 30
+
+[[sources]]
+id = "ndrc_news_html"
+name = "国家发改委新闻发布 HTML"
+category = "policy"
+type = "html"
+url = "https://www.ndrc.gov.cn/xwdt/xwfb/"
+enabled = true
+weight = 0.88
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "https://www.ndrc.gov.cn/xwdt/xwfb/"
+link_contains = ".html"
+max_items = 30
+
+[[sources]]
+id = "ndrc_policy_html"
+name = "国家发改委政策通知 HTML"
+category = "policy"
+type = "html"
+url = "https://www.ndrc.gov.cn/xxgk/zcfb/tz/"
+enabled = true
+weight = 0.88
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "https://www.ndrc.gov.cn/xxgk/zcfb/tz/"
+link_contains = ".html"
+max_items = 30
+
+[[sources]]
+id = "stats_release_html"
+name = "国家统计局数据发布 HTML"
+category = "finance"
+type = "html"
+url = "https://www.stats.gov.cn/sj/zxfb/"
+enabled = true
+weight = 0.82
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "https://www.stats.gov.cn/sj/zxfb/"
+link_contains = ".html"
+max_items = 30
+
+[[sources]]
+id = "cnstock_home_html"
+name = "上海证券报首页 HTML"
+category = "finance"
+type = "html"
+url = "https://www.cnstock.com/"
+enabled = true
+weight = 0.72
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "https://www.cnstock.com/"
+link_contains = ["/commonDetail/", "/topicDetail/"]
+max_items = 30
+
+[[sources]]
+id = "qhrb_home_html"
+name = "期货日报首页 HTML"
+category = "commodity"
+type = "html"
+url = "http://www.qhrb.com.cn/"
+enabled = true
+weight = 0.72
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "http://www.qhrb.com.cn/"
+link_contains = ["/articles/", "/links/"]
+max_items = 30
+
+# 以下境内源已验证但暂不启用：
+# - 新华网 RSS 可解析，但样例内容偏旧/缺少 pubDate，先保留模板。
+# - 新浪 RSS 当前返回 2018 年旧内容，先保留模板。
+# - 凤凰 RSS 当前返回内容不可按 RSS XML 解析，先保留模板。
+# - 人民网 RSS 可解析，但当前样例日期停留在 2025-06-05，先保留模板。
+# - 国家能源局首页可访问但当前结构抓不到有效新闻链接，先保留模板。
+# - 证监会列表部分样例偏旧，先保留 HTML 模板。
+
+[[sources]]
+id = "xinhua_world_rss_template"
+name = "新华网国际 RSS 模板"
+category = "policy"
+type = "rss"
+url = "http://www.news.cn/world/news_world.xml"
+enabled = false
+weight = 0.60
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "sina_china_rss_template"
+name = "新浪国内 RSS 模板"
+category = "policy"
+type = "rss"
+url = "https://rss.sina.com.cn/news/china/focus15.xml"
+enabled = false
+weight = 0.55
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "sina_world_rss_template"
+name = "新浪国际 RSS 模板"
+category = "geopolitics"
+type = "rss"
+url = "https://rss.sina.com.cn/news/world/focus15.xml"
+enabled = false
+weight = 0.55
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "ifeng_mainland_rss_template"
+name = "凤凰新闻国内 RSS 模板"
+category = "policy"
+type = "rss"
+url = "http://news.ifeng.com/rss/mainland.xml"
+enabled = false
+weight = 0.55
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "ifeng_world_rss_template"
+name = "凤凰新闻国际 RSS 模板"
+category = "geopolitics"
+type = "rss"
+url = "http://news.ifeng.com/rss/world.xml"
+enabled = false
+weight = 0.55
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "people_finance_rss_template"
+name = "人民网财经 RSS 模板"
+category = "finance"
+type = "rss"
+url = "http://www.people.com.cn/rss/finance.xml"
+enabled = false
+weight = 0.62
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "people_politics_rss_template"
+name = "人民网时政 RSS 模板"
+category = "policy"
+type = "rss"
+url = "http://www.people.com.cn/rss/politics.xml"
+enabled = false
+weight = 0.62
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[[sources]]
+id = "nea_energy_news_template"
+name = "国家能源局能源要闻 HTML 模板"
+category = "energy"
+type = "html"
+url = "http://www.nea.gov.cn/xwzx/nyyw.htm"
+enabled = false
+weight = 0.70
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "http://www.nea.gov.cn/"
+link_contains = ".htm"
+max_items = 30
+
+[[sources]]
+id = "csrc_news_template"
+name = "证监会要闻 HTML 模板"
+category = "policy"
+type = "html"
+url = "http://www.csrc.gov.cn/csrc/c100028/common_list.shtml"
+enabled = false
+weight = 0.68
+
+[sources.headers]
+User-Agent = "MoatX/0.1 (+event-intelligence)"
+
+[sources.field_map]
+base_url = "http://www.csrc.gov.cn/"
+link_contains = "/csrc/c100028/"
+max_items = 30
+
+[[sources]]
+id = "custom_json_news"
+name = "自定义 JSON 新闻源模板"
+category = "finance"
+type = "http_json"
+url = ""
+enabled = false
+weight = 0.75
+record_path = "data.items"
+
+[sources.headers]
+User-Agent = "MoatX/0.1"
+
+[sources.field_map]
+title = "headline"
+summary = "summary"
+url = "url"
+published_at = "published_at"

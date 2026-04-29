@@ -3,10 +3,10 @@ rank_engine.py - MoatX 综合评分引擎
 对候选股票进行技术面+基本面+资金面综合评分
 """
 
-import akshare as ak
 import pandas as pd
-import numpy as np
 from typing import Optional
+
+from modules.stock_data import StockData
 
 
 class RankEngine:
@@ -96,12 +96,15 @@ class RankEngine:
         return df
 
     def rank_all(self, limit: int = 50, with_fundamentals: bool = False) -> pd.DataFrame:
-        """对全市场股票评分（只取综合分最高的前N只）"""
+        """对全市场股票评分（取综合分最高的前N只，基于 Sina 快照）"""
         try:
-            spot = ak.stock_zh_a_spot_em()
-            symbols = spot["代码"].astype(str).tolist()
-            # 全市场5800只太慢，随机采样或取涨跌幅排行前N
-            top_symbols = symbols[:500]  # 先取前500只简化
+            from modules.stock_data import StockData
+            sd = StockData()
+            spot = sd.get_spot()
+            if spot.empty:
+                return pd.DataFrame()
+            symbols = spot["code"].astype(str).tolist()
+            top_symbols = symbols[:500]
             return self.rank(top_symbols, with_fundamentals=with_fundamentals).head(limit)
         except Exception:
             return pd.DataFrame()
@@ -112,7 +115,7 @@ class RankEngine:
     def _score_trend(pct_change: float, turnover: float) -> float:
         """趋势分：涨跌幅 + 换手率"""
         score = 50  # 基准分
-        score += min(max(pct_change * 5, -30, 30))  # 涨跌贡献 [-30, +30]
+        score += min(max(pct_change * 5, -30), 30)  # 涨跌贡献 [-30, +30]
         score += min(turnover * 2, 20)  # 换手率贡献 [0, 20]
         return max(0, min(100, score))
 
@@ -180,10 +183,31 @@ class RankEngine:
         return max(0, min(100, score))
 
     def _get_spot(self, symbols: list) -> pd.DataFrame:
-        """获取指定股票的实时行情"""
+        """获取指定股票的实时行情（复用 StockData 的 30s Parquet 缓存）"""
         try:
-            spot = ak.stock_zh_a_spot_em()
-            spot = spot[spot["代码"].isin([s.split(".")[0] for s in symbols])]
-            return spot
+            sd = StockData()
+            full_spot = sd.get_spot(use_cache=True)
+            if full_spot.empty:
+                return pd.DataFrame()
+
+            # 过滤目标股票
+            symbol_set = set(str(s) for s in symbols)
+            filtered = full_spot[full_spot["code"].isin(symbol_set)].copy()
+
+            # 转换为 rank() 期望的列名格式
+            records = []
+            for _, row in filtered.iterrows():
+                records.append({
+                    "代码": row.get("code", ""),
+                    "名称": row.get("name", ""),
+                    "code": row.get("code", ""),
+                    "name": row.get("name", ""),
+                    "最新价": row.get("price", 0),
+                    "涨跌幅": row.get("pct_change", 0),
+                    "换手率": row.get("turnover", 0),
+                    "市盈率-动态": row.get("pe"),
+                    "市净率": row.get("pb"),
+                })
+            return pd.DataFrame(records)
         except Exception:
             return pd.DataFrame()

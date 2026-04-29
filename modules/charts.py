@@ -3,11 +3,14 @@ charts.py - MoatX 可视化图表模块
 K线、均线、MACD、KDJ、RSI、成交量
 """
 
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.gridspec import GridSpec
 from typing import Optional
+
+_logger = logging.getLogger("moatx.charts")
 
 
 class MoatXCharts:
@@ -81,7 +84,7 @@ class MoatXCharts:
         if save_path:
             fig.savefig(save_path, dpi=120, bbox_inches="tight",
                         facecolor=fig.get_facecolor())
-            print(f"图表已保存: {save_path}")
+            _logger.info("图表已保存: %s", save_path)
 
         plt.show()
 
@@ -92,7 +95,7 @@ class MoatXCharts:
 
         # 逐一绘制K线
         for i, (_, row) in enumerate(df.iterrows()):
-            o, h, l, c = row["open"], row["high"], row["low"], row["close"]
+            o, h, low_price, c = row["open"], row["high"], row["low"], row["close"]
             is_up = c >= o
             body_bottom = min(o, c)
             body_height = abs(c - o) + 1e-9
@@ -107,7 +110,7 @@ class MoatXCharts:
             # 上影线
             ax.plot([i, i], [h, max(o, c)], color=color, linewidth=0.8, zorder=1)
             # 下影线
-            ax.plot([i, i], [min(o, c), l], color=color, linewidth=0.8, zorder=1)
+            ax.plot([i, i], [min(o, c), low_price], color=color, linewidth=0.8, zorder=1)
 
         # 均线
         lw_ma = {"ma5": 1.0, "ma10": 1.0, "ma20": 1.0, "ma60": 1.0, "ma120": 1.0}

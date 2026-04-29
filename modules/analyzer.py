@@ -3,16 +3,176 @@ analyzer.py - MoatX 核心分析引擎
 把数据获取 + 指标计算 + 信号判断 + 报告生成 整合在一起
 """
 
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional, Literal, Any, TypedDict, NotRequired
+
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from typing import Optional, Literal
+
+_logger = logging.getLogger("moatx.analyzer")
 
 from .stock_data import StockData
 from .indicators import IndicatorEngine
 from .charts import MoatXCharts
 from .screener import MoatXScreener
-from .rank_engine import RankEngine
+from .calendar import is_trading_day
+
+
+# ------------------------------------------------------------------
+# TypedDict definitions for analyzer report
+# ------------------------------------------------------------------
+
+class MAData(TypedDict):
+    ma5: Optional[float]
+    ma10: Optional[float]
+    ma20: Optional[float]
+    ma60: Optional[float]
+    ma120: Optional[float]
+    ma250: Optional[float]
+
+
+class MACDData(TypedDict):
+    dif: Optional[float]
+    dea: Optional[float]
+    macd: Optional[float]
+    signal: str
+
+
+class KDJData(TypedDict):
+    k: Optional[float]
+    d: Optional[float]
+    j: Optional[float]
+    signal: str
+
+
+class RSIData(TypedDict):
+    rsi6: Optional[float]
+    rsi12: Optional[float]
+    rsi24: Optional[float]
+    signal: str
+
+
+class BOLLData(TypedDict):
+    upper: Optional[float]
+    mid: Optional[float]
+    lower: Optional[float]
+    position: float  # 0.0~100.0
+
+
+class TrendData(TypedDict):
+    status: str
+    score: float
+    ma20_rising: Optional[bool]
+
+
+class SignalsData(TypedDict):
+    macd_signal: str
+    kdj_signal: str
+    rsi_signal: str
+    boll_signal: str
+    composite_score: int
+
+
+class ValuationData(TypedDict):
+    pe_judge: str
+    pb_judge: str
+    roe_judge: str
+    pe_value: Optional[float]
+    pb_value: Optional[float]
+    roe: Optional[float]
+
+
+class FinancialRiskData(TypedDict):
+    risk_score: int
+    risk_level: str
+    is_buyable: bool
+    red_flags: NotRequired[list[str]]
+    warnings: NotRequired[list[str]]
+
+
+class BuffettViewData(TypedDict):
+    reflection_points: list[str]
+    verdict: str
+
+
+class ProfitSheetData(TypedDict):
+    report_date: str
+    revenue: NotRequired[float]
+    net_profit: NotRequired[float]
+    gross_margin: NotRequired[float]
+    net_margin: NotRequired[float]
+    basic_eps: NotRequired[float]
+
+
+class CashFlowData(TypedDict):
+    report_date: str
+    operating_cf: NotRequired[float]
+    investing_cf: NotRequired[float]
+    financing_cf: NotRequired[float]
+    free_cf: NotRequired[float]
+    cash_end: NotRequired[float]
+
+
+class DividendRecord(TypedDict):
+    date: str
+    dividend_per_share: float
+    record_date: str
+    ex_date: str
+    pay_date: str
+
+
+class ForecastRecord(TypedDict):
+    year: int
+    avg_eps: float
+    min_eps: float
+    max_eps: float
+    num_firms: int
+
+
+class ProfitForecastData(TypedDict):
+    forecasts: NotRequired[list[ForecastRecord]]
+
+
+class MajorHolderRecord(TypedDict):
+    name: str
+    pct: float
+    nature: str
+    截止日期: str
+
+
+class MoneyFlowData(TypedDict):
+    inflow: NotRequired[float]
+    outflow: NotRequired[float]
+
+
+class AnalyzerReport(TypedDict):
+    symbol: str
+    name: str
+    price: float
+    pct_change: float
+    volume: float
+    turnover: float
+    pe: Any  # may be '-' or float
+    pb: Any  # may be '-' or float
+    roe: Any  # may be None or float
+    date: str
+    ma: MAData
+    trend: TrendData
+    macd: MACDData
+    kdj: KDJData
+    rsi: RSIData
+    boll: BOLLData
+    signals: SignalsData
+    valuation: ValuationData
+    money_flow: NotRequired[MoneyFlowData]
+    profit_sheet: NotRequired[ProfitSheetData]
+    cash_flow: NotRequired[CashFlowData]
+    dividend: NotRequired[list[DividendRecord]]
+    profit_forecast: NotRequired[ProfitForecastData]
+    major_holders: NotRequired[list[MajorHolderRecord]]
+    financial_risk: FinancialRiskData
+    buffett_view: BuffettViewData
 
 
 class MoatXAnalyzer:
@@ -24,16 +184,16 @@ class MoatXAnalyzer:
         print(report)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.data = StockData()
         self.ind = IndicatorEngine()
 
     def analyze(
         self,
         symbol: str,
-        days: int = 120,
+        days: int | None = None,
         adjust: Literal["qfq", "hfq", ""] = "qfq"
-    ) -> dict:
+    ) -> AnalyzerReport:
         """
         综合分析一只股票
 
@@ -42,7 +202,8 @@ class MoatXAnalyzer:
         """
         # 获取数据
         df = self.data.get_daily(symbol, adjust=adjust)
-        df = df.tail(days)
+        if days is not None:
+            df = df.tail(days)
 
         # 计算指标
         ind_df = self.ind.all_in_one(df)
@@ -51,43 +212,47 @@ class MoatXAnalyzer:
         # 获取实时行情
         try:
             realtime = self.data.get_realtime_quote(symbol)
-        except Exception:
+        except Exception as e:
+            _logger.warning("获取实时行情失败（已降级）: %s", e)
             realtime = {}
 
-        # 获取资金流向
-        try:
-            money_flow = self.data.get_money_flow(symbol)
-        except Exception:
-            money_flow = {}
+        # 并行获取 6 个财务数据（串行约 ~10s+，并行约 ~3s）
+        _fin_results: dict[str, Any] = {}
 
-        # 获取财务数据
-        try:
-            profit_sheet = self.data.get_profit_sheet_summary(symbol)
-        except Exception:
-            profit_sheet = {}
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            futures = {
+                ex.submit(self.data.get_money_flow, symbol): "money_flow",
+                ex.submit(self.data.get_profit_sheet_summary, symbol): "profit_sheet",
+                ex.submit(self.data.get_cash_flow_summary, symbol): "cash_flow",
+                ex.submit(self.data.get_dividend, symbol): "dividend",
+                ex.submit(self.data.get_profit_forecast, symbol): "profit_forecast",
+                ex.submit(self.data.get_major_shareholders, symbol): "major_holders",
+            }
+            for fut in as_completed(futures, timeout=15):
+                key = futures[fut]
+                try:
+                    val = fut.result()
+                    _fin_results[key] = val if val else {}
+                except Exception as e:
+                    _logger.warning("获取 %s 失败（已降级）: %s", key, e)
+                    _fin_results[key] = [] if key in ("dividend", "major_holders") else {}
 
-        try:
-            cash_flow = self.data.get_cash_flow_summary(symbol)
-        except Exception:
-            cash_flow = {}
-
-        try:
-            dividend = self.data.get_dividend(symbol)
-        except Exception:
-            dividend = []
-
-        try:
-            profit_forecast = self.data.get_profit_forecast(symbol)
-        except Exception:
-            profit_forecast = {}
-
-        try:
-            major_holders = self.data.get_major_shareholders(symbol)
-        except Exception:
-            major_holders = []
+        money_flow = _fin_results.get("money_flow", {})
+        profit_sheet = _fin_results.get("profit_sheet", {})
+        cash_flow = _fin_results.get("cash_flow", {})
+        dividend = _fin_results.get("dividend", [])
+        profit_forecast = _fin_results.get("profit_forecast", {})
+        major_holders = _fin_results.get("major_holders", [])
 
         # 计算各项信号
         signals = self._generate_signals(df)
+
+        # 财务风险检测（独立查询，快速失败）
+        try:
+            financial_risk = self.data.check_financial_risk(symbol)
+        except Exception as e:
+            _logger.warning("财务风险检测失败（已降级）: %s", e)
+            financial_risk = {"risk_score": 0, "risk_level": "基本无风险", "is_buyable": True}
 
         # 估值辅助（从财务报表计算 PE/PB）
         current_price = realtime.get("price", df.iloc[-1]["close"])
@@ -96,13 +261,13 @@ class MoatXAnalyzer:
 
         # 构建报告
         latest = df.iloc[-1]
-        prev = df.iloc[-2] if len(df) > 1 else latest
 
         report = {
             "symbol": symbol,
             "name": realtime.get("name", symbol),
             "price": current_price,
             "pct_change": realtime.get("change_pct", 0),
+            "_notice": "" if (current_price > 0 or is_trading_day()) else "非交易时段，以下数据来自上一交易日",
             "volume": realtime.get("volume", latest["volume"]),
             "turnover": realtime.get("turnover", 0),
             "pe": valuation.get("pe", "-"),
@@ -154,12 +319,13 @@ class MoatXAnalyzer:
             "dividend": dividend,
             "profit_forecast": profit_forecast,
             "major_holders": major_holders,
-            "buffett_view": self._buffett_reflection(symbol, realtime, signals, valuation),
+            "financial_risk": financial_risk,
+            "buffett_view": self._buffett_reflection(symbol, realtime, signals, valuation, financial_risk),
         }
 
         return report
 
-    def _judge_trend(self, df: pd.DataFrame) -> dict:
+    def _judge_trend(self, df: pd.DataFrame) -> TrendData:
         """判断均线趋势多头/空头排列"""
         if len(df) < 60:
             return {"status": "数据不足", "score": 0}
@@ -203,7 +369,7 @@ class MoatXAnalyzer:
 
         return {"status": status, "score": score, "ma20_rising": ma20_rising}
 
-    def _generate_signals(self, df: pd.DataFrame) -> dict:
+    def _generate_signals(self, df: pd.DataFrame) -> SignalsData:
         """生成综合技术信号"""
         latest = df.iloc[-1]
         prev = df.iloc[-2] if len(df) > 1 else latest
@@ -273,7 +439,7 @@ class MoatXAnalyzer:
 
         return signals
 
-    def _estimate_valuation(self, valuation: dict) -> dict:
+    def _estimate_valuation(self, valuation: dict[str, Any]) -> ValuationData:
         """基于财务报表数据的估值判断"""
         val = {}
         pe = valuation.get("pe")
@@ -324,7 +490,8 @@ class MoatXAnalyzer:
 
         return val
 
-    def _buffett_reflection(self, symbol: str, realtime: dict, signals: dict, valuation: dict) -> dict:
+    def _buffett_reflection(self, symbol: str, realtime: dict[str, Any], signals: SignalsData,
+                              valuation: ValuationData, financial_risk: FinancialRiskData | None = None) -> BuffettViewData:
         """
         巴菲特视角反思
         从护城河、安全边际、管理层、竞争格局角度给出文字提醒
@@ -332,6 +499,7 @@ class MoatXAnalyzer:
         name = realtime.get("name", symbol)
         pe_judge = valuation.get("pe_judge", "无数据")
         composite = signals.get("composite_score", 50)
+        frisk = financial_risk or {}
 
         reflections = []
 
@@ -349,18 +517,30 @@ class MoatXAnalyzer:
         elif composite <= 30:
             reflections.append(f"【技术弱势】综合评分{composite}，趋势向下，不宜盲目抄底")
 
+        # 财务风险（新增）
+        if not frisk.get("is_buyable", True):
+            reflections.append(f"【财务风险】风险评分{frisk.get('risk_score',0)}分（{frisk.get('risk_level','未知')}），存在重大风险信号，强烈不建议买入")
+        elif frisk.get("risk_score", 0) >= 30:
+            reflections.append(f"【风险提示】财务风险评分{frisk.get('risk_score',0)}分（{frisk.get('risk_level','未知')}），需谨慎评估")
+
         # 仓位提醒
         reflections.append("【仓位原则】永远不要满仓一只股票，分散投资是铁律")
 
         # 护城河提醒
         reflections.append("【护城河自检】这只股票的护城河是什么？品牌？垄断？网络效应？")
 
+        verdict = "谨慎观望"
+        if frisk.get("is_buyable", True) and pe_judge in ["偏低", "合理"] and composite >= 50:
+            verdict = "可关注"
+        elif not frisk.get("is_buyable", True):
+            verdict = "风险过高"
+
         return {
             "reflection_points": reflections,
-            "verdict": "可关注" if pe_judge in ["偏低", "合理"] and composite >= 50 else "谨慎观望"
+            "verdict": verdict
         }
 
-    def format_markdown(self, report: dict) -> str:
+    def format_markdown(self, report: AnalyzerReport) -> str:
         """格式化输出为 Markdown 报告"""
         symbol = report["symbol"]
         name = report["name"]
@@ -380,21 +560,22 @@ class MoatXAnalyzer:
         profit_forecast = report.get("profit_forecast", {})
         major_holders = report.get("major_holders", [])
         buffett = report["buffett_view"]
+        frisk = report.get("financial_risk", {})
 
         change_emoji = "🔴" if pct > 0 else "🔵"
         trend_emoji = "🟢" if "多头" in trend["status"] else "🔴" if "空头" in trend["status"] else "🟡"
 
         lines = [
             f"# {name}（{symbol}）技术分析报告",
-            f"",
+            "",
             f"**日期**: {report['date']}  |  **现价**: {price}  |  **涨跌幅**: {change_emoji} {pct}%",
-            f"",
-            f"---",
-            f"",
-            f"## 📊 核心数据",
-            f"",
-            f"| 指标 | 数值 |",
-            f"|------|------|",
+            "",
+            "---",
+            "",
+            "## 📊 核心数据",
+            "",
+            "| 指标 | 数值 |",
+            "|------|------|",
             f"| 趋势 | {trend_emoji} {trend['status']} (评分: {trend['score']}) |",
             f"| 综合评分 | {signals['composite_score']}/100 |",
             f"| MA20方向 | {'上升↗' if trend.get('ma20_rising') else '下降↘'} |",
@@ -402,155 +583,169 @@ class MoatXAnalyzer:
             f"| 市净率PB | {report['pb']} ({valuation.get('pb_judge')}) |",
             f"| 净资产收益率ROE | {report['roe']}% ({valuation.get('roe_judge')}) |",
             f"| 换手率 | {report['turnover']}% |",
-            f"",
-            f"## 📈 均线系统",
-            f"",
-            f"| 均线 | 数值 |",
-            f"|------|------|",
+            "",
+            "## 📈 均线系统",
+            "",
+            "| 均线 | 数值 |",
+            "|------|------|",
             f"| MA5 | {ma['ma5']} |",
             f"| MA10 | {ma['ma10']} |",
             f"| MA20 | {ma['ma20']} |",
             f"| MA60 | {ma['ma60']} |",
             f"| MA120 | {ma['ma120']} |",
             f"| MA250 | {ma['ma250']} |",
-            f"",
-            f"## 📉 MACD",
-            f"",
-            f"| 指标 | 数值 |",
-            f"|------|------|",
+            "",
+            "## 📉 MACD",
+            "",
+            "| 指标 | 数值 |",
+            "|------|------|",
             f"| DIF | {macd['dif']} |",
             f"| DEA | {macd['dea']} |",
             f"| MACD柱 | {macd['macd']} |",
             f"| 信号 | {macd['signal']} |",
-            f"",
-            f"## 📊 KDJ",
-            f"",
-            f"| 指标 | 数值 |",
-            f"|------|------|",
+            "",
+            "## 📊 KDJ",
+            "",
+            "| 指标 | 数值 |",
+            "|------|------|",
             f"| K | {kdj['k']} |",
             f"| D | {kdj['d']} |",
             f"| J | {kdj['j']} |",
             f"| 信号 | {kdj['signal']} |",
-            f"",
-            f"## 📊 RSI",
-            f"",
-            f"| 周期 | 数值 |",
-            f"|------|------|",
+            "",
+            "## 📊 RSI",
+            "",
+            "| 周期 | 数值 |",
+            "|------|------|",
             f"| RSI6 | {rsi['rsi6']} |",
             f"| RSI12 | {rsi['rsi12']} |",
             f"| RSI24 | {rsi['rsi24']} |",
             f"| 信号 | {rsi['signal']} |",
-            f"",
-            f"## 📊 布林带",
-            f"",
-            f"| 轨道 | 数值 |",
-            f"|------|------|",
+            "",
+            "## 📊 布林带",
+            "",
+            "| 轨道 | 数值 |",
+            "|------|------|",
             f"| 上轨 | {boll['upper']} |",
             f"| 中轨 | {boll['mid']} |",
             f"| 下轨 | {boll['lower']} |",
             f"| 当前位置 | {boll['position']}% (0%=下轨, 100%=上轨) |",
             f"| 信号 | {signals.get('boll_signal', 'N/A')} |",
-            f"",
+            "",
 
             # 利润表摘要
-            f"## 💰 利润表摘要",
-            f"",
+            "## 💰 利润表摘要",
+            "",
         ]
 
         if profit_sheet and "error" not in profit_sheet:
             lines.extend([
-                f"| 指标 | 数值 |",
-                f"|------|------|",
+                "| 指标 | 数值 |",
+                "|------|------|",
                 f"| 报告期 | {profit_sheet.get('report_date', 'N/A')} |",
                 f"| 营业收入 | {self._format_yuan(profit_sheet.get('revenue', 0))} |",
                 f"| 净利润 | {self._format_yuan(profit_sheet.get('net_profit', 0))} |",
                 f"| 毛利率 | {profit_sheet.get('gross_margin', 0)}% |",
                 f"| 净利率 | {profit_sheet.get('net_margin', 0)}% |",
                 f"| 基本EPS | {profit_sheet.get('basic_eps', 0)} |",
-                f"",
+                "",
             ])
         else:
-            lines.append(f"_利润表数据暂不可用_")
-            lines.append(f"")
+            lines.append("_利润表数据暂不可用_")
+            lines.append("")
 
         # 现金流量表摘要
-        lines.append(f"## 💵 现金流量表")
-        lines.append(f"")
+        lines.append("## 💵 现金流量表")
+        lines.append("")
         if cash_flow and "error" not in cash_flow:
             lines.extend([
-                f"| 指标 | 数值 |",
-                f"|------|------|",
+                "| 指标 | 数值 |",
+                "|------|------|",
                 f"| 报告期 | {cash_flow.get('report_date', 'N/A')} |",
                 f"| 经营现金流 | {self._format_yuan(cash_flow.get('operating_cf', 0))} |",
                 f"| 投资现金流 | {self._format_yuan(cash_flow.get('investing_cf', 0))} |",
                 f"| 筹资现金流 | {self._format_yuan(cash_flow.get('financing_cf', 0))} |",
                 f"| 自由现金流 | {self._format_yuan(cash_flow.get('free_cf', 0))} |",
                 f"| 期末现金 | {self._format_yuan(cash_flow.get('cash_end', 0))} |",
-                f"",
+                "",
             ])
         else:
-            lines.append(f"_现金流量表数据暂不可用_")
-            lines.append(f"")
+            lines.append("_现金流量表数据暂不可用_")
+            lines.append("")
 
         # 分红历史
-        lines.append(f"## 📋 历史分红（近5次）")
-        lines.append(f"")
+        lines.append("## 📋 历史分红（近5次）")
+        lines.append("")
         if dividend and all("error" not in d for d in dividend):
             lines.extend([
-                f"| 公告日期 | 分红方案 | 股权登记日 | 除权日 | 派息日 |",
-                f"|------|------|------|------|------|",
+                "| 公告日期 | 分红方案 | 股权登记日 | 除权日 | 派息日 |",
+                "|------|------|------|------|------|",
             ])
             for d in dividend[:5]:
                 div_str = f"每股{d.get('dividend_per_share', 0)}元" if d.get('dividend_per_share', 0) > 0 else "—"
                 lines.append(f"| {d.get('date', 'N/A')} | {div_str} | {d.get('record_date', 'N/A')} | {d.get('ex_date', 'N/A')} | {d.get('pay_date', 'N/A')} |")
-            lines.append(f"")
+            lines.append("")
         else:
-            lines.append(f"_分红数据暂不可用_")
-            lines.append(f"")
+            lines.append("_分红数据暂不可用_")
+            lines.append("")
 
         # 盈利预测
-        lines.append(f"## 🔮 券商盈利预测")
-        lines.append(f"")
+        lines.append("## 🔮 券商盈利预测")
+        lines.append("")
         forecasts = profit_forecast.get("forecasts", [])
         if forecasts:
             lines.extend([
-                f"| 年度 | 预测EPS均值 | 最小值 | 最大值 | 预测机构数 |",
-                f"|------|------|------|------|------|",
+                "| 年度 | 预测EPS均值 | 最小值 | 最大值 | 预测机构数 |",
+                "|------|------|------|------|------|",
             ])
             for f in forecasts[:3]:
                 lines.append(f"| {f.get('year', 'N/A')} | {f.get('avg_eps', 0)} | {f.get('min_eps', 0)} | {f.get('max_eps', 0)} | {f.get('num_firms', 0)}家 |")
-            lines.append(f"")
+            lines.append("")
         else:
-            lines.append(f"_盈利预测暂不可用_")
-            lines.append(f"")
+            lines.append("_盈利预测暂不可用_")
+            lines.append("")
 
         # 前十大股东
-        lines.append(f"## 🏛️ 前十大股东")
-        lines.append(f"")
+        lines.append("## 🏛️ 前十大股东")
+        lines.append("")
         if major_holders and all("error" not in h for h in major_holders):
             lines.extend([
-                f"| 股东名称 | 持股比例 | 股本性质 | 截至日期 |",
-                f"|------|------|------|------|",
+                "| 股东名称 | 持股比例 | 股本性质 | 截至日期 |",
+                "|------|------|------|------|",
             ])
             for h in major_holders[:10]:
                 lines.append(f"| {h.get('name', 'N/A')} | {h.get('pct', 0)}% | {h.get('nature', 'N/A')} | {h.get('截止日期', 'N/A')} |")
-            lines.append(f"")
+            lines.append("")
         else:
-            lines.append(f"_股东数据暂不可用_")
-            lines.append(f"")
+            lines.append("_股东数据暂不可用_")
+            lines.append("")
 
-        lines.append(f"## 🧠 巴菲特视角")
-        lines.append(f"")
+        lines.append("## 🛡️ 财务风险检测")
+        lines.append("")
+        risk_score = frisk.get("risk_score", 0)
+        risk_level = frisk.get("risk_level", "未知")
+        is_buyable = frisk.get("is_buyable", True)
+        risk_emoji = "🚨" if risk_score >= 50 else "⚠️" if risk_score >= 30 else "✅"
+        lines.append(f"- 风险评分: **{risk_score}** 分（{risk_level}）{risk_emoji}")
+        lines.append(f"- 是否建议买入: **{'✅ 可买入' if is_buyable else '❌ 不建议买入'}**")
+        for flag in frisk.get("red_flags", []):
+            lines.append(f"- ⚠️ {flag}")
+        for w in frisk.get("warnings", []):
+            lines.append(f"- ⚡ {w}")
+        lines.append("")
+
+        lines.append("## 🧠 巴菲特视角")
+        lines.append("")
 
         for point in buffett["reflection_points"]:
             lines.append(f"- {point}")
 
-        lines.append(f"")
+        lines.append("")
         lines.append(f"**结论**: {buffett['verdict']}")
-        lines.append(f"")
-        lines.append(f"---")
-        lines.append(f"")
-        lines.append(f"*本报告仅供参考，不构成投资建议。股市有风险，投资需谨慎。*")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+        lines.append("*本报告仅供参考，不构成投资建议。股市有风险，投资需谨慎。*")
 
         return "\n".join(lines)
 
@@ -569,7 +764,7 @@ class MoatXAnalyzer:
 
     def chart(self, symbol: str, days: int = 120,
               adjust: Literal["qfq", "hfq", ""] = "qfq",
-              save_path: str = None,
+              save_path: str | None = None,
               style: str = "dark") -> None:
         """
         弹出 K线图表（含 MACD/KDJ/RSI/成交量）
@@ -592,8 +787,8 @@ class MoatXAnalyzer:
     def screen(
         self,
         # 基本面
-        pe_range: tuple = (0, 50),
-        pb_range: tuple = (0, 10),
+        pe_range: tuple[float, float] = (0, 50),
+        pb_range: tuple[float, float] = (0, 10),
         cap_min: float = None,
         cap_max: float = None,
         turnover_min: float = None,
@@ -633,10 +828,10 @@ class MoatXAnalyzer:
             return "**暂无符合条件的结果**"
 
         lines = [
-            f"# MoatX 选股结果",
-            f"",
-            f"| 代码 | 名称 | 现价 | 涨跌幅 | PE | PB | 换手率 | 综合评分 |",
-            f"|------|------|------|--------|----|----|--------|--------|",
+            "# MoatX 选股结果",
+            "",
+            "| 代码 | 名称 | 现价 | 涨跌幅 | PE | PB | 换手率 | 综合评分 |",
+            "|------|------|------|--------|----|----|--------|--------|",
         ]
 
         for _, row in df.iterrows():
@@ -647,9 +842,9 @@ class MoatXAnalyzer:
                 f"{row.get('turnover', 0):.2f}% | {row.get('composite', 0):.1f} |"
             )
 
-        lines.append(f"")
+        lines.append("")
         lines.append(f"_共 {len(df)} 只符合条件_")
-        lines.append(f"")
-        lines.append(f"*评分维度：趋势25% + 估值25% + 资金25% + 动量25%*")
+        lines.append("")
+        lines.append("*评分维度：趋势25% + 估值25% + 资金25% + 动量25%*")
 
         return "\n".join(lines)

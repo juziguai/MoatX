@@ -22,19 +22,21 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "akshare>=1.12.0",
-    "pandas>=2.0.0",
-    "numpy>=1.24.0",
-    "requests>=2.31.0",
-    "lxml>=4.9.0",
-    "matplotlib>=3.7.0",
-    "scipy>=1.11.0",
+    "akshare>=1.12.0,<1.19.0",        # akshare API 变化频繁，保守锁上界 (2026-04当前: 1.18.57)
+    "pandas>=2.0.0,<2.5.0",
+    "numpy>=1.24.0,<3.0.0",           # numpy 2.x wheel无需编译，3.0前仍有上界保护
+    "requests>=2.31.0,<2.33.0",
+    "beautifulsoup4>=4.12.0,<4.14.0",
+    "lxml>=4.9.0,<5.3.0",
+    "matplotlib>=3.7.0,<3.9.0",
+    "scipy>=1.11.0,<1.14.0",
+    "APScheduler>=3.10.0,<3.11.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
+    "pytest>=7.0.0,<8.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
 ]
 
 [project.urls]
@@ -43,7 +45,12 @@ Documentation = "https://github.com/moatx/moatx#readme"
 
 [tool.setuptools]
 packages = ["modules"]
-package-dir = {"" = "modules"}
 
 [tool.setuptools.package-data]
 modules = ["*.md"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests that access external data sources",
+    "slow: marks tests that are slow (download real data)",
+]

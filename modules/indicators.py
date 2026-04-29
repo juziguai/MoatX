@@ -5,7 +5,6 @@ indicators.py - 技术指标计算引擎
 
 import pandas as pd
 import numpy as np
-from typing import Optional
 
 
 class IndicatorEngine:
@@ -54,7 +53,7 @@ class IndicatorEngine:
         lowest_low = low.rolling(window=n, min_periods=1).min()
         highest_high = high.rolling(window=n, min_periods=1).max()
 
-        rsv = (close - lowest_low) / (highest_high - lowest_low) * 100
+        rsv = (close - lowest_low) / (highest_high - lowest_low).replace(0, 1e-10) * 100
         rsv = rsv.fillna(50)
 
         k = rsv.ewm(com=m1 - 1, adjust=False).mean()
@@ -75,8 +74,10 @@ class IndicatorEngine:
         avg_gain = gain.ewm(alpha=1/period, adjust=False).mean()
         avg_loss = loss.ewm(alpha=1/period, adjust=False).mean()
 
-        rs = avg_gain / avg_loss
+        rs = avg_gain / avg_loss.replace(0, 1e-10)
         rsi = 100 - (100 / (1 + rs))
+        rsi = rsi.where(avg_loss > 0, 100)  # avg_loss=0 且 avg_gain>0 → RSI=100
+        rsi = rsi.fillna(0)  # 两者都为0 → RSI=0
         return rsi
 
     @staticmethod
@@ -205,7 +206,7 @@ class IndicatorEngine:
         close = df["close"]
         high = df["high"]
         low = df["low"]
-        open_ = df["open"]
+        _open = df["open"]
         volume = df["volume"]
 
         result = pd.DataFrame(index=df.index)

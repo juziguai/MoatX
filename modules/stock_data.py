@@ -3,27 +3,190 @@ stock_data.py - A股数据获取模块
 支持：日线、周线、月线、财务数据、资金流向、龙虎榜
 """
 
+import json
 import os
+import time as _time
+import requests
+import logging
+import threading
 import akshare as ak
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import Literal, Optional
+from functools import wraps
+from typing import Any, Dict, List, Literal, Optional
 
+from modules.crawler import tencent as _tencent_crawler
+from modules.crawler.eastmoney import fetch_stock_info as _em_stock_info
+from modules.crawler.fundflow import get_money_flow_summary
+from modules.config import cfg
+from modules.market_filters import filter_selection_universe
+from modules.datasource import QuoteManager
+from modules.risk_checker import FinancialRiskChecker
+from modules.utils import _clear_all_proxy, to_full_code
+
+_logger = logging.getLogger("moatx.stock_data")
+_logger.setLevel(logging.WARNING)
+
+
+def retry_on_network_error(max_retries: int = 2, base_delay: float = 1.0):
+    """指数退避重试装饰器，网络异常时自动重试。"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except (requests.exceptions.ConnectionError,
+                        requests.exceptions.Timeout,
+                        requests.exceptions.HTTPError) as e:
+                    if attempt == max_retries:
+                        _logger.warning("%s 最终失败（已重试 %d 次）: %s",
+                                       func.__name__, max_retries, e)
+                        raise
+                    delay = base_delay * (2 ** attempt)
+                    _logger.debug("%s 重试 %d/%d，%.1f秒后: %s",
+                                 func.__name__, attempt + 1, max_retries, delay, e)
+                    _time.sleep(delay)
+        return wrapper
+    return decorator
+
+
+_clear_all_proxy()
+
+
+def _patch_requests_no_proxy():
+    """
+    全局 Patch: 让所有 requests 调用都不走系统代理。
+    解决 Windows 即使 ProxyEnable=0x0 也在 TCP 层劫持流量的问题。
+    """
+    _orig_get = requests.get
+    _orig_post = requests.post
+    _orig_put = requests.put
+    _orig_delete = requests.delete
+    _orig_session_request = requests.sessions.Session.request
+
+    def _no_proxy_request(self, method, url, **kwargs):
+        old = getattr(self, 'trust_env', None)
+        self.trust_env = False
+        try:
+            return _orig_session_request(self, method, url, **kwargs)
+        finally:
+            if old is not None:
+                self.trust_env = old
+
+    def _no_proxy_get(url, **kwargs):
+        kwargs.setdefault('timeout', 30)
+        return _orig_get(url, **kwargs)
+
+    def _no_proxy_post(url, **kwargs):
+        kwargs.setdefault('timeout', 30)
+        return _orig_post(url, **kwargs)
+
+    def _no_proxy_put(url, **kwargs):
+        kwargs.setdefault('timeout', 30)
+        return _orig_put(url, **kwargs)
+
+    def _no_proxy_delete(url, **kwargs):
+        kwargs.setdefault('timeout', 30)
+        return _orig_delete(url, **kwargs)
+
+    requests.sessions.Session.request = _no_proxy_request
+    requests.get = _no_proxy_get
+    requests.post = _no_proxy_post
+    requests.put = _no_proxy_put
+    requests.delete = _no_proxy_delete
+
+
+_patch_requests_no_proxy()
+
+
+_REQUESTS_PATCHED = False
 
 class StockData:
     """A股数据获取器"""
 
-    def __init__(self):
-        self._clear_proxy()
-        self.cache = {}
+    def __init__(self, no_cache: bool = False) -> None:
+        _clear_all_proxy()
+        self._cache: Dict[str, Any] = {}
+        self._cache_lock = threading.RLock()
+        self._no_cache = no_cache
 
-    @staticmethod
-    def _clear_proxy():
-        """清除代理环境变量，避免网络请求被系统代理拦截"""
-        for key in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy",
-                    "HTTP_PROXY", "HTTPS_PROXY"]:
-            os.environ.pop(key, None)
+    @property
+    def timeout(self) -> int:
+        """统一 timeout 配置，来自 config.crawler.timeout（默认 10s）"""
+        return cfg().crawler.timeout
 
+    # ─────────────────────────────────────────────
+    # 全市场实时行情（Sina 为主，30秒 Parquet 缓存）
+    # ─────────────────────────────────────────────
+
+    @retry_on_network_error(max_retries=2)
+    def get_spot(self, use_cache: bool = True) -> pd.DataFrame:
+        """
+        获取全市场实时行情（Sina 数据源，并行抓取约 6000+ 条）。
+        磁盘缓存 30 秒（Parquet 格式）。
+        """
+        from modules.crawler import cache as _cache
+
+        if use_cache:
+            cached = _cache.read_df_cache("spot_sina", max_age_seconds=cfg().cache.spot_seconds)
+            if cached.ok and cached.data is not None:
+                return cached.data
+
+        try:
+            import concurrent.futures
+            session = requests.Session()
+            session.trust_env = False
+            base_url = "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData"
+
+            def fetch_page(page):
+                params = {
+                    "page": page, "num": 100, "sort": "symbol",
+                    "asc": 1, "node": "hs_a", "_s_r_a": "page",
+                }
+                r = session.get(base_url, params=params, timeout=self.timeout)
+                return r.json()
+
+            all_data = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=cfg().thread_pool.sina_spot_workers) as ex:
+                futures = {ex.submit(fetch_page, p): p for p in range(1, 61)}
+                for fut in concurrent.futures.as_completed(futures):
+                    try:
+                        items = fut.result()
+                        if items:
+                            all_data.extend(items)
+                    except Exception as e:
+                        _logger.warning("get_spot page %s failed: %s", futures[fut], e)
+
+            if not all_data:
+                return pd.DataFrame()
+            df = pd.DataFrame(all_data)
+            df["code"] = df["symbol"].str[2:]
+            keep_cols = {
+                "code": "code", "name": "name", "trade": "price",
+                "changepercent": "pct_change", "volume": "volume",
+                "amount": "amount", "per": "pe", "pb": "pb",
+                "turnoverratio": "turnover",
+            }
+            df = df[[c for c in keep_cols if c in df.columns]].rename(columns=keep_cols)
+            for col in ["price", "pct_change", "volume", "amount", "pe", "pb", "turnover"]:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors="coerce")
+
+            _cache.write_df_cache("spot_sina", df, source="sina")
+            return df
+        except Exception as e:
+            _logger.error("get_spot failed: %s", e)
+            return pd.DataFrame()
+
+    def get_spot_sina(self, max_pages: int = 60, use_cache: bool = True) -> pd.DataFrame:
+        """
+        获取全市场实时行情（新浪，备用降级源）。
+        已废弃，请使用 get_spot()。
+        """
+        return self.get_spot(use_cache=use_cache)
+
+    @retry_on_network_error(max_retries=2)
     def get_daily(
         self,
         symbol: str,
@@ -54,34 +217,85 @@ class StockData:
         if end_date is None:
             end_date = datetime.now().strftime("%Y%m%d")
 
-        # 主数据源：东方财富（push2his），备用：新浪
-        df = self._get_daily_eastmoney(code, start_date, end_date, adjust)
+        # Check warehouse cache first
+        if not self._no_cache:
+            try:
+                from modules.db import DatabaseManager
+                from modules.config import cfg as _cfg
+                if _cfg().data.enable_warehouse:
+                    db = DatabaseManager(_cfg().data.warehouse_path)
+                    cached = db.price().load_daily(symbol, start_date, end_date, adjust)
+                    if not cached.empty and cached["date"].max() >= pd.Timestamp(end_date):
+                        cached.set_index("date", inplace=True)
+                        return cached
+            except Exception:
+                pass  # fall through to network fetch
+
+        # 主数据源：新浪（akshare），备用：腾讯财经（支持 ETF）
+        df = self._get_daily_sina(code, start_date, end_date, adjust)
         if df is None or df.empty:
-            df = self._get_daily_sina(code, start_date, end_date, adjust)
+            df = self._get_daily_tencent(code, start_date, end_date, adjust)
         if df is None or df.empty:
             raise RuntimeError(f"获取日线数据失败 {code}: 所有数据源均不可用")
+
+        # Save to warehouse cache
+        if not self._no_cache:
+            try:
+                from modules.db import DatabaseManager
+                from modules.config import cfg as _cfg
+                if _cfg().data.enable_warehouse:
+                    save_df = df.copy()
+                    if "date" not in save_df.columns:
+                        save_df = save_df.reset_index()
+                    db = DatabaseManager(_cfg().data.warehouse_path)
+                    db.price().save_daily_batch(save_df, symbol, adjust)
+            except Exception:
+                pass
 
         df["date"] = pd.to_datetime(df["date"])
         df.set_index("date", inplace=True)
         return df
 
-    def _get_daily_eastmoney(self, code: str, start_date: str, end_date: str, adjust: str) -> Optional[pd.DataFrame]:
-        """东方财富日线数据"""
+    def _get_daily_tencent(self, code: str, start_date: str, end_date: str, adjust: str) -> Optional[pd.DataFrame]:
+        """腾讯财经日线数据（备用源，支持 ETF）"""
         try:
-            df = ak.stock_zh_a_hist(
-                symbol=code.split(".")[0],
-                period="daily",
-                start_date=start_date,
-                end_date=end_date,
-                adjust=adjust
+            if code.endswith(".SH"):
+                tc_code = f"sh{code.split('.')[0]}"
+            elif code.endswith(".SZ"):
+                tc_code = f"sz{code.split('.')[0]}"
+            else:
+                tc_code = f"sh{code}"
+
+            url = (
+                f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
+                f"?_var=kline_dayqfq&param={tc_code},day,,,{20 if adjust else 20},{'qfq' if adjust == 'qfq' else ''}"
             )
-            df.columns = [c.lower() for c in df.columns]
-            df.rename(columns={
-                "日期": "date", "开盘": "open", "收盘": "close",
-                "最高": "high", "最低": "low", "成交量": "volume",
-                "成交额": "amount", "振幅": "turn",
-                "涨跌幅": "pct_change", "换手率": "turnover"
-            }, inplace=True)
+            resp = requests.get(url, timeout=self.timeout)
+            text = resp.text
+            json_str = text[text.index("=") + 1:]
+            data = json.loads(json_str)
+            symbol_data = data.get("data", {}).get(tc_code, {})
+            days = symbol_data.get("qfqday") or symbol_data.get("day") or []
+
+            if not days:
+                return None
+
+            df = pd.DataFrame(
+                days,
+                columns=["date", "open", "close", "high", "low", "volume"]
+            )
+            # 腾讯数据量是手（百股），akshare用的是股，统一
+            df["volume"] = pd.to_numeric(df["volume"], errors="coerce") * 100
+            df["open"] = pd.to_numeric(df["open"], errors="coerce")
+            df["high"] = pd.to_numeric(df["high"], errors="coerce")
+            df["low"] = pd.to_numeric(df["low"], errors="coerce")
+            df["close"] = pd.to_numeric(df["close"], errors="coerce")
+            df["amount"] = 0.0
+            df["turn"] = 0.0
+            df["turnover"] = 0.0
+            # 计算涨跌幅
+            df["pct_change"] = df["close"].pct_change() * 100
+            df = df[["date", "open", "high", "low", "close", "volume", "amount", "turn", "pct_change", "turnover"]]
             return df
         except Exception:
             return None
@@ -103,6 +317,8 @@ class StockData:
                 end_date=end_date.replace("-", ""),
                 adjust=adjust if adjust else ""
             )
+            if df is None or df.empty:
+                return None
             # 新浪接口列名已是英文：date, open, high, low, close, volume, amount, outstanding_share, turnover
             # 补充缺失的 pct_change 和 turn 列（从 close 计算近似）
             if "pct_change" not in df.columns and "close" in df.columns:
@@ -113,8 +329,54 @@ class StockData:
         except Exception:
             return None
 
+    @retry_on_network_error(max_retries=2)
+    def get_daily_prices(self, symbols: List[str], count: int = 5) -> Dict[str, Any]:
+        """
+        批量获取日线收盘价（多股并行，Sina API）
+        返回: {symbol: {date: {close, prev_close, pct_change}}}
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def fetch_one(code):
+            prefix = "sh" if code.startswith(("6", "5", "9")) else "sz"
+            url = (f"https://money.finance.sina.com.cn/quotes_service/api/json_v2.php"
+                   f"/CN_MarketData.getKLineData?symbol={prefix}{code}&scale=240&ma=no&datalen={count}")
+            r = requests.get(url, timeout=self.timeout)
+            r.encoding = "utf-8"
+            return code, r.json()
+
+        results = {}
+        with ThreadPoolExecutor(max_workers=min(len(symbols), 20)) as executor:
+            futures = {executor.submit(fetch_one, s): s for s in symbols}
+            for future in as_completed(futures):
+                try:
+                    code, data = future.result()
+                except Exception as e:
+                    _logger.warning("get_daily_prices fetch failed for %s: %s", futures[future], e)
+                    continue
+                if not data:
+                    continue
+                recs = {}
+                for i, rec in enumerate(data):
+                    try:
+                        close = float(rec["close"])
+                        day = rec["day"]
+                    except (KeyError, ValueError, TypeError):
+                        _logger.warning("get_daily_prices 跳过畸形记录 %s: %s", code, rec)
+                        continue
+                    prev = data[i - 1] if i > 0 else rec
+                    try:
+                        prev_close = float(prev["close"])
+                    except (KeyError, ValueError, TypeError):
+                        prev_close = close
+                    pct = (close - prev_close) / prev_close * 100 if prev_close else 0
+                    recs[day] = {"close": close, "prev_close": prev_close, "pct_change": pct}
+                results[code] = recs
+        return results
+
+    @retry_on_network_error(max_retries=2)
     def get_weekly(self, symbol: str, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
-        """获取周线数据"""
+        """获取周线数据（腾讯财经）"""
         if symbol.endswith(".SH") or symbol.endswith(".SZ"):
             code = symbol
         else:
@@ -125,135 +387,188 @@ class StockData:
         if end_date is None:
             end_date = datetime.now().strftime("%Y%m%d")
 
-        df = ak.stock_zh_a_hist(
-            symbol=code.split(".")[0],
-            period="weekly",
-            start_date=start_date,
-            end_date=end_date,
-            adjust="qfq"
-        )
-        df.columns = [c.lower() for c in df.columns]
-        df.rename(columns={
-            "日期": "date", "开盘": "open", "收盘": "close",
-            "最高": "high", "最低": "low", "成交量": "volume", "成交额": "amount"
-        }, inplace=True)
-        df["date"] = pd.to_datetime(df["date"])
-        df.set_index("date", inplace=True)
-        return df
+        try:
+            if code.endswith(".SH"):
+                tc_code = f"sh{code.split('.')[0]}"
+            elif code.endswith(".SZ"):
+                tc_code = f"sz{code.split('.')[0]}"
+            else:
+                tc_code = f"sh{code}"
 
-    def get_realtime_quote(self, symbol: str) -> dict:
+            url = (
+                f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
+                f"?_var=kline_weekqfq&param={tc_code},week,,,100,qfq"
+            )
+            resp = requests.get(url, timeout=self.timeout)
+            text = resp.text
+            json_str = text[text.index("=") + 1:]
+            data = json.loads(json_str)
+            symbol_data = data.get("data", {}).get(tc_code, {})
+            weeks = symbol_data.get("qfqweek") or symbol_data.get("week") or []
+
+            if not weeks:
+                raise RuntimeError("腾讯周线无数据")
+
+            df = pd.DataFrame(
+                weeks,
+                columns=["date", "open", "close", "high", "low", "volume"]
+            )
+            df["volume"] = pd.to_numeric(df["volume"], errors="coerce") * 100
+            for col in ["open", "close", "high", "low"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+            df["pct_change"] = df["close"].pct_change() * 100
+
+            df["date"] = pd.to_datetime(df["date"])
+            start = pd.to_datetime(start_date.replace("-", ""))
+            end = pd.to_datetime(end_date.replace("-", ""))
+            df = df[(df["date"] >= start) & (df["date"] <= end)]
+            df.set_index("date", inplace=True)
+            return df
+        except Exception as e:
+            raise RuntimeError(f"获取周线数据失败 {code}: {e}")
+
+    def get_realtime_quote(self, symbol: str, source: str | None = None, mode: str | None = None) -> Dict[str, Any]:
         """
-        获取实时行情（单股）
-        返回：当前价、涨跌幅、成交量、换手率等
+        获取实时行情（单股，多源交叉验证）。
+        返回：当前价、涨跌幅、成交量、换手率、校验状态等。
+        """
+        quotes = self.get_realtime_quotes([symbol], source=source, mode=mode)
+        full_code = to_full_code(symbol)
+        quote = quotes.get(full_code)
+        if not quote:
+            raise RuntimeError(f"获取实时行情失败 {symbol}: 所有数据源均不可用")
+        return quote
+
+    @retry_on_network_error(max_retries=2)
+    def get_realtime_quotes(
+        self,
+        symbols: List[str],
+        source: str | None = None,
+        mode: str | None = None,
+    ) -> Dict[str, Any]:
+        """
+        批量获取实时行情。
+        默认按 [datasource] 配置查询；可用 source 指定单一数据源，或用
+        mode=single/validate 覆盖配置模式。
+        """
+        source_names = [source] if source else None
+        return QuoteManager(source_names=source_names, mode=mode).fetch_quotes(symbols)
+
+    def get_money_flow(self, symbol: str) -> Dict[str, Any]:
+        """
+        获取个股资金流向（EastMoney 数据中心，走 akshare stock_individual_fund_flow）
         """
         try:
-            if symbol.endswith(".SH") or symbol.endswith(".SZ"):
-                code = symbol
-            else:
-                code = f"{symbol}.SH" if symbol.startswith(("6", "9")) else f"{symbol}.SZ"
-
-            df = ak.stock_zh_a_spot_em()
-            row = df[df["代码"] == code.split(".")[0]]
-            if row.empty:
-                raise ValueError(f"股票 {code} 未找到")
-
-            r = row.iloc[0]
+            return get_money_flow_summary(symbol, use_cache=True)
+        except Exception as exc:
+            _logger.warning("get_money_flow(%s) failed: %s", symbol, exc)
             return {
-                "code": code,
-                "name": r["名称"],
-                "price": r["最新价"],
-                "change_pct": r["涨跌幅"],
-                "volume": r["成交量"],
-                "amount": r["成交额"],
-                "turnover": r["换手率"],
-                "pe": r["市盈率"],
-                "pb": r["市净率"],
-                "mkt_cap": r["总市值"],
-                "float_cap": r["流通市值"],
-                "high": r["最高"],
-                "low": r["最低"],
-                "open": r["今开"],
-                "prev_close": r["昨收"]
+                "date": "",
+                "main_net_inflow": 0,
+                "main_net_inflow_pct": 0,
+                "super_large_net": 0,
+                "large_net": 0,
+                "medium_net": 0,
+                "small_net": 0,
+                "_note": f"资金流向数据不可用: {exc}",
             }
-        except Exception as e:
-            raise RuntimeError(f"获取实时行情失败 {symbol}: {e}")
-
-    def get_money_flow(self, symbol: str) -> dict:
-        """
-        获取个股资金流向
-        返回：主力净流入、超大单净流入、大单净流入等
-        """
-        try:
-            if not symbol.endswith((".SH", ".SZ")):
-                code = f"{symbol}.SH" if symbol.startswith(("6", "9")) else f"{symbol}.SZ"
-            else:
-                code = symbol
-
-            df = ak.stock_individual_fund_flow(stock=code.split(".")[0], market="sh" if code.endswith(".SH") else "sz")
-            latest = df.iloc[-1]
-            return {
-                "date": latest["日期"],
-                "main_net_inflow": latest["主力净流入净额"],
-                "main_net_inflow_pct": latest["主力净流入资金占比"],
-                "super_large_net": latest["超大单净流入净额"],
-                "large_net": latest["大单净流入净额"],
-                "medium_net": latest["中单净流入净额"],
-                "small_net": latest["小单净流入净额"],
-            }
-        except Exception as e:
-            raise RuntimeError(f"获取资金流向失败 {symbol}: {e}")
 
     def get_sector_flow(self, limit: int = 10) -> pd.DataFrame:
         """
-        获取板块资金流排名
-        Args:
-            limit: 返回前N个板块
+        获取板块资金流排名（使用 THS 行业板块数据作为代理）
         """
         try:
-            df = ak.stock_sector_fund_flow_rank(indicator="今日")
-            df = df.head(limit)
-            return df
-        except Exception as e:
-            raise RuntimeError(f"获取板块资金流失败: {e}")
+            from modules.crawler import sector
+            result = sector.get_industry_boards(use_cache=True)
+            if result.ok and result.data is not None:
+                return result.data.head(limit)
+        except Exception as exc:
+            _logger.warning("get_sector_flow failed: %s", exc)
+        return pd.DataFrame()
 
     def get_limit_up(self) -> pd.DataFrame:
-        """获取今日涨停股"""
+        """
+        获取今日涨停股（Sina 快照 + Tencent 验证）
+
+        两步法：
+        1. 从 Sina 快照按 pct_change 筛选候选
+        2. 用 Tencent 的 limit_up/limit_down 字段验证
+        """
         try:
-            df = ak.stock_zt_pool_em(date=datetime.now().strftime("%Y%m%d"))
-            return df
-        except Exception:
-            # 如果今日没有数据，尝试昨天
-            yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
-            df = ak.stock_zt_pool_em(date=yesterday)
-            return df
+            spot = self.get_spot()
+            if spot.empty:
+                return pd.DataFrame()
+            candidates = spot[spot["pct_change"] >= 9.0].copy()
+            candidates = filter_selection_universe(candidates, code_col="code")
+            if candidates.empty:
+                return pd.DataFrame()
+            return self._verify_limit(candidates, direction="up")
+        except Exception as exc:
+            _logger.warning("get_limit_up failed: %s", exc)
+            return pd.DataFrame()
 
     def get_limit_down(self) -> pd.DataFrame:
-        """获取今日跌停股"""
+        """获取今日跌停股（Sina 快照 + Tencent 验证）"""
         try:
-            df = ak.stock_zt_pool_strong_em(date=datetime.now().strftime("%Y%m%d"))
-            return df
+            spot = self.get_spot()
+            if spot.empty:
+                return pd.DataFrame()
+            candidates = spot[spot["pct_change"] <= -9.0].copy()
+            candidates = filter_selection_universe(candidates, code_col="code")
+            if candidates.empty:
+                return pd.DataFrame()
+            return self._verify_limit(candidates, direction="down")
+        except Exception as exc:
+            _logger.warning("get_limit_down failed: %s", exc)
+            return pd.DataFrame()
+
+    def _verify_limit(self, candidates: pd.DataFrame, direction: str = "up") -> pd.DataFrame:
+        """用 Tencent 验证候选股是否真实涨停/跌停"""
+        import requests
+        codes = candidates["code"].tolist()
+        # Build Tencent query directly (bypass cache to avoid long cache key)
+        from modules.crawler.tencent import _build_query, _parse_tencent_response, BASE_URL
+        query = _build_query(codes)
+        try:
+            session = requests.Session()
+            session.trust_env = False
+            session.proxies = {"http": None, "https": None}
+            r = session.get(BASE_URL, params={"q": query}, timeout=self.timeout)
+            r.encoding = "utf-8"
+            if r.status_code != 200:
+                return pd.DataFrame()
+            quotes = _parse_tencent_response(r.text)
         except Exception:
-            yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
-            df = ak.stock_zt_pool_strong_em(date=yesterday)
-            return df
+            return pd.DataFrame()
 
-    def get_stock_info(self, symbol: str) -> dict:
+        verified = []
+        for q in quotes:
+            price = q.get("price")
+            limit_price = q.get("limit_up" if direction == "up" else "limit_down")
+            if price and limit_price and abs(price - limit_price) < 0.05:
+                verified.append({
+                    "code": q.get("code"),
+                    "name": q.get("name"),
+                    "price": price,
+                    "limit_price": limit_price,
+                    "pct_change": q.get("pct_change"),
+                    "amount": q.get("amount"),
+                    "turnover": q.get("turnover"),
+                })
+        if not verified:
+            return pd.DataFrame()
+        return pd.DataFrame(verified).head(100)
+
+    def get_stock_info(self, symbol: str) -> Dict[str, Any]:
         """
-        获取股票基本信息
+        获取股票基本信息（东方财富数据中心）
         """
-        try:
-            if not symbol.endswith((".SH", ".SZ")):
-                code = f"{symbol}.SH" if symbol.startswith(("6", "9")) else f"{symbol}.SZ"
-            else:
-                code = symbol
+        result = _em_stock_info(symbol, use_cache=True)
+        if not result.ok or result.data is None:
+            raise RuntimeError(f"获取股票信息失败 {symbol}: {result.user_message}")
+        return result.data
 
-            df = ak.stock_individual_info_em(symbol=code.split(".")[0])
-            info = dict(zip(df["item"], df["value"]))
-            return info
-        except Exception as e:
-            raise RuntimeError(f"获取股票信息失败 {symbol}: {e}")
-
-    def get_valuation(self, symbol: str, current_price: float) -> dict:
+    def get_valuation(self, symbol: str, current_price: float) -> Dict[str, Any]:
         """
         获取估值数据（PE/PB/ROE）
         通过同花顺财务报告计算最新估值
@@ -272,6 +587,8 @@ class StockData:
                 code = symbol
 
             df = ak.stock_financial_abstract_ths(symbol=code.split(".")[0])
+            if df is None or df.empty:
+                return None
             # 取最新一期财报
             latest = df.iloc[-1]
 
@@ -315,7 +632,7 @@ class StockData:
         except Exception:
             return 0.0
 
-    def get_dividend(self, symbol: str) -> list:
+    def get_dividend(self, symbol: str) -> List[Dict[str, Any]]:
         """
         获取历史分红记录（巨潮）
         Returns: 近5年分红记录列表
@@ -352,7 +669,7 @@ class StockData:
         except Exception as e:
             return [{"error": str(e)}]
 
-    def get_profit_forecast(self, symbol: str) -> dict:
+    def get_profit_forecast(self, symbol: str) -> Dict[str, Any]:
         """
         获取券商盈利预测（同花顺）
         Returns: 未来2-3年EPS预测（均值）
@@ -381,7 +698,7 @@ class StockData:
         except Exception as e:
             return {"forecasts": [], "error": str(e)}
 
-    def get_major_shareholders(self, symbol: str) -> list:
+    def get_major_shareholders(self, symbol: str) -> List[Dict[str, Any]]:
         """
         获取前10大股东
         Returns: 股东名称、持股比例、股本性质
@@ -411,7 +728,7 @@ class StockData:
         except Exception as e:
             return [{"error": str(e)}]
 
-    def get_shareholder_changes(self, symbol: str, limit: int = 5) -> list:
+    def get_shareholder_changes(self, symbol: str, limit: int = 5) -> List[Dict[str, Any]]:
         """
         获取股东增减持变化（近5次）
         """
@@ -436,7 +753,7 @@ class StockData:
         except Exception as e:
             return [{"error": str(e)}]
 
-    def get_profit_sheet_summary(self, symbol: str) -> dict:
+    def get_profit_sheet_summary(self, symbol: str) -> Dict[str, Any]:
         """
         获取利润表核心指标摘要（最新一期）
         营业收入、净利润、毛利率、净利率
@@ -448,6 +765,8 @@ class StockData:
                 code = symbol
 
             df = ak.stock_profit_sheet_by_report_em(symbol=code)
+            if df is None or df.empty:
+                return {"error": "no data"}
             latest = df.iloc[0]  # 最新一期在前面
 
             revenue = self._parse_number(latest.get("营业总收入", 0))
@@ -468,7 +787,7 @@ class StockData:
         except Exception as e:
             return {"error": str(e)}
 
-    def get_cash_flow_summary(self, symbol: str) -> dict:
+    def get_cash_flow_summary(self, symbol: str) -> Dict[str, Any]:
         """
         获取现金流量表核心指标摘要（最新一期）
         经营现金流、投资现金流、筹资现金流、期末现金
@@ -480,6 +799,8 @@ class StockData:
                 code = symbol
 
             df = ak.stock_financial_cash_ths(symbol=code.split(".")[0], indicator="按报告期")
+            if df is None or df.empty:
+                return {"error": "no data"}
             latest = df.iloc[0]
 
             op_cf = self._parse_number(latest.get("经营活动产生的现金流量净额", 0))
@@ -497,3 +818,11 @@ class StockData:
             }
         except Exception as e:
             return {"error": str(e)}
+
+    # ─── 财务风险检测（委托给 FinancialRiskChecker） ─────────────────
+
+    @retry_on_network_error(max_retries=2)
+    def check_financial_risk(self, symbol: str) -> Dict[str, Any]:
+        """综合财务风险检测（委托给 FinancialRiskChecker）。"""
+        checker = FinancialRiskChecker(self)
+        return checker.check_financial_risk(symbol)

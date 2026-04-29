@@ -1,0 +1,134 @@
+openapi: 3.0.3
+info:
+  title: 东方财富行情 API (eastmoney.com)
+  version: 1.0.0
+  description: 基于捕获流量生成的东方财富实时行情 API 文档
+
+servers:
+  - url: https://push2.eastmoney.com
+  - url: https://push2his.eastmoney.com
+
+paths:
+  /api/qt/stock/get:
+    get:
+      summary: 获取股票实时行情
+      parameters:
+        - name: secid
+          in: query
+          required: true
+          example: "1.600734"
+        - name: fields
+          in: query
+          required: true
+          example: "f43,f44,f45,f46,f47,f48,f57,f58"
+        - name: ut
+          in: query
+          example: "fa5fd1943c7b386f172d6893dbfba10b"
+      responses:
+        '200':
+          description: OK
+
+  /api/qt/stock/details/get:
+    get:
+      summary: 获取分时成交明细
+      parameters:
+        - name: secid
+          in: query
+          required: true
+          example: "1.600734"
+        - name: fields1
+          in: query
+          example: "f1,f2,f3,f4,f5,f6"
+        - name: fields2
+          in: query
+          example: "f51,f52,f53,f54,f55"
+        - name: iscca
+          in: query
+          example: 1
+        - name: np
+          in: query
+          example: 1
+        - name: fltt
+          in: query
+          example: 2
+      responses:
+        '200':
+          description: OK
+
+  /api/qt/stock/fflow/kline/get:
+    get:
+      summary: 获取资金流向K线
+      parameters:
+        - name: secid
+          in: query
+          required: true
+          example: "1.600734"
+        - name: klt
+          in: query
+          example: 1
+        - name: lmt
+          in: query
+          example: 0
+        - name: fields1
+          in: query
+          example: "f1,f2,f3,f7"
+        - name: fields2
+          in: query
+          example: "f51,f52,f53,f54,f55,f56,f57,f58"
+      responses:
+        '200':
+          description: OK
+
+  /api/qt/clist/get:
+    get:
+      summary: 获取股票列表/板块
+      parameters:
+        - name: pn
+          in: query
+          example: 1
+        - name: pz
+          in: query
+          example: 20
+        - name: fid
+          in: query
+          example: "f62"
+        - name: fs
+          in: query
+          example: "m:0+t:6,m:0+t:13,m:1+t:2,m:1+t:23"
+        - name: fields
+          in: query
+          example: "f12,f13,f14,f62"
+      responses:
+        '200':
+          description: OK
+
+  /api/qt/stock/kline/get:
+    get:
+      summary: 获取历史K线
+      server: https://push2his.eastmoney.com
+      parameters:
+        - name: secid
+          in: query
+          required: true
+          example: "1.600734"
+        - name: klt
+          in: query
+          example: 101
+        - name: fqt
+          in: query
+          example: 1
+        - name: lmt
+          in: query
+          example: 100
+        - name: fields1
+          in: query
+          example: "f1,f2,f3,f4,f5,f6"
+        - name: fields2
+          in: query
+          example: "f51,f52,f53,f54,f55,f56,f57,f58"
+        - name: end
+          in: query
+          example: "20260423"
+      responses:
+        '200':
+          description: OK
