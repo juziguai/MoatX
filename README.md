@@ -1,213 +1,313 @@
 # MoatX
 
-A 股量化分析 CLI 工具，支持行情抓取、技术指标、选股筛选、持仓管理、风控预警、信号回测。
+MoatX 是一个面向 A 股的本地量化分析与事件情报工具箱。它覆盖行情查询、持仓管理、风控预警、因子评分、模拟交易、宏观事件情报、新闻源采集、板块/产业图谱、事件弹性回测和调度任务。
 
-## 安装
+> 说明：MoatX 只做数据分析、情报提示、模拟交易和辅助决策；不会自动下真实交易订单。项目输出不构成投资建议。
+
+## 当前状态
+
+- **行情链路**：支持新浪、腾讯、东方财富等多源行情；可配置主数据源，也可开启交叉验证聚合。
+- **盘中监控**：支持持仓实时估值、市场宽度、盈亏归因、模拟盘快照和事件情报摘要。
+- **事件情报**：可采集新闻源，抽取宏观事件，更新事件概率，映射 A 股板块和机会标的，生成报告与推送候选。
+- **选股评分**：包含估值、质量、技术、情绪、事件乘数、风控 veto、集中度惩罚等核心因子。
+- **模拟交易**：支持纸面账户、信号生成、交易记录、手续费估算、日终快照和调度任务。
+- **调度器**：支持候选股扫描、预警、模拟交易、事件采集/抽取/推送等任务。
+- **测试与 CI**：GitHub Actions 覆盖 Python 3.10/3.11/3.12；本地当前测试为 `163 passed, 3 skipped`。
+
+## 快速开始
+
+### 环境要求
+
+- Python 3.10+
+- Windows PowerShell 或兼容 Shell
+- 网络可访问行情/新闻源
+
+### 安装
 
 ```powershell
 cd D:\Tools\AI\Claude-code\MoatX
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -U pip
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-依赖：akshare, pandas, numpy, requests, lxml, matplotlib, scipy, pyyaml, pytest, ruff
+如果只想按旧方式安装依赖：
 
-## CLI 入口
+```powershell
+python -m pip install -r requirements.txt
+```
+
+### 查看帮助
 
 ```powershell
 python -m modules.cli --help
+python -m modules.cli tool event --help
+python -m modules.scheduler --list
 ```
 
-所有子命令通过 `python -m modules.cli <subcommand>` 调用。
+## 常用命令
 
-### 实时行情
+### 行情查询
 
 ```powershell
-python -m modules.cli quote              # 自动读取持仓，多源校验
-python -m modules.cli quote 600519 000858 # 个股行情，多源校验
-python -m modules.cli market             # 大盘指数，多源校验
-python -m modules.cli market --breadth   # 全市场上涨/下跌/平盘家数
-python -m modules.cli market 科创50 沪深300 --json
+# 查询持仓行情；默认读取本地持仓
+python -m modules.cli quote
+
+# 查询个股/ETF
+python -m modules.cli quote 600519 000858 510300
+
+# 查询大盘指数
+python -m modules.cli market
+
+# 查询市场宽度：上涨/下跌/平盘家数
+python -m modules.cli market --breadth
+
+# JSON 输出
+python -m modules.cli market 上证指数 深证成指 创业板指 --json
 ```
 
-### 持仓管理
+行情查询默认通过 `data/moatx.toml` 控制：
 
-```powershell
-python -m modules.cli list                # 查看持仓
-python -m modules.cli config              # 查看/修改配置
-python -m modules.cli refresh             # 刷新持仓实时行情
+```toml
+[datasource]
+primary = "sina"          # 主数据源
+mode = "validate"         # single=单源；validate=主源+校验源交叉验证
+validation = ["tencent"]  # 校验源
+supplement = ["eastmoney"]# 补充源
 ```
 
-### 预警与风控
+### 持仓与交易记录
 
 ```powershell
-python -m modules.cli check               # 运行预警检测
-python -m modules.cli risk check          # 手动触发风控检查
-python -m modules.cli risk status         # 查看当前风控状态
-python -m modules.cli risk history        # 风控事件历史
-python -m modules.cli alerts --limit 50  # 预警历史
+# 从截图导入持仓
+python -m modules.cli import path\to\screenshot.jpg
+
+# 批量扫描目录导入截图
+python -m modules.cli batch-import path\to\folder
+
+# 查看持仓
+python -m modules.cli list
+
+# 刷新持仓实时行情
+python -m modules.cli refresh
+
+# 持仓总览
+python -m modules.cli summary
+
+# 记录买卖流水
+python -m modules.cli trade
 ```
 
-### 信号与模拟交易
+### 风控与预警
 
 ```powershell
-python -m modules.cli signal list         # 查看信号记录
-python -m modules.cli paper status        # 模拟账户状态
-python -m modules.cli paper holdings      # 模拟持仓
-python -m modules.cli paper trades        # 模拟交易记录
+python -m modules.cli alert check
+python -m modules.cli alert history
+python -m modules.cli risk check
+python -m modules.cli risk status
+python -m modules.cli risk history
+python -m modules.cli monitor
 ```
 
-### 诊断工具
+风控能力包括止损、仓位上限、单日亏损、回撤、信号日志、飞书/文件/CLI 推送等。
+
+### 模拟交易与信号
 
 ```powershell
-python -m modules.cli diagnose            # 数据源诊断
-python -m modules.cli probe-api URL      # API 探测
+python -m modules.cli tool signal list
+python -m modules.cli tool paper status
+python -m modules.cli tool paper holdings
+python -m modules.cli tool paper trades
 ```
 
-### 宏观事件情报
+模拟交易只写入本地模拟账户和信号表，不影响真实持仓/真实交易。
 
-当前宏观事件情报模块约 95% 完成，已进入可用级收工状态：可持续采集新闻、抽取宏观事件、更新事件概率、映射 A 股机会、生成报告、执行推送冷却和调度任务；模块只输出情报与机会，不自动下单。
+### 爬虫与接口探测
 
 ```powershell
+python -m modules.cli tool diagnose
+python -m modules.cli tool probe https://quote.eastmoney.com/sh600988.html --discover --probe-js-apis --json
+```
+
+爬虫模块用于合法网页/API 的接口发现、请求复用、字段标准化和批量并发采集。遇到登录、验证码、图形校验等反自动化机制时，项目默认不提供绕过能力，应改用公开接口、授权数据或人工配置。
+
+## 宏观事件情报
+
+事件情报模块负责“新闻源 → 事件信号 → 概率状态 → 产业/板块映射 → 机会标的 → 报告/推送候选”的闭环。
+
+### 核心命令
+
+```powershell
+# 采集新闻源
 python -m modules.cli tool event collect --json
+
+# 手动注入事件文本
 python -m modules.cli tool event ingest --title "伊朗威胁封锁霍尔木兹海峡" --summary "原油供给风险升高"
-python -m modules.cli tool event run --json --min-probability 1.0
-python -m modules.cli tool event summary --json         # 盘中宏观事件 Top3
-python -m modules.cli tool event notify --json          # dry-run，不发送
-python -m modules.cli tool event notify --send --json   # 显式发送
-python -m modules.cli tool event sources --json         # 查看源配置与质量
-python -m modules.cli tool event context --json         # 下游模型/交易/回测上下文
+
+# 抽取事件信号
+python -m modules.cli tool event extract --json
+
+# 更新事件状态
+python -m modules.cli tool event states --json
+
+# 扫描 A 股机会
+python -m modules.cli tool event opportunities --json --min-probability 0.55
+
+# 生成事件报告
+python -m modules.cli tool event report
+
+# 盘中监控摘要：宏观事件 Top3 + 关联板块 + 机会标的
+python -m modules.cli tool event summary --json
+
+# 推送检查；默认 dry-run，不真正发送
+python -m modules.cli tool event notify --json
+
+# 真正发送推送
+python -m modules.cli tool event notify --send --json
+
+# 上下文导出，供其他模型/策略/复盘读取
+python -m modules.cli tool event context --json
+
+# 日线事件弹性回测
 python -m modules.cli tool event elasticity --event-id hormuz_closure_risk --windows 1,3,5,10 --json
-python -m modules.scheduler --list                      # 查看事件调度状态
-python -m modules.scheduler --daemon                    # 后台持续运行采集/抽取/推送
-python -m modules.scheduler --status                    # 查看后台调度器进程
+
+# 一键闭环：采集、抽取、状态、机会、报告，可选推送
+python -m modules.cli tool event run --json --notify
 ```
 
-事件新闻源已启用 BBC 中文、RFI 中文、DW 中文、OilPrice、中国新闻网国内/国际/财经 RSS、财联社 7x24 电报、央视网新闻 JSONP、证券时报要闻 HTML、中国人民银行新闻 HTML、国家发改委新闻/政策、国家统计局数据发布、上海证券报首页、期货日报首页等 16 个源；新华、新浪、凤凰、人民网、国家能源局、证监会、自定义 JSON 作为禁用模板保留。事件调度任务已启用，`--daemon` 可在 Windows/本机后台持续运行。推送阈值在 `data/moatx.toml` 的 `[event_intelligence]` 中配置，默认 `probability >= 0.55` 或 `opportunity_score >= 75` 提醒，冷却 6 小时。盘中模拟监控会附带“宏观事件 Top3 + 关联板块 + 机会标的”。源质量已按抓取量、错误率、命中率生成 `quality_score/reliability` 和 `source_recommendation` 治理建议，报告含最新证据链。规则 NLP 已区分传闻、升级、确认、否认、缓和；抽取层默认跳过发布日期超过 14 天的旧新闻，避免历史网页误触发当前事件。事件弹性回测使用日线窗口，已内置霍尔木兹、原油、黄金、红海、俄乌、芯片制裁、关税、国内宽松历史样本，不触发自动交易。
+### 当前信息源
 
-## 项目结构
+已启用或可用的信息源分为五类：
 
-完整架构图、流程图、功能模块和数据流说明见 `docs/PROJECT_ARCHITECTURE.md`。
+- **地缘政治**：BBC 中文、RFI 中文、德国之声中文、中国新闻网国际等。
+- **能源/商品**：OilPrice、期货日报模板、国家能源局模板等。
+- **政策/官方**：央视网、中国人民银行、国家发改委、国家统计局等。
+- **财经证券**：财联社 7x24、证券时报、上海证券报、中国新闻网财经等。
+- **保留模板**：新华网、新浪、凤凰网、人民网、证监会、自定义 JSON 源等，默认禁用，待验证后开启。
 
+配置文件：`data/event_sources.toml`
+
+### 事件规则与产业图谱
+
+- 事件传导配置：`data/event_transmission_map.toml`
+- 旧版事件板块映射：`data/event_sector_map.toml`
+- 历史事件样本：`data/event_history.toml`
+- 产业/板块图谱：`data/sector_graph.toml`
+
+首批重点方向包括石油、油服、天然气、黄金、贵金属、军工、航运、航空、半导体、芯片、信创、光伏、储能、电力、煤炭、有色等。
+
+## 调度任务
+
+查看任务：
+
+```powershell
+python -m modules.scheduler --list
 ```
-modules/
-├── __init__.py              # 懒加载导出
-├── __main__.py              # python -m modules 入口
-├── config.py                 # 配置管理（moatx.toml + 环境变量）
-├── candidate.py              # 候选股管理
-├── stock_data.py             # 行情、财务、公告抓取
-├── datasource.py             # 个股行情多源校验聚合
-├── indicators.py             # 技术指标引擎（KDJ/RSI/BOLL/MACD 等）
-├── analyzer.py              # 单股分析 + Markdown 报告
-├── charts.py                 # K 线图渲染
-├── screener.py               # 选股器（全市场扫描）
-├── rank_engine.py            # 综合评分引擎
-├── portfolio.py              # 持仓/交易/快照管理
-├── alert_manager.py          # 预警检测逻辑
-├── alerter.py               # 飞书/文件/CLI 推送
-├── risk_controller.py        # 风控检测（止损/仓位/回撤）
-├── scheduler.py              # 定时任务调度器
-├── backtest/
-│   ├── engine.py             # 回测引擎
-│   ├── strategy.py           # 策略上下文
-│   ├── fees.py               # 手续费计算
-│   ├── metrics.py            # 回测指标
-│   └── datafeed.py           # 回测数据供给
-├── strategy/
-│   ├── base.py               # ParametrizedStrategy 基类
-│   ├── library.py            # 内置策略（MA Cross / MeanReversion / Breakout 等）
-│   ├── optimizer.py           # 参数网格优化
-│   ├── comparator.py          # 多策略对比
-│   └── walkforward.py         # Walk-Forward 分析
-├── signal/
-│   ├── engine.py             # 信号生成引擎
-│   ├── journal.py             # 信号日志
-│   └── paper_trader.py       # 模拟交易
-├── db/
-│   ├── __init__.py           # DatabaseManager 外观类
-│   ├── migrations.py         # Schema 迁移
-│   ├── price_store.py        # OHLCV 行情存储
-│   ├── backtest_store.py     # 回测记录存储
-│   ├── signal_store.py       # 信号/模拟交易存储
-│   └── task_log.py           # 调度任务日志
-└── cli/
-    ├── __init__.py           # CLI 入口（quote/list/check 等）
-    ├── __main__.py           # python -m modules.cli 入口
-    ├── alerter.py            # 飞书推送
-    ├── portfolio.py          # 持仓命令
-    ├── risk.py               # 风控命令
-    ├── scheduler_cli.py      # 调度命令
-    ├── quote.py              # 行情命令
-    └── tool/
-        ├── diagnose.py        # 诊断
-        ├── probe.py           # API 探测
-        ├── signal.py          # 信号
-        └── paper.py           # 模拟交易
 
-data/
-├── portfolio.db              # 主数据库（持仓/交易/预警）
-└── warehouse.db              # 数据仓库（行情/回测/信号/日志）
+后台运行：
 
-tests/                        # 单元测试（pytest）
-scripts/                      # 辅助脚本
-docs/                         # 设计文档
+```powershell
+python -m modules.scheduler --daemon
 ```
+
+查看后台状态：
+
+```powershell
+python -m modules.scheduler --status
+```
+
+当前调度覆盖：
+
+- 候选股扫描、待验证标记、收盘验证、残留清理
+- 盘中预警、持仓快照、信号生成
+- 模拟盘开盘扫描、盘中监控、卖出信号、交易执行、日报
+- 宏观事件新闻采集、信号抽取、状态更新、机会扫描、闭环、推送检查
+
+任务开关位于 `data/schedule_config.toml`。
+
+## 项目架构
+
+```text
+MoatX
+├─ modules/
+│  ├─ cli/                         # CLI 入口与工具命令
+│  ├─ crawler/                     # 爬虫、API 探测、网页接口分析
+│  ├─ db/                          # SQLite 仓储、迁移、任务日志
+│  ├─ event_intelligence/          # 宏观事件情报闭环
+│  ├─ signal/                      # 信号与模拟交易
+│  ├─ strategy/                    # 策略库、参数优化、Walk-Forward
+│  ├─ backtest/                    # 回测引擎、费用、指标、数据供给
+│  ├─ stock_data.py                # A 股行情/财务/公告数据
+│  ├─ datasource.py                # 多源行情聚合与交叉验证
+│  ├─ market_index.py              # 大盘指数和市场宽度
+│  ├─ sector_tags.py               # 行业/概念/产业标签统一入口
+│  ├─ scoring_engine.py            # 核心选股因子评分
+│  ├─ event_driver.py              # 事件乘数与个股事件评分
+│  ├─ portfolio.py                 # 持仓、交易、快照
+│  ├─ risk_controller.py           # 风控检测
+│  ├─ alerter.py                   # 飞书/文件/CLI 推送
+│  └─ scheduler.py                 # 任务调度器
+├─ data/
+│  ├─ moatx.toml                   # 主配置
+│  ├─ schedule_config.toml         # 调度配置
+│  ├─ event_sources.toml           # 新闻源配置
+│  ├─ event_transmission_map.toml  # 事件传导规则
+│  ├─ sector_graph.toml            # 产业/板块图谱
+│  ├─ portfolio.db                 # 持仓主库
+│  └─ warehouse.db                 # 行情/事件/信号/回测仓库
+├─ docs/                           # 架构、算法、计划、评审文档
+├─ scripts/                        # 监控、辅助、比赛脚本
+└─ tests/                          # pytest 测试
+```
+
+完整架构图、流程图和模块说明见：
+
+- `docs/PROJECT_ARCHITECTURE.md`
+- `docs/PROJECT_STATUS.md`
+- `docs/EVENT_INTELLIGENCE_IMPL_PLAN.md`
+- `docs/EVENT_INTELLIGENCE_ALGORITHM.md`
+- `docs/SCORING_ALGORITHM.md`
 
 ## 数据库
 
-| 数据库 | 路径 | 内容 |
-|--------|------|------|
+| 数据库 | 路径 | 主要内容 |
+| --- | --- | --- |
 | 主库 | `data/portfolio.db` | 持仓、交易流水、快照、候选股、预警 |
-| 数据仓库 | `data/warehouse.db` | OHLCV 行情、回测记录、信号日志、任务日志 |
+| 仓库 | `data/warehouse.db` | OHLCV、事件新闻、事件信号、事件状态、机会、推送冷却、回测、任务日志 |
 
-## 数据源架构
-
-```
-业务层 (stock_data.get_realtime_quotes)
-    └─→ QuoteManager
-         ├─ Tencent   ── 查询
-         ├─ EastMoney ── 查询
-         └─ Sina      ── 查询
-              ↓
-          统一字段 → 交叉校验 → 聚合输出
-```
-
-默认多源查询并返回 `validation_status/source_quotes/sources` 等校验信息；单源失败时自动降级为剩余可用源。
-
-## 内置策略
-
-```python
-from modules.strategy.library import MovingAverageCross, BreakoutStrategy
-
-strategy = MovingAverageCross()
-strategy.fast_period = 5
-strategy.slow_period = 20
-strategy.position_pct = 0.8
-```
-
-支持：MovingAverageCross、MeanReversion、TrendFollowing、BreakoutStrategy、MACrossWithVolume
-
-## Python API
+## Python API 示例
 
 ```python
 from modules.stock_data import StockData
 from modules.indicators import IndicatorEngine
-from modules.portfolio import Portfolio
+from modules.datasource import QuoteManager
+from modules.event_intelligence.summary import build_event_monitor_summary
 
 sd = StockData()
-df = sd.get_daily("600519")
+daily = sd.get_daily("600519")
 
 ind = IndicatorEngine()
-result = ind.all_in_one(df)
+signals = ind.all_in_one(daily)
 
-pf = Portfolio()
-holdings = pf.list_holdings()
+quotes = QuoteManager().fetch_quotes(["600519", "000858"])
+
+event_summary = build_event_monitor_summary(top_events=3)
 ```
 
-## 工程化
+## 测试与质量检查
 
-- **Lint**：ruff，0 警告
-- **类型注解**：核心模块完整（config/portfolio/alert_manager/candidate/risk_controller/indicators/db）
-- **CI**：GitHub Actions（Python 3.10/3.11/3.12 矩阵）
-- **风控**：止损/仓位/回撤检测 + 飞书预警
-- **回测**：BacktestEngine 支持多策略参数优化和 Walk-Forward 分析
+```powershell
+ruff check modules/
+python -m py_compile modules/config.py modules/scheduler.py modules/scoring_engine.py
+python -m pytest -q
+```
+
+CI 工作流位于 `.github/workflows/ci.yml`，会在 Python 3.10/3.11/3.12 上运行 lint 与测试。
+
+## 重要边界
+
+- 不自动下真实交易订单。
+- 不绕过验证码、登录墙、图形校验或反爬验证。
+- 事件情报目前是规则系统，不是外部大模型复杂语义推理。
+- 历史弹性回测用于复盘事件传导有效性，不是买卖指令。
+- 产业图谱已有首版，但不是完整实时产业链数据库。
