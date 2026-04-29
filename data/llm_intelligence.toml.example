@@ -1,0 +1,19 @@
+# MoatX LLM 语义增强配置示例
+# 复制为 data/llm_intelligence.toml 后再修改；真实文件默认被 .gitignore 忽略。
+# 不要把 API key 写进本文件，统一通过环境变量读取。
+
+[llm_intelligence]
+enabled = false
+provider = "openai_compatible"
+base_url = "https://api.openai.com/v1"
+model = "your-model-name"
+api_key_env = "MOATX_LLM_API_KEY"
+timeout = 30
+max_items = 20
+max_output_tokens = 2000
+temperature = 0.1
+
+# 兼容 DeepSeek / 其他 OpenAI-compatible 服务时示例：
+# base_url = "https://api.deepseek.com/v1"
+# model = "deepseek-chat"
+# api_key_env = "MOATX_DEEPSEEK_API_KEY"

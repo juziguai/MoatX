@@ -10,6 +10,7 @@ from modules.event_intelligence.collector import EventNewsCollector
 from modules.event_intelligence.context import EventContextBuilder
 from modules.event_intelligence.elasticity import EventElasticityBacktester
 from modules.event_intelligence.extractor import EventExtractor
+from modules.event_intelligence.llm_semantics import LLMSemanticReviewer, llm_settings_status
 from modules.event_intelligence.manual_ingest import ingest_manual_news, ingest_news_file
 from modules.event_intelligence.news_factors import NewsFactorEngine
 from modules.event_intelligence.news_intelligence import NewsIntelligenceEngine
@@ -81,6 +82,19 @@ def cmd_event(args) -> None:
             "engine": "topic_memory_v1",
             "topic": args.topic or "",
             "snapshots": TopicMemoryEngine().snapshots(topic=args.topic or "", limit=args.limit),
+        }
+    elif action == "llm-status":
+        payload = llm_settings_status()
+    elif action == "llm-review":
+        payload = LLMSemanticReviewer().review(
+            limit=args.limit,
+            min_score=args.min_score,
+            send=args.send,
+        )
+    elif action == "llm-reviews":
+        payload = {
+            "engine": "llm_semantic_review_v1",
+            "reviews": LLMSemanticReviewer().list_reviews(limit=args.limit),
         }
     elif action == "sources":
         payload = _source_snapshot(limit=args.limit)

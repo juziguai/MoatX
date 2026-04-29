@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 MIGRATIONS: dict[int, list[str]] = {
     1: [
@@ -299,6 +299,24 @@ MIGRATIONS: dict[int, list[str]] = {
         )""",
         """CREATE INDEX IF NOT EXISTS idx_event_topic_snapshots_topic
            ON event_topic_snapshots(topic, created_at)""",
+    ],
+    12: [
+        """CREATE TABLE IF NOT EXISTS event_llm_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            news_id INTEGER DEFAULT 0,
+            title TEXT DEFAULT '',
+            topic TEXT DEFAULT '',
+            value_score REAL DEFAULT 0,
+            llm_score REAL DEFAULT 0,
+            decision TEXT DEFAULT '',
+            rationale TEXT DEFAULT '',
+            review_json TEXT DEFAULT '{}',
+            created_at TEXT NOT NULL
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_event_llm_reviews_topic
+           ON event_llm_reviews(topic, created_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_event_llm_reviews_score
+           ON event_llm_reviews(llm_score DESC, created_at DESC)""",
     ],
 }
 

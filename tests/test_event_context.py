@@ -76,6 +76,8 @@ def test_event_context_exports_extension_contracts():
         assert context["historical_event_count"] >= len(context["historical_events"])
         assert "sector_graph_version" in context
         assert context["extension_points"]["auto_trading"]["status"] == "prepared_disabled"
-        assert context["extension_points"]["external_llm"]["status"] == "prepared_disabled"
+        assert context["extension_points"]["external_llm"]["status"] == "prepared_configurable"
+        assert "llm_semantic_status" in context
+        assert "llm_reviews" in context
     finally:
         db.close()

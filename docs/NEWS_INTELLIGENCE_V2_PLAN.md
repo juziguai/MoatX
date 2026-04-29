@@ -183,6 +183,10 @@ python -m modules.cli tool event news-report
 python -m modules.cli tool event news-factors --json
 python -m modules.cli tool event topics --json
 python -m modules.cli tool event topic-snapshots --topic AI??? --json
+python -m modules.cli tool event llm-status --json
+python -m modules.cli tool event llm-review --json
+python -m modules.cli tool event llm-review --send --json
+python -m modules.cli tool event llm-reviews --json
 ```
 
 ## 数据库落地计划

@@ -11,6 +11,7 @@ from modules.db import DatabaseManager
 from modules.sector_tags import SectorTagProvider
 
 from .history import EventHistoryRegistry
+from .llm_semantics import LLMSemanticReviewer, llm_settings_status
 from .models import now_ts
 from .news_factors import NewsFactorEngine
 from .news_intelligence import NewsIntelligenceEngine
@@ -42,6 +43,7 @@ class EventContextBuilder:
         news_intelligence = NewsIntelligenceEngine(db=self._db).analyze(limit=news_scan_limit, min_score=45.0)
         news_factors = NewsFactorEngine(db=self._db).build(limit=news_scan_limit, min_score=55.0, top_n=20)
         topic_memory = TopicMemoryEngine(db=self._db).list(limit=limit)
+        llm_reviews = LLMSemanticReviewer(db=self._db).list_reviews(limit=limit)
 
         return {
             "schema_version": self.SCHEMA_VERSION,
@@ -55,6 +57,8 @@ class EventContextBuilder:
             "news_intelligence": news_intelligence,
             "news_sector_factors": news_factors,
             "topic_memory": topic_memory,
+            "llm_semantic_status": llm_settings_status(),
+            "llm_reviews": llm_reviews,
             "elasticity_summary": self._records(elasticity_runs),
             "historical_events": history,
             "historical_event_count": history_registry.count(),
@@ -65,8 +69,8 @@ class EventContextBuilder:
                     "contract": "consume states/opportunities, never place orders without explicit trading adapter",
                 },
                 "external_llm": {
-                    "status": "prepared_disabled",
-                    "contract": "send latest_news/news_intelligence/states to a user-approved model adapter",
+                    "status": "prepared_configurable",
+                    "contract": "llm-review is dry-run by default; --send requires local config and env API key",
                 },
                 "complex_nlp": {
                     "status": "prepared_disabled",

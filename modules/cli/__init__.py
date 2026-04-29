@@ -284,6 +284,9 @@ def _build_event_parser(p_event):
             "news-factors",
             "topics",
             "topic-snapshots",
+            "llm-status",
+            "llm-review",
+            "llm-reviews",
             "sources",
             "notify",
             "context",
@@ -291,7 +294,7 @@ def _build_event_parser(p_event):
             "elasticity",
             "run",
         ],
-        help="collect/ingest/extract/states/opportunities/report/news/news-report/news-factors/topics/topic-snapshots/sources/notify/context/summary/elasticity/run",
+        help="collect/ingest/extract/states/opportunities/report/news/news-report/news-factors/topics/topic-snapshots/llm-status/llm-review/llm-reviews/sources/notify/context/summary/elasticity/run",
     )
     p_event.add_argument("--limit", type=int, default=200, help="news/report limit")
     p_event.add_argument("--topic", default="", help="news intelligence topic/category filter")

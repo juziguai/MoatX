@@ -8,6 +8,7 @@ from modules.config import cfg
 from modules.db import DatabaseManager
 
 from .history import EventHistoryRegistry
+from .llm_semantics import LLMSemanticReviewer, llm_settings_status
 from .models import event_status_label
 from .news_factors import NewsFactorEngine
 from .news_intelligence import NewsIntelligenceEngine
@@ -32,6 +33,7 @@ class EventReporter:
         news_intelligence = NewsIntelligenceEngine(db=self._db).analyze(limit=news_scan_limit, min_score=45.0)
         news_factors = NewsFactorEngine(db=self._db).build(limit=news_scan_limit, min_score=55.0, top_n=limit)
         topic_memory = TopicMemoryEngine(db=self._db).update(limit=news_scan_limit, min_score=45.0, top_n=limit)
+        llm_reviews = LLMSemanticReviewer(db=self._db).list_reviews(limit=limit)
 
         lines = ["# MoatX 宏观事件情报报告", ""]
         if states.empty:
@@ -90,6 +92,7 @@ class EventReporter:
 
         lines.extend(self._news_intelligence_section(news_intelligence, news_factors, limit))
         lines.extend(self._topic_memory_section(topic_memory, limit))
+        lines.extend(self._llm_reviews_section(llm_reviews))
 
         if signal_evidence.empty:
             lines.extend(["## 最新证据链", "", "暂无最新事件证据。", ""])
@@ -226,6 +229,30 @@ class EventReporter:
                 f"| {row.get('topic', '')} | {float(row.get('heat') or 0):.1f} | "
                 f"{float(row.get('momentum') or 0):+.1f} | {row.get('trend', '')} | "
                 f"{int(row.get('total_insight_count') or 0)} | {sectors} |"
+            )
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _llm_reviews_section(reviews: list[dict]) -> list[str]:
+        status = llm_settings_status()
+        lines = [
+            "## LLM 语义评审",
+            "",
+            f"状态：enabled={status.get('enabled')}，model={status.get('model') or '未配置'}，api_key_present={status.get('api_key_present')}",
+            "",
+        ]
+        if not reviews:
+            return lines + ["暂无 LLM 评审记录；可运行 `python -m modules.cli tool event llm-review --json` 预览，或加 `--send` 调用外部模型。", ""]
+        lines.extend([
+            "| 新闻 | 主题 | 规则分 | LLM分 | 决策 | 理由 |",
+            "|---|---|---:|---:|---|---|",
+        ])
+        for row in reviews:
+            lines.append(
+                f"| {str(row.get('title') or '')[:36]} | {row.get('topic', '')} | "
+                f"{float(row.get('value_score') or 0):.1f} | {float(row.get('llm_score') or 0):.1f} | "
+                f"{row.get('decision', '')} | {str(row.get('rationale') or '')[:48]} |"
             )
         lines.append("")
         return lines
