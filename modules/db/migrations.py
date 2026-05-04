@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 MIGRATIONS: dict[int, list[str]] = {
     1: [
@@ -317,6 +317,59 @@ MIGRATIONS: dict[int, list[str]] = {
            ON event_llm_reviews(topic, created_at)""",
         """CREATE INDEX IF NOT EXISTS idx_event_llm_reviews_score
            ON event_llm_reviews(llm_score DESC, created_at DESC)""",
+    ],
+    13: [
+        """CREATE TABLE IF NOT EXISTS event_news_insights (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            news_id INTEGER NOT NULL,
+            source TEXT DEFAULT '',
+            title TEXT DEFAULT '',
+            topic TEXT NOT NULL,
+            category TEXT DEFAULT '',
+            value_score REAL DEFAULT 0,
+            sentiment TEXT DEFAULT 'neutral',
+            time_horizon TEXT DEFAULT 'mid',
+            affected_sectors_json TEXT DEFAULT '[]',
+            affected_stocks_json TEXT DEFAULT '[]',
+            reason TEXT DEFAULT '',
+            llm_score REAL DEFAULT 0,
+            llm_decision TEXT DEFAULT '',
+            llm_rationale TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(news_id, topic)
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_event_news_insights_topic
+           ON event_news_insights(topic, value_score DESC)""",
+        """CREATE INDEX IF NOT EXISTS idx_event_news_insights_score
+           ON event_news_insights(value_score DESC, updated_at DESC)""",
+        """CREATE TABLE IF NOT EXISTS event_news_topic_events (
+            topic TEXT PRIMARY KEY,
+            category TEXT DEFAULT '',
+            heat REAL DEFAULT 0,
+            confidence REAL DEFAULT 0,
+            market_relevance REAL DEFAULT 0,
+            direction TEXT DEFAULT 'neutral',
+            insight_count INTEGER DEFAULT 0,
+            affected_sectors_json TEXT DEFAULT '[]',
+            latest_news_json TEXT DEFAULT '[]',
+            updated_at TEXT NOT NULL
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_event_news_topic_events_heat
+           ON event_news_topic_events(heat DESC, updated_at DESC)""",
+        """CREATE TABLE IF NOT EXISTS event_news_factors (
+            sector TEXT PRIMARY KEY,
+            factor_score REAL DEFAULT 0,
+            direction TEXT DEFAULT 'neutral',
+            insight_count INTEGER DEFAULT 0,
+            avg_value_score REAL DEFAULT 0,
+            top_topic TEXT DEFAULT '',
+            top_titles_json TEXT DEFAULT '[]',
+            llm_adjustment REAL DEFAULT 1,
+            updated_at TEXT NOT NULL
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_event_news_factors_score
+           ON event_news_factors(factor_score DESC, updated_at DESC)""",
     ],
 }
 

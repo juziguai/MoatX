@@ -83,3 +83,19 @@ def test_default_provider_uses_sector_graph_members():
     assert {"code", "name", "source", "tag"} <= set(members.columns)
     assert "600028" in set(members["code"])
     assert set(members["source"]) == {"sector_graph"}
+
+
+def test_sector_graph_covers_news_intelligence_v2_themes():
+    provider = SectorTagProvider()
+
+    ai_members = provider.get_members("AI大模型", "theme")
+    compute_members = provider.get_members("算力基础设施", "theme")
+    robot_members = provider.get_members("人形机器人", "theme")
+    low_altitude_members = provider.get_members("eVTOL", "concept")
+    drug_members = provider.get_members("ADC", "concept")
+
+    assert "002230" in set(ai_members["code"])
+    assert "601138" in set(compute_members["code"])
+    assert "002472" in set(robot_members["code"])
+    assert "002085" in set(low_altitude_members["code"])
+    assert "600276" in set(drug_members["code"])

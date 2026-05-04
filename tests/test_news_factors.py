@@ -53,3 +53,72 @@ def test_news_factor_engine_aggregates_ai_news_to_sector_boosts():
         assert payload["topic_summary"][0]["topic"] == "AI大模型"
     finally:
         db.close()
+
+
+def test_news_factor_engine_persists_materialized_factors():
+    db = MemoryDB()
+    try:
+        db.event().insert_news(
+            NewsItem(
+                source="manual_ai",
+                title="OpenAI GPT-5.5 launch boosts AI compute demand",
+                summary="GPU server, CPO optical module and data center demand may increase.",
+                published_at="2026-04-29 09:35:00",
+            )
+        )
+
+        payload = NewsFactorEngine(db=db).build(limit=20, min_score=0)
+        rows = NewsFactorEngine(db=db).list_persisted(limit=20)
+
+        assert payload["factors"]
+        assert rows
+        assert {row["sector"] for row in rows} >= {row["sector"] for row in payload["factors"]}
+        assert all("top_titles" in row for row in rows)
+    finally:
+        db.close()
+
+
+def test_news_factor_engine_uses_latest_llm_review_decision():
+    db = MemoryDB()
+    try:
+        news_id = db.event().insert_news(
+            NewsItem(
+                source="manual_ai",
+                title="OpenAI GPT-5.5 launch boosts AI compute demand",
+                summary="GPU server, CPO optical module and data center demand may increase.",
+                published_at="2026-04-29 09:35:00",
+            )
+        )
+
+        baseline = NewsFactorEngine(db=db).build(limit=20, min_score=0)
+        top_sector = baseline["factors"][0]["sector"]
+        baseline_score = next(row["factor_score"] for row in baseline["factors"] if row["sector"] == top_sector)
+
+        topics = {row["topic"] for row in NewsFactorEngine(db=db).build(limit=20, min_score=0)["topic_summary"]}
+        for topic in topics:
+            db.conn.execute(
+                """INSERT INTO event_llm_reviews
+                   (news_id, title, topic, value_score, llm_score, decision, rationale, review_json, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (news_id, "reviewed", topic, 80, 95, "ignore", "not market relevant", "{}", "2026-04-29 09:36:00"),
+            )
+        db.conn.commit()
+        ignored = NewsFactorEngine(db=db).build(limit=20, min_score=0)
+        assert all(row["sector"] != top_sector for row in ignored["factors"])
+
+        for topic in topics:
+            db.conn.execute(
+                """INSERT INTO event_llm_reviews
+                   (news_id, title, topic, value_score, llm_score, decision, rationale, review_json, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (news_id, "reviewed", topic, 80, 95, "use", "high value", "{}", "2026-04-29 09:37:00"),
+            )
+        db.conn.commit()
+        boosted = NewsFactorEngine(db=db).build(limit=20, min_score=0)
+        boosted_score = next(row["factor_score"] for row in boosted["factors"] if row["sector"] == top_sector)
+        boosted_adjustment = next(row["llm_adjustment"] for row in boosted["factors"] if row["sector"] == top_sector)
+
+        assert boosted_score >= baseline_score
+        assert boosted_adjustment > 1.0
+    finally:
+        db.close()

@@ -33,6 +33,13 @@ def calc_sell_proceeds(price: float, shares: int) -> float:
     return value - calc_commission(value) - calc_stamp_tax(value) - calc_transfer_fee(value)
 
 
+def apply_slippage(price: float, direction: str, slippage_pct: float = 0.001) -> float:
+    """应用滑点：买入时价格上浮，卖出时价格下浮。"""
+    if direction == "buy":
+        return price * (1 + slippage_pct)
+    return price * (1 - slippage_pct)
+
+
 def round_lot(shares: int) -> int:
     """将股数向下取整到整手（100 股）。"""
     return (shares // 100) * 100

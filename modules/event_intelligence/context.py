@@ -42,6 +42,9 @@ class EventContextBuilder:
         news_scan_limit = max(100, limit)
         news_intelligence = NewsIntelligenceEngine(db=self._db).analyze(limit=news_scan_limit, min_score=45.0)
         news_factors = NewsFactorEngine(db=self._db).build(limit=news_scan_limit, min_score=55.0, top_n=20)
+        persisted_news_insights = NewsIntelligenceEngine(db=self._db).list_persisted_insights(limit=limit)
+        topic_events = NewsIntelligenceEngine(db=self._db).list_topic_events(limit=limit)
+        persisted_news_factors = NewsFactorEngine(db=self._db).list_persisted(limit=limit)
         topic_memory = TopicMemoryEngine(db=self._db).list(limit=limit)
         llm_reviews = LLMSemanticReviewer(db=self._db).list_reviews(limit=limit)
 
@@ -56,6 +59,9 @@ class EventContextBuilder:
             "signal_evidence": self._records(signal_evidence),
             "news_intelligence": news_intelligence,
             "news_sector_factors": news_factors,
+            "persisted_news_insights": persisted_news_insights,
+            "topic_events": topic_events,
+            "news_factors": persisted_news_factors,
             "topic_memory": topic_memory,
             "llm_semantic_status": llm_settings_status(),
             "llm_reviews": llm_reviews,

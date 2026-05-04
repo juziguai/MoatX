@@ -54,7 +54,7 @@ def cmd_event(args) -> None:
     elif action == "report":
         payload = EventReporter().report(limit=args.limit)
     elif action == "news":
-        payload = NewsIntelligenceEngine().analyze(
+        payload = EventIntelligenceService().news_intelligence(
             limit=args.limit,
             topic=args.topic or None,
             min_score=args.min_score,
@@ -66,13 +66,13 @@ def cmd_event(args) -> None:
             min_score=args.min_score,
         )
     elif action == "news-factors":
-        payload = NewsFactorEngine().build(
+        payload = EventIntelligenceService().news_factors(
             limit=args.limit,
             min_score=args.min_score,
             top_n=args.top_events or 20,
         )
     elif action == "topics":
-        payload = TopicMemoryEngine().update(
+        payload = EventIntelligenceService().topic_memory(
             limit=args.limit,
             min_score=args.min_score,
             top_n=args.top_events or 30,
@@ -86,7 +86,7 @@ def cmd_event(args) -> None:
     elif action == "llm-status":
         payload = llm_settings_status()
     elif action == "llm-review":
-        payload = LLMSemanticReviewer().review(
+        payload = EventIntelligenceService().llm_review(
             limit=args.limit,
             min_score=args.min_score,
             send=args.send,
@@ -121,28 +121,15 @@ def cmd_event(args) -> None:
         )
     elif action == "run":
         service = EventIntelligenceService()
-        collect_stats = service.collect_news()
-        extract_stats = service.extract_events(limit=args.limit)
-        state_stats = service.update_states()
-        opportunity_stats = service.scan_opportunities(
+        payload = service.run_event_cycle(
+            limit=args.limit,
             min_probability=args.min_probability,
             per_effect_limit=args.per_effect_limit,
+            notify=args.notify,
+            send=args.send,
+            probability_threshold=args.probability_threshold,
+            opportunity_threshold=args.opportunity_threshold,
         )
-        report = service.report(limit=args.limit)
-        payload = {
-            "collect": collect_stats,
-            "extract": extract_stats,
-            "states": state_stats,
-            "opportunities": opportunity_stats,
-            "report": report,
-        }
-        if args.notify:
-            payload["notify"] = EventNotifier().notify(
-                send=args.send,
-                probability_threshold=args.probability_threshold,
-                opportunity_threshold=args.opportunity_threshold,
-                limit=args.limit,
-            )
     else:
         raise SystemExit(f"Unknown event action: {action}")
 

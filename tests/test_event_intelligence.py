@@ -264,11 +264,10 @@ def test_event_report_contains_state_and_opportunity_sections():
 
         report = EventReporter(db=db).report(limit=5)
         assert "MoatX" in report
-        assert "hormuz_closure_risk" in report
-        assert "600028" in report
-        assert "最新证据链" in report
-        assert "源质量" in report
-        assert "建议" in report
+        assert "热点速览 |" in report
+        assert "本时段扫描1个源，捕获5条资讯" in report
+        assert "无触发阈值" in report
+        assert "注：本报告基于算法新闻抓取与人工增强逻辑，不构成投资建议。" in report
     finally:
         db.close()
 

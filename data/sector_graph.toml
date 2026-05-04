@@ -1,4 +1,4 @@
-version = "2026-04-27"
+version = "2026-04-29"
 
 [[nodes]]
 tag = "石油行业"
@@ -482,3 +482,396 @@ name = "北大荒"
 [[nodes.members]]
 code = "000876"
 name = "新希望"
+
+[[nodes]]
+tag = "AI大模型"
+type = "theme"
+aliases = ["AI大模型", "大模型", "人工智能", "AIGC", "智能体", "AI应用"]
+upstream = ["算力", "数据中心", "半导体"]
+downstream = ["软件服务", "传媒游戏", "消费电子"]
+related_events = ["ai_model_release", "ai_compute_demand", "chip_sanction_escalation"]
+
+[[nodes.members]]
+code = "002230"
+name = "科大讯飞"
+[[nodes.members]]
+code = "688111"
+name = "金山办公"
+[[nodes.members]]
+code = "300033"
+name = "同花顺"
+[[nodes.members]]
+code = "600570"
+name = "恒生电子"
+
+[[nodes]]
+tag = "算力"
+type = "theme"
+aliases = ["算力", "AI算力", "服务器", "GPU服务器", "算力基础设施"]
+upstream = ["半导体", "芯片"]
+downstream = ["数据中心", "液冷", "光模块"]
+related_events = ["ai_compute_demand", "ai_model_release"]
+
+[[nodes.members]]
+code = "601138"
+name = "工业富联"
+[[nodes.members]]
+code = "000977"
+name = "浪潮信息"
+[[nodes.members]]
+code = "603019"
+name = "中科曙光"
+[[nodes.members]]
+code = "000938"
+name = "紫光股份"
+
+[[nodes]]
+tag = "光模块"
+type = "concept"
+aliases = ["光模块", "光通信", "CPO", "高速光模块", "光器件"]
+upstream = ["半导体"]
+downstream = ["算力", "数据中心"]
+related_events = ["ai_compute_demand", "ai_model_release"]
+
+[[nodes.members]]
+code = "300308"
+name = "中际旭创"
+[[nodes.members]]
+code = "300502"
+name = "新易盛"
+[[nodes.members]]
+code = "300394"
+name = "天孚通信"
+[[nodes.members]]
+code = "002281"
+name = "光迅科技"
+
+[[nodes]]
+tag = "CPO"
+type = "concept"
+aliases = ["CPO", "共封装光学", "硅光", "光互连"]
+upstream = ["光模块", "半导体"]
+downstream = ["算力", "数据中心"]
+related_events = ["ai_compute_demand", "ai_model_release"]
+
+[[nodes.members]]
+code = "300308"
+name = "中际旭创"
+[[nodes.members]]
+code = "300502"
+name = "新易盛"
+[[nodes.members]]
+code = "300394"
+name = "天孚通信"
+
+[[nodes]]
+tag = "数据中心"
+type = "sector"
+aliases = ["数据中心", "IDC", "云计算", "智算中心"]
+upstream = ["算力", "电力"]
+downstream = ["液冷", "软件服务"]
+related_events = ["ai_compute_demand", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600845"
+name = "宝信软件"
+[[nodes.members]]
+code = "300017"
+name = "网宿科技"
+[[nodes.members]]
+code = "000977"
+name = "浪潮信息"
+[[nodes.members]]
+code = "603019"
+name = "中科曙光"
+
+[[nodes]]
+tag = "液冷"
+type = "concept"
+aliases = ["液冷", "服务器液冷", "温控", "数据中心温控"]
+upstream = ["数据中心"]
+downstream = ["算力"]
+related_events = ["ai_compute_demand"]
+
+[[nodes.members]]
+code = "002837"
+name = "英维克"
+[[nodes.members]]
+code = "300499"
+name = "高澜股份"
+[[nodes.members]]
+code = "002050"
+name = "三花智控"
+
+[[nodes]]
+tag = "服务器电源"
+type = "concept"
+aliases = ["服务器电源", "AI服务器电源", "GB300电源", "高端电源", "电源链"]
+upstream = ["电子元件"]
+downstream = ["数据中心", "液冷", "算力"]
+related_events = ["ai_compute_demand", "ai_model_release"]
+
+[[nodes.members]]
+code = "002851"
+name = "麦格米特"
+[[nodes.members]]
+code = "300870"
+name = "欧陆通"
+[[nodes.members]]
+code = "002364"
+name = "中恒电气"
+
+[[nodes]]
+tag = "光无源器件"
+type = "concept"
+aliases = ["光无源器件", "光器件", "关键无源器件", "光通信无源器件"]
+upstream = ["光通信"]
+downstream = ["光模块", "CPO", "数据中心"]
+related_events = ["ai_compute_demand", "ai_model_release"]
+
+[[nodes.members]]
+code = "300394"
+name = "天孚通信"
+[[nodes.members]]
+code = "300570"
+name = "太辰光"
+[[nodes.members]]
+code = "300548"
+name = "博创科技"
+
+[[nodes]]
+tag = "绿色算力"
+type = "theme"
+aliases = ["绿色算力", "绿色算力设施", "绿色数据中心", "智算中心"]
+upstream = ["电力", "液冷"]
+downstream = ["数据中心", "算力"]
+related_events = ["ai_compute_demand", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600845"
+name = "宝信软件"
+[[nodes.members]]
+code = "002837"
+name = "英维克"
+[[nodes.members]]
+code = "300499"
+name = "高澜股份"
+
+[[nodes]]
+tag = "机器人"
+type = "theme"
+aliases = ["机器人", "人形机器人", "具身智能", "工业机器人"]
+upstream = ["减速器", "伺服系统", "传感器"]
+downstream = ["汽车", "消费电子"]
+related_events = ["robotics_breakthrough", "ai_model_release"]
+
+[[nodes.members]]
+code = "002050"
+name = "三花智控"
+[[nodes.members]]
+code = "601689"
+name = "拓普集团"
+[[nodes.members]]
+code = "002472"
+name = "双环传动"
+[[nodes.members]]
+code = "002747"
+name = "埃斯顿"
+
+[[nodes]]
+tag = "减速器"
+type = "concept"
+aliases = ["减速器", "谐波减速器", "RV减速器", "机器人关节"]
+upstream = ["机械设备"]
+downstream = ["机器人"]
+related_events = ["robotics_breakthrough"]
+
+[[nodes.members]]
+code = "002472"
+name = "双环传动"
+[[nodes.members]]
+code = "688017"
+name = "绿的谐波"
+[[nodes.members]]
+code = "002896"
+name = "中大力德"
+
+[[nodes]]
+tag = "伺服系统"
+type = "concept"
+aliases = ["伺服", "伺服系统", "伺服电机", "运动控制"]
+upstream = ["电机"]
+downstream = ["机器人", "工业自动化"]
+related_events = ["robotics_breakthrough"]
+
+[[nodes.members]]
+code = "002747"
+name = "埃斯顿"
+[[nodes.members]]
+code = "300124"
+name = "汇川技术"
+[[nodes.members]]
+code = "002979"
+name = "雷赛智能"
+
+[[nodes]]
+tag = "传感器"
+type = "concept"
+aliases = ["传感器", "力传感器", "视觉传感器", "机器人传感器"]
+upstream = ["半导体"]
+downstream = ["机器人", "汽车"]
+related_events = ["robotics_breakthrough"]
+
+[[nodes.members]]
+code = "300007"
+name = "汉威科技"
+[[nodes.members]]
+code = "688017"
+name = "绿的谐波"
+[[nodes.members]]
+code = "002236"
+name = "大华股份"
+
+[[nodes]]
+tag = "低空经济"
+type = "theme"
+aliases = ["低空经济", "eVTOL", "飞行汽车", "通航", "空域改革"]
+upstream = ["航空装备", "无人机"]
+downstream = ["旅游", "物流"]
+related_events = ["low_altitude_policy", "military_drone_demand"]
+
+[[nodes.members]]
+code = "000099"
+name = "中信海直"
+[[nodes.members]]
+code = "002085"
+name = "万丰奥威"
+[[nodes.members]]
+code = "600038"
+name = "中直股份"
+
+[[nodes]]
+tag = "eVTOL"
+type = "concept"
+aliases = ["eVTOL", "飞行汽车", "电动垂直起降", "低空飞行器"]
+upstream = ["航空装备", "电池"]
+downstream = ["低空经济"]
+related_events = ["low_altitude_policy"]
+
+[[nodes.members]]
+code = "002085"
+name = "万丰奥威"
+[[nodes.members]]
+code = "000099"
+name = "中信海直"
+[[nodes.members]]
+code = "600038"
+name = "中直股份"
+
+[[nodes]]
+tag = "无人机"
+type = "concept"
+aliases = ["无人机", "军用无人机", "工业无人机", "低空飞行器"]
+upstream = ["航空装备", "军工"]
+downstream = ["低空经济", "物流"]
+related_events = ["low_altitude_policy", "military_drone_demand"]
+
+[[nodes.members]]
+code = "002389"
+name = "航天彩虹"
+[[nodes.members]]
+code = "600760"
+name = "中航沈飞"
+[[nodes.members]]
+code = "002179"
+name = "中航光电"
+
+[[nodes]]
+tag = "航空装备"
+type = "sector"
+aliases = ["航空装备", "航空制造", "航天装备", "大飞机"]
+upstream = ["国防军工", "半导体"]
+downstream = ["低空经济", "无人机"]
+related_events = ["low_altitude_policy", "middle_east_conflict_escalation"]
+
+[[nodes.members]]
+code = "600760"
+name = "中航沈飞"
+[[nodes.members]]
+code = "000768"
+name = "中航西飞"
+[[nodes.members]]
+code = "600893"
+name = "航发动力"
+
+[[nodes]]
+tag = "创新药"
+type = "sector"
+aliases = ["创新药", "新药", "医药创新", "生物医药"]
+upstream = ["CXO", "原料药"]
+downstream = ["医疗服务"]
+related_events = ["drug_approval", "healthcare_policy"]
+
+[[nodes.members]]
+code = "600276"
+name = "恒瑞医药"
+[[nodes.members]]
+code = "000661"
+name = "长春高新"
+[[nodes.members]]
+code = "600196"
+name = "复星医药"
+
+[[nodes]]
+tag = "CXO"
+type = "concept"
+aliases = ["CXO", "CRO", "CDMO", "医药外包"]
+upstream = ["创新药"]
+downstream = ["医药"]
+related_events = ["drug_approval", "healthcare_policy"]
+
+[[nodes.members]]
+code = "603259"
+name = "药明康德"
+[[nodes.members]]
+code = "300759"
+name = "康龙化成"
+[[nodes.members]]
+code = "300347"
+name = "泰格医药"
+
+[[nodes]]
+tag = "ADC"
+type = "concept"
+aliases = ["ADC", "抗体偶联药物", "肿瘤创新药", "生物药"]
+upstream = ["创新药", "CXO"]
+downstream = ["医疗服务"]
+related_events = ["drug_approval", "healthcare_policy"]
+
+[[nodes.members]]
+code = "600276"
+name = "恒瑞医药"
+[[nodes.members]]
+code = "603259"
+name = "药明康德"
+[[nodes.members]]
+code = "600196"
+name = "复星医药"
+
+[[nodes]]
+tag = "医疗服务"
+type = "sector"
+aliases = ["医疗服务", "医院", "医疗机构", "眼科医疗"]
+upstream = ["创新药", "医疗器械"]
+downstream = []
+related_events = ["healthcare_policy"]
+
+[[nodes.members]]
+code = "600763"
+name = "通策医疗"
+[[nodes.members]]
+code = "000516"
+name = "国际医学"
+[[nodes.members]]
+code = "300015"
+name = "爱尔眼科"

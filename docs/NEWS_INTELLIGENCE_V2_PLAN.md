@@ -1,5 +1,15 @@
 # MoatX News Intelligence v2：全量新闻价值发现引擎
 
+## 2026-04-29 落地状态
+
+- 已完成全量新闻流规则识别：`NewsIntelligenceEngine` 从 `event_news` 读取新闻，识别 AI、算力、机器人、低空经济、能源、军工、黄金、创新药、金融地产、消费出海、并购国改等主题。
+- 已完成新闻洞察持久化：`event_news_insights`、`event_news_topic_events`、`event_news_factors` 物化新闻价值、主题热度和板块因子。
+- 已完成 LLM 可选增强：`llm-review` 默认 dry-run；只有 `--send` 且本地配置与环境变量齐全时才调用外部 OpenAI-compatible 模型。
+- 已完成 LLM 入因子：最新 LLM 评审中 `use/watch/ignore` 会分别放大、保持或剔除对应新闻对板块因子的贡献。
+- 已完成主题记忆库：`event_topic_memory` 与 `event_topic_snapshots` 追踪主题热度、动量和趋势。
+- 已完成调度接入：事件闭环、新闻因子、主题记忆进入 scheduler；真实 LLM 调用不默认调度。
+- 仍保持边界：不自动交易、不提交 API Key、不默认产生付费模型调用。
+
 ## 背景
 
 当前 `event_intelligence` v1 的核心是“预设事件雷达”：先在配置里定义霍尔木兹、原油、黄金、芯片制裁等事件，再从新闻中匹配这些事件。它能解释既有宏观主题，但无法主动发现 GPT-5.5、DeepSeek V4、机器人突破、低空经济政策、创新药进展、并购重组等新主题。
@@ -179,23 +189,25 @@ python -m modules.cli tool event news --topic AI大模型 --json
 # 输出主题聚合报告
 python -m modules.cli tool event news-report
 
-# 未来：把 v2 因子写入评分上下文
+# 生成并持久化 v2 新闻板块因子
 python -m modules.cli tool event news-factors --json
 python -m modules.cli tool event topics --json
-python -m modules.cli tool event topic-snapshots --topic AI??? --json
+python -m modules.cli tool event topic-snapshots --topic AI大模型 --json
 python -m modules.cli tool event llm-status --json
 python -m modules.cli tool event llm-review --json
 python -m modules.cli tool event llm-review --send --json
 python -m modules.cli tool event llm-reviews --json
 ```
 
-## 数据库落地计划
+## 数据库落地
 
-首版可先不迁移表，直接从 `event_news` 读取并即时分析；第二阶段新增：
+当前已进入持久化阶段，不再只做即时分析：
 
-- `news_insights`：逐条新闻价值分析结果。
-- `news_topic_events`：聚合主题事件。
-- `news_event_factors`：面向选股评分的事件因子。
+- `event_news_insights`：逐条新闻价值分析结果，按 `news_id + topic` 去重，保存规则分、关联板块/个股、LLM 决策和理由。
+- `event_news_topic_events`：当前主题事件物化表，保存热度、置信度、关联板块和最新新闻 ID。
+- `event_news_factors`：面向选股评分的板块新闻因子，保存 `sector -> factor_score`、方向、主导主题和 LLM 调整系数。
+- `event_topic_memory` / `event_topic_snapshots`：长期主题记忆和热度演化追踪。
+- `event_llm_reviews`：外部大模型语义评审记录；默认不调用外部模型，只有显式 `--send` 才写入真实评审。
 
 ## 分阶段实现
 
@@ -232,3 +244,43 @@ python -m modules.cli tool event llm-reviews --json
 - 每条高价值新闻必须解释“为什么和 A 股有关”。
 - 主题必须映射到板块/产业链，而不是只输出新闻标题。
 - 选股评分可以读取新闻事件因子，但不自动下单。
+
+## 正式盘中热点报告模板
+
+`python -m modules.cli tool event report` 当前采用“热点速览”格式，目标是让输出像一个懂行情的盘中助理，而不是关键词复读。
+
+### 输出样例
+
+```text
+MoatX 热点速览 | 2026-04-30 盘中
+
+本时段扫描19个源，捕获1227条资讯。今日高热聚焦：算力基础设施（3条）、储能新能源（1条）、能源商品（1条）。AI大模型、医药创新药、机器人、军工地缘、黄金贵金属无触发阈值。
+
+🔥 算力基础设施 · 硬件突破与政策双轮驱动
+
+1. 麦格米特获GB300电源订单
+热度 ⭐⭐⭐⭐ (84%) | 财联社 (中国)
+核心看点：国产电源厂首次获得AI服务器高端平台批量配套订单，验证高端电源国产化从0到1的突破。
+传导路径：GB300批量订单 ➔ 服务器电源（麦格米特(002851)等） ➔ 液冷及数据中心基础设施
+选中理由：命中关键词"GB300"，自动归入"算力基础设施"模块。该新闻标志着AI服务器电源国产替代取得实质订单，可能引发资金对电源链及液冷散热环节的重新定价。
+可能涉及的A股：麦格米特(002851)、欧陆通(300870)、中恒电气(002364)
+一句话：电源环节国产替代加速，液冷和数据中心配套确定性抬升。
+```
+
+### 生成约束
+
+- 顶部摘要必须说明扫描源数量、资讯数量、高热模块和无触发阈值模块。
+- 单条标题必须精炼为“谁干了什么、结果怎样”，控制在 20 字左右，禁止在词语中间截断。
+- 核心看点必须包含标题之外的增量事实和市场关注原因；若新闻源只有标题无正文，显式标记“全文待扩展”。
+- 传导路径必须从具体触发点开始，按“触发点 ➔ 第一受益环节（代表标的）➔ 次生影响环节”输出。
+- 股票映射优先使用细粒度标签，例如 `服务器电源`、`光无源器件`、`绿色算力`，不能直接套用模块通用股票池。
+- 选中理由第一句保留机器命中逻辑，第二句按订单/紧缺/政策/数据等事件类型输出编辑判断，禁止退化成“出现边际变化”。
+- 一句话结论用于语音播报，只做方向性描述，不出现买入、强烈看好等推荐话术。
+
+### 防退化验收
+
+- 麦格米特 GB300 新闻的首只标的必须是 `麦格米特(002851)`，不得回退到 `工业富联(601138)` 等通用算力池。
+- 光无源器件新闻的路径起点应表达为 `800G/1.6T光模块扩产拉动`，避免“光无源器件 ➔ 光无源器件”的重复链路。
+- 钠电订单新闻应归入 `储能新能源`，不应强行归入 `算力基础设施`。
+- 5 条高价值新闻中至少 4 条不得出现“边际变化”。
+- 报告仍然只输出情报、机会和评分因子，不产生自动下单指令。

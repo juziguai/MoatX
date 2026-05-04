@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import math
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 import pandas as pd
@@ -71,6 +73,7 @@ class NewsIntelligenceEngine:
         limit: int = 200,
         topic: str | None = None,
         min_score: float = 45.0,
+        persist: bool = True,
     ) -> dict[str, Any]:
         """Return high-value insights from recent full-stream news."""
         try:
@@ -81,8 +84,10 @@ class NewsIntelligenceEngine:
             if topic:
                 insights = [item for item in insights if topic in item.topic or topic == item.category]
             insights = [item for item in insights if item.value_score >= min_score]
-            insights.sort(key=lambda item: item.value_score, reverse=True)
+            insights.sort(key=self._insight_sort_key, reverse=True)
             topic_summary = self._topic_summary(insights)
+            if persist:
+                self._persist(insights, topic_summary)
             return {
                 "engine": "news_intelligence_v2",
                 "news_scanned": int(len(news)),
@@ -143,6 +148,38 @@ class NewsIntelligenceEngine:
         ])
         return "\n".join(lines)
 
+    def list_persisted_insights(self, *, limit: int = 50, topic: str = "") -> list[dict[str, Any]]:
+        """Return persisted news insights for contexts and diagnostics."""
+        try:
+            params: list[Any] = []
+            where = ""
+            if topic:
+                where = " WHERE topic = ?"
+                params.append(topic)
+            params.append(limit)
+            df = pd.read_sql_query(
+                f"""SELECT * FROM event_news_insights{where}
+                    ORDER BY value_score DESC, updated_at DESC LIMIT ?""",
+                self._db.conn,
+                params=params,
+            )
+            return self._json_records(df)
+        finally:
+            self.close()
+
+    def list_topic_events(self, *, limit: int = 20) -> list[dict[str, Any]]:
+        """Return materialized current topic events."""
+        try:
+            df = pd.read_sql_query(
+                """SELECT * FROM event_news_topic_events
+                   ORDER BY heat DESC, updated_at DESC LIMIT ?""",
+                self._db.conn,
+                params=[limit],
+            )
+            return self._json_records(df)
+        finally:
+            self.close()
+
     def _analyze_frame(self, news: pd.DataFrame, source_quality: dict[str, float]) -> list[NewsInsight]:
         if news.empty:
             return []
@@ -161,6 +198,7 @@ class NewsIntelligenceEngine:
             matched = self._match_topics(content)
             if not matched:
                 continue
+            matched = self._primary_matches(content, matched)
             for rule, keyword_hits in matched:
                 source = str(row.get("source") or "")
                 published_at = str(row.get("published_at") or "")
@@ -177,6 +215,10 @@ class NewsIntelligenceEngine:
                     market_relevance=market_relevance,
                     impact_strength=impact_strength,
                     confidence=confidence,
+                )
+                value_score = max(
+                    0.0,
+                    min(100.0, value_score + self._time_bonus(published_at or str(row.get("fetched_at") or ""))),
                 )
                 insights.append(
                     NewsInsight(
@@ -205,6 +247,132 @@ class NewsIntelligenceEngine:
                 )
         return insights
 
+    def _persist(self, insights: list[NewsInsight], topic_summary: list[dict[str, Any]]) -> None:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        reviews = self._latest_llm_reviews()
+        for item in insights:
+            review = reviews.get((item.news_id, item.topic)) or reviews.get((item.news_id, "")) or {}
+            self._db.conn.execute(
+                """INSERT INTO event_news_insights
+                   (news_id, source, title, topic, category, value_score, sentiment,
+                    time_horizon, affected_sectors_json, affected_stocks_json, reason,
+                    llm_score, llm_decision, llm_rationale, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(news_id, topic) DO UPDATE SET
+                   source=excluded.source,
+                   title=excluded.title,
+                   category=excluded.category,
+                   value_score=excluded.value_score,
+                   sentiment=excluded.sentiment,
+                   time_horizon=excluded.time_horizon,
+                   affected_sectors_json=excluded.affected_sectors_json,
+                   affected_stocks_json=excluded.affected_stocks_json,
+                   reason=excluded.reason,
+                   llm_score=excluded.llm_score,
+                   llm_decision=excluded.llm_decision,
+                   llm_rationale=excluded.llm_rationale,
+                   updated_at=excluded.updated_at""",
+                (
+                    item.news_id,
+                    item.source,
+                    item.title,
+                    item.topic,
+                    item.category,
+                    item.value_score,
+                    item.sentiment,
+                    item.time_horizon,
+                    json.dumps(item.affected_sectors, ensure_ascii=False),
+                    json.dumps(item.affected_stocks, ensure_ascii=False),
+                    item.reason,
+                    float(review.get("llm_score") or 0.0),
+                    str(review.get("decision") or ""),
+                    str(review.get("rationale") or ""),
+                    now,
+                    now,
+                ),
+            )
+
+        insight_by_topic: dict[str, list[NewsInsight]] = {}
+        for item in insights:
+            insight_by_topic.setdefault(item.topic, []).append(item)
+        for row in topic_summary:
+            topic = str(row.get("topic") or "")
+            topic_items = insight_by_topic.get(topic, [])
+            if not topic:
+                continue
+            avg_confidence = sum(item.confidence for item in topic_items) / max(1, len(topic_items))
+            avg_relevance = sum(item.market_relevance for item in topic_items) / max(1, len(topic_items))
+            sentiment_votes: dict[str, int] = {}
+            latest_news: list[int] = []
+            for item in topic_items[:10]:
+                sentiment_votes[item.sentiment] = sentiment_votes.get(item.sentiment, 0) + 1
+                if item.news_id:
+                    latest_news.append(item.news_id)
+            direction = max(sentiment_votes, key=sentiment_votes.get) if sentiment_votes else "neutral"
+            self._db.conn.execute(
+                """INSERT INTO event_news_topic_events
+                   (topic, category, heat, confidence, market_relevance, direction,
+                    insight_count, affected_sectors_json, latest_news_json, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(topic) DO UPDATE SET
+                   category=excluded.category,
+                   heat=excluded.heat,
+                   confidence=excluded.confidence,
+                   market_relevance=excluded.market_relevance,
+                   direction=excluded.direction,
+                   insight_count=excluded.insight_count,
+                   affected_sectors_json=excluded.affected_sectors_json,
+                   latest_news_json=excluded.latest_news_json,
+                   updated_at=excluded.updated_at""",
+                (
+                    topic,
+                    str(row.get("category") or ""),
+                    float(row.get("heat") or 0.0),
+                    round(avg_confidence, 3),
+                    round(avg_relevance, 3),
+                    direction,
+                    int(row.get("count") or 0),
+                    json.dumps(row.get("sectors") or [], ensure_ascii=False),
+                    json.dumps(latest_news, ensure_ascii=False),
+                    now,
+                ),
+            )
+        self._db.conn.commit()
+
+    def _latest_llm_reviews(self) -> dict[tuple[int, str], dict[str, Any]]:
+        rows = self._db.conn.execute(
+            """SELECT news_id, topic, llm_score, decision, rationale
+               FROM event_llm_reviews
+               ORDER BY id DESC"""
+        ).fetchall()
+        reviews: dict[tuple[int, str], dict[str, Any]] = {}
+        for news_id, topic, llm_score, decision, rationale in rows:
+            key = (int(news_id or 0), str(topic or ""))
+            if key in reviews:
+                continue
+            reviews[key] = {
+                "llm_score": float(llm_score or 0.0),
+                "decision": str(decision or ""),
+                "rationale": str(rationale or ""),
+            }
+        return reviews
+
+    @staticmethod
+    def _json_records(df: pd.DataFrame) -> list[dict[str, Any]]:
+        if df.empty:
+            return []
+        records = df.where(pd.notna(df), None).to_dict(orient="records")
+        for row in records:
+            for key in ("affected_sectors_json", "affected_stocks_json", "latest_news_json"):
+                if key not in row:
+                    continue
+                target = key.removesuffix("_json")
+                try:
+                    row[target] = json.loads(str(row.get(key) or "[]"))
+                except json.JSONDecodeError:
+                    row[target] = []
+        return records
+
     @staticmethod
     def _source_quality_map(df: pd.DataFrame) -> dict[str, float]:
         if df.empty:
@@ -224,6 +392,55 @@ class NewsIntelligenceEngine:
             if hits:
                 matched.append((rule, hits))
         return matched
+
+    def _primary_matches(
+        self,
+        content: str,
+        matched: list[tuple[TopicRule, list[str]]],
+    ) -> list[tuple[TopicRule, list[str]]]:
+        """Keep one primary topic per news item to avoid duplicated report rows."""
+        if len(matched) <= 1:
+            return matched
+        primary = max(matched, key=lambda item: self._topic_match_score(content, item[0], item[1]))
+        return [primary]
+
+    @staticmethod
+    def _topic_match_score(content: str, rule: TopicRule, hits: list[str]) -> float:
+        lowered = content.lower()
+        score = (
+            len(hits) * 10
+            + sum(len(keyword) for keyword in hits) * 0.2
+            + rule.base_importance * 5
+            + TOPIC_PRIORITY.get(rule.topic, 0)
+        )
+
+        real_estate_words = ["地产", "房地产", "住房", "购房", "房贷", "公积金"]
+        if any(word in content for word in real_estate_words):
+            if rule.topic == "金融地产政策":
+                score += 18
+            if rule.topic == "消费出海":
+                score -= 18
+
+        oil_words = ["原油", "油价", "crude", "oil", "barrel", "eia", "inventor"]
+        if any(word in lowered for word in oil_words):
+            if rule.topic == "能源商品":
+                score += 18
+            if rule.topic == "AI大模型" and {hit.lower() for hit in hits} <= {"api"}:
+                score -= 30
+
+        travel_words = ["文旅", "旅游", "假期", "出行", "铁路", "酒店", "景区"]
+        if any(word in content for word in travel_words):
+            if rule.topic == "消费出海":
+                score += 8
+            if rule.topic == "金融地产政策":
+                score -= 8
+
+        ai_words = ["大模型", "智能体", "openai", "deepseek", "gpt", "算力", "gpu"]
+        if any(word in lowered for word in ai_words):
+            if rule.topic in {"AI大模型", "算力基础设施"}:
+                score += 8
+
+        return score
 
     @staticmethod
     def _dedupe_key(title: str) -> str:
@@ -252,6 +469,70 @@ class NewsIntelligenceEngine:
             parsed = parsed.replace(tzinfo=None)
         age_hours = max(0.0, (datetime.now() - parsed).total_seconds() / 3600)
         return round(max(0.2, math.exp(-age_hours / 72)), 3)
+
+    @classmethod
+    def _insight_sort_key(cls, item: NewsInsight) -> tuple[int, float]:
+        return (cls._time_bucket(item.published_at), item.value_score)
+
+    @classmethod
+    def _time_bonus(cls, value: str) -> float:
+        bucket = cls._time_bucket(value)
+        if bucket >= 5:
+            return 6.0
+        if bucket == 4:
+            return 4.0
+        if bucket == 3:
+            return 2.0
+        if bucket == 2:
+            return -2.0
+        if bucket == 1:
+            return -8.0
+        return -3.0
+
+    @classmethod
+    def _time_bucket(cls, value: str, now: datetime | None = None) -> int:
+        """Rank news recency for report ordering: today first, then overnight, then older."""
+        parsed = cls._parse_time(value)
+        if parsed is None:
+            return 0
+        current = now or datetime.now()
+        if parsed.date() == current.date():
+            return 5
+        age_days = (current.date() - parsed.date()).days
+        if age_days == 1 and parsed.hour >= 15:
+            return 4
+        if age_days == 1:
+            return 3
+        if 1 < age_days <= 3:
+            return 2
+        return 1
+
+    @staticmethod
+    def _parse_time(value: str) -> datetime | None:
+        text = str(value or "").strip()
+        if not text:
+            return None
+        text = text.replace("T", " ").replace("Z", "")
+        if "." in text:
+            text = text.split(".", 1)[0]
+        candidates = [
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+            "%Y-%m-%d",
+            "%a, %d %b %Y %H:%M:%S %z",
+            "%a, %d %b %Y %H:%M:%S %Z",
+        ]
+        for fmt in candidates:
+            try:
+                parsed = datetime.strptime(text, fmt)
+                return parsed.replace(tzinfo=None) if parsed.tzinfo is not None else parsed
+            except ValueError:
+                continue
+        try:
+            parsed = parsedate_to_datetime(text)
+            return parsed.replace(tzinfo=None) if parsed else None
+        except (TypeError, ValueError):
+            return None
 
     @staticmethod
     def _impact_strength(content: str, rule: TopicRule) -> float:
@@ -337,6 +618,22 @@ class NewsIntelligenceEngine:
         return f"已从 {len(news)} 条新闻中发现 {len(insights)} 条高价值 A 股相关洞察。"
 
 
+TOPIC_PRIORITY = {
+    "军工地缘": 9,
+    "AI大模型": 8,
+    "算力基础设施": 7,
+    "半导体": 7,
+    "能源商品": 7,
+    "金融地产政策": 7,
+    "黄金贵金属": 6,
+    "医药创新药": 6,
+    "机器人": 6,
+    "低空经济": 6,
+    "并购重组国改": 5,
+    "消费出海": 3,
+}
+
+
 TOPIC_RULES = [
     TopicRule(
         topic="AI大模型",
@@ -384,7 +681,10 @@ TOPIC_RULES = [
     TopicRule(
         topic="能源商品",
         category="commodity",
-        keywords=["原油", "天然气", "煤炭", "电力", "储能", "光伏", "油价", "OPEC", "Brent", "WTI"],
+        keywords=[
+            "原油", "天然气", "煤炭", "电力", "储能", "光伏", "油价",
+            "OPEC", "Brent", "WTI", "crude", "oil", "barrel", "EIA", "inventory", "inventories",
+        ],
         sectors=["石油行业", "天然气", "煤炭", "电力", "储能", "光伏"],
         base_importance=0.68,
     ),

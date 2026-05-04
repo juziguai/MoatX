@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -23,6 +24,7 @@ class NewsSectorFactor:
     avg_value_score: float
     top_topic: str
     top_titles: list[str] = field(default_factory=list)
+    llm_adjustment: float = 1.0
 
 
 class NewsFactorEngine:
@@ -47,7 +49,9 @@ class NewsFactorEngine:
         try:
             payload = NewsIntelligenceEngine(db=self._db).analyze(limit=limit, min_score=min_score)
             insights = payload.get("insights") or []
-            factors = self._aggregate(insights)
+            llm_reviews = self._latest_llm_reviews()
+            factors = self._aggregate(insights, llm_reviews)
+            self._persist_factors(factors)
             return {
                 "engine": "news_factor_v1",
                 "generated_at": now_ts(),
@@ -57,6 +61,29 @@ class NewsFactorEngine:
                 "topic_summary": payload.get("topic_summary") or [],
                 "message": self._message(insights, factors),
             }
+        finally:
+            self.close()
+
+    def list_persisted(self, *, limit: int = 50) -> list[dict[str, Any]]:
+        """Return materialized news factors."""
+        try:
+            import pandas as pd
+
+            df = pd.read_sql_query(
+                """SELECT * FROM event_news_factors
+                   ORDER BY ABS(factor_score) DESC, updated_at DESC LIMIT ?""",
+                self._db.conn,
+                params=[limit],
+            )
+            if df.empty:
+                return []
+            rows = df.where(pd.notna(df), None).to_dict(orient="records")
+            for row in rows:
+                try:
+                    row["top_titles"] = json.loads(str(row.get("top_titles_json") or "[]"))
+                except json.JSONDecodeError:
+                    row["top_titles"] = []
+            return rows
         finally:
             self.close()
 
@@ -75,14 +102,21 @@ class NewsFactorEngine:
         }
 
     @staticmethod
-    def _aggregate(insights: list[dict[str, Any]]) -> list[NewsSectorFactor]:
+    def _aggregate(
+        insights: list[dict[str, Any]],
+        llm_reviews: dict[tuple[int, str], dict[str, Any]] | None = None,
+    ) -> list[NewsSectorFactor]:
         buckets: dict[str, dict[str, Any]] = {}
+        reviews = llm_reviews or {}
         for item in insights:
             sectors = item.get("affected_sectors") or []
             if not sectors:
                 continue
             sign = -1.0 if item.get("sentiment") == "bearish" else 1.0
-            contribution = NewsFactorEngine._contribution(item) * sign
+            llm_multiplier = NewsFactorEngine._llm_multiplier(item, reviews)
+            if llm_multiplier <= 0:
+                continue
+            contribution = NewsFactorEngine._contribution(item) * sign * llm_multiplier
             for sector in sectors:
                 sector_name = str(sector).strip()
                 if not sector_name:
@@ -95,6 +129,8 @@ class NewsFactorEngine:
                         "value_total": 0.0,
                         "topics": {},
                         "titles": [],
+                        "llm_total": 0.0,
+                        "llm_count": 0,
                     },
                 )
                 bucket["score"] += contribution
@@ -105,6 +141,8 @@ class NewsFactorEngine:
                 title = str(item.get("title") or "")[:48]
                 if title and title not in bucket["titles"]:
                     bucket["titles"].append(title)
+                bucket["llm_total"] += llm_multiplier
+                bucket["llm_count"] += 1
 
         factors: list[NewsSectorFactor] = []
         for sector, bucket in buckets.items():
@@ -123,6 +161,7 @@ class NewsFactorEngine:
                     avg_value_score=round(bucket["value_total"] / max(1, bucket["count"]), 1),
                     top_topic=top_topic,
                     top_titles=bucket["titles"][:3],
+                    llm_adjustment=round(bucket["llm_total"] / max(1, bucket["llm_count"]), 3),
                 )
             )
 
@@ -136,6 +175,74 @@ class NewsFactorEngine:
         impact_strength = float(item.get("impact_strength") or 0.0)
         score_part = max(0.0, value_score - 45.0) / 55.0
         return min(18.0, score_part * 24.0 * confidence * impact_strength)
+
+    @staticmethod
+    def _llm_multiplier(
+        item: dict[str, Any],
+        reviews: dict[tuple[int, str], dict[str, Any]],
+    ) -> float:
+        news_id = int(item.get("news_id") or 0)
+        topic = str(item.get("topic") or "")
+        review = reviews.get((news_id, topic)) or reviews.get((news_id, ""))
+        if not review:
+            return 1.0
+        decision = str(review.get("decision") or "watch").lower()
+        llm_score = float(review.get("llm_score") or 0.0)
+        if decision == "ignore":
+            return 0.0
+        if llm_score and llm_score < 50:
+            return 0.7
+        if decision == "use":
+            return 1.15
+        return 1.0
+
+    def _latest_llm_reviews(self) -> dict[tuple[int, str], dict[str, Any]]:
+        rows = self._db.conn.execute(
+            """SELECT news_id, topic, llm_score, decision
+               FROM event_llm_reviews
+               ORDER BY id DESC"""
+        ).fetchall()
+        reviews: dict[tuple[int, str], dict[str, Any]] = {}
+        for news_id, topic, llm_score, decision in rows:
+            key = (int(news_id or 0), str(topic or ""))
+            if key in reviews:
+                continue
+            reviews[key] = {
+                "llm_score": float(llm_score or 0.0),
+                "decision": str(decision or ""),
+            }
+        return reviews
+
+    def _persist_factors(self, factors: list[NewsSectorFactor]) -> None:
+        now = now_ts()
+        for item in factors:
+            self._db.conn.execute(
+                """INSERT INTO event_news_factors
+                   (sector, factor_score, direction, insight_count, avg_value_score,
+                    top_topic, top_titles_json, llm_adjustment, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(sector) DO UPDATE SET
+                   factor_score=excluded.factor_score,
+                   direction=excluded.direction,
+                   insight_count=excluded.insight_count,
+                   avg_value_score=excluded.avg_value_score,
+                   top_topic=excluded.top_topic,
+                   top_titles_json=excluded.top_titles_json,
+                   llm_adjustment=excluded.llm_adjustment,
+                   updated_at=excluded.updated_at""",
+                (
+                    item.sector,
+                    item.factor_score,
+                    item.direction,
+                    item.insight_count,
+                    item.avg_value_score,
+                    item.top_topic,
+                    json.dumps(item.top_titles, ensure_ascii=False),
+                    item.llm_adjustment,
+                    now,
+                ),
+            )
+        self._db.conn.commit()
 
     @staticmethod
     def _message(insights: list[dict[str, Any]], factors: list[NewsSectorFactor]) -> str:

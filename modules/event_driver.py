@@ -73,25 +73,41 @@ class EventDriver:
 
     def score_batch(self, symbols: list[str]) -> dict[str, float]:
         """Return per-symbol event_boost dict (-40 to +40)."""
+        explanations = self.explain_batch(symbols)
+        return {symbol: float(row.get("boost") or 0.0) for symbol, row in explanations.items()}
+
+    def explain_batch(self, symbols: list[str]) -> dict[str, dict[str, Any]]:
+        """Return explainable event boost details for each symbol."""
         results = {}
         sector_boosts = self._active_sector_boosts()
 
         with ThreadPoolExecutor(max_workers=min(len(symbols), 8)) as ex:
-            futures = {ex.submit(self.score_single, s, sector_boosts): s for s in symbols}
+            futures = {ex.submit(self.explain_single, s, sector_boosts): s for s in symbols}
             for fut in as_completed(futures):
                 sym = futures[fut]
                 try:
                     results[sym] = fut.result()
                 except Exception:
-                    results[sym] = 0.0
+                    results[sym] = {
+                        "symbol": sym,
+                        "boost": 0.0,
+                        "matched_factors": [],
+                        "announcement_score": 0.0,
+                        "reason": "",
+                    }
         return results
 
     def score_single(self, symbol: str, sector_boosts: dict[str, float] | None = None) -> float:
         """Score a single stock's event sentiment. Returns -40 to +40."""
+        return float(self.explain_single(symbol, sector_boosts).get("boost") or 0.0)
+
+    def explain_single(self, symbol: str, sector_boosts: dict[str, float] | None = None) -> dict[str, Any]:
+        """Explain a single stock's event sentiment. Returns boost and matched factors."""
         if sector_boosts is None:
             sector_boosts = self._active_sector_boosts()
 
         score = 0.0
+        matched_factors: list[dict[str, Any]] = []
 
         # 1. Sector-level boost (macro news → sector mapping)
         # A stock can belong to multiple industries/concepts; accumulate each event tag once
@@ -103,11 +119,32 @@ class EventDriver:
                 if self._tag_matches(tag, event_tag):
                     score += boost
                     matched_event_tags.add(event_tag)
+                    matched_factors.append(
+                        {
+                            "stock_tag": tag,
+                            "event_tag": event_tag,
+                            "boost": round(float(boost), 1),
+                        }
+                    )
 
         # 2. Individual stock sentiment (CNINFO announcements)
-        score += self._scan_announcement_sentiment(symbol)
+        announcement_score = self._scan_announcement_sentiment(symbol)
+        score += announcement_score
 
-        return max(-40.0, min(40.0, round(score, 1)))
+        final_score = max(-40.0, min(40.0, round(score, 1)))
+        reason_parts = [
+            f"{row['event_tag']}({row['boost']:+.1f})"
+            for row in matched_factors[:5]
+        ]
+        if announcement_score:
+            reason_parts.append(f"公告情绪({announcement_score:+.1f})")
+        return {
+            "symbol": symbol,
+            "boost": final_score,
+            "matched_factors": matched_factors,
+            "announcement_score": round(float(announcement_score), 1),
+            "reason": "；".join(reason_parts),
+        }
 
     # ── Sector boost from macro events ─────────────
 

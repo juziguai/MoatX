@@ -7,6 +7,8 @@ def test_event_scheduler_tasks_exist_and_enabled():
         "event_extract_signals",
         "event_update_states",
         "event_scan_opportunities",
+        "event_news_factors",
+        "event_topic_memory",
         "event_cycle",
         "event_notify",
     }
@@ -21,3 +23,9 @@ def test_event_notify_scheduler_sends_explicitly():
     task = next(task for task in TASKS if task["id"] == "event_notify")
 
     assert task["enabled"] is True
+
+
+def test_event_llm_review_scheduler_is_dry_run_and_disabled_by_default():
+    task = next(task for task in TASKS if task["id"] == "event_llm_review_dry_run")
+
+    assert task["enabled"] is False

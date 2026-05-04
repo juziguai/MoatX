@@ -44,7 +44,7 @@ D:\Tools\AI\Claude-code\MoatX
 | `modules/logger.py` | 结构化日志 | ✅ 新增 |
 | `modules/risk_controller.py` | 止损/仓位/回撤检测 | ✅ |
 | `modules/scheduler.py` | 定时任务调度器（7任务） | ✅ |
-| `modules/backtest/` | 回测引擎 | ✅ |
+| `modules/backtest/` | 回测引擎（滑点/基准/交易级指标/风控/可视化） | ✅ 增强 |
 | `modules/strategy/` | 策略库 + 参数优化 | ✅ |
 | `modules/signal/` | 信号引擎 + 模拟交易 | ✅ |
 | `modules/db/` | 数据仓库（SCHEMA_VERSION=6） | ✅ |
@@ -91,3 +91,24 @@ python -m modules.scheduler --start     # 启动调度器
 - EastMoney push2 已废弃，由 THS 替代
 - 调度器尚未在真实连续交易日跑过完整周期
 - `data/trading_calendar.json` 和 `data/strategy_params.json` 需首次运行对应功能后生成
+
+## 回测引擎增强 (2026-05-02)
+
+| 功能 | 说明 | 状态 |
+|------|------|------|
+| 滑点模拟 | `fees.apply_slippage`，买入上浮/卖出下浮，配置 `backtest.slippage_pct` | ✅ |
+| 基准对比 | 加载沪深300基准数据，计算 Alpha、信息比率 | ✅ |
+| 交易级指标 | `calc_trade_metrics(orders)`，按交易对计算胜率/盈亏比/持仓天数 | ✅ |
+| 风控检查 | 仓位超限/单日回撤超限自动平仓，配置 `risk.max_position_pct` | ✅ |
+| 权益曲线图 | `charts.plot_backtest()`，含回撤水下图和买卖标记 | ✅ |
+
+配置示例（`data/moatx.toml`）：
+```toml
+[backtest]
+slippage_pct = 0.001    # 滑点（千分之一）
+benchmark = "000300"    # 基准指数
+
+[risk]
+max_position_pct = 0.95      # 最大仓位比例
+max_daily_drawdown_pct = 5.0 # 单日最大回撤百分比
+```

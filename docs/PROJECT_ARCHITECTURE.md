@@ -191,7 +191,11 @@ flowchart TB
 flowchart LR
     Strategy["strategy/\n策略参数"] --> Backtest["backtest.engine"]
     Price["price_store / StockData"] --> Backtest
-    Backtest --> Metrics["metrics.py\n收益/回撤/胜率"]
+    Benchmark["沪深300\n基准数据"] --> Backtest
+    Backtest --> Metrics["metrics.py\n收益/回撤/胜率/Alpha"]
+    Backtest --> Slippage["fees.py\n滑点模拟"]
+    Backtest --> RiskCtrl["风控检查\n仓位/回撤"]
+    Metrics --> Charts["charts.py\n权益曲线图"]
     Metrics --> BacktestStore["backtest_store"]
     SignalEngine["signal.engine"] --> Journal["signal.journal"]
     Journal --> Paper["paper_trader\n模拟账户"]
@@ -200,7 +204,8 @@ flowchart LR
 
 关键点：
 
-- 回测与模拟交易用于验证策略想法。
+- 回测引擎支持滑点模拟（`fees.apply_slippage`）、基准对比（沪深300）、交易级胜率/盈亏比、风控检查（仓位/回撤限制）。
+- 回测报告可生成权益曲线图（含回撤水下图和买卖标记）。
 - 模拟交易不是实盘交易。
 - 事件情报可通过 context 输出给未来交易/回测适配器，但模块本身不下单。
 
@@ -241,7 +246,7 @@ flowchart TB
 | 宏观事件情报 | `modules/event_intelligence/`、`modules/cli/tool/event.py` | 新闻源采集、事件抽取、机会扫描、报告、推送 |
 | 风控 | `risk_checker.py`、`risk_controller.py` | 仓位、止损、回撤、风险告警 |
 | 告警推送 | `alerter.py`、`alert_manager.py` | 飞书、日志、CLI 推送 |
-| 回测 | `modules/backtest/` | 策略回测、手续费、指标、数据供给 |
+| 回测 | `modules/backtest/` | 策略回测、滑点模拟、基准对比、交易级指标、风控检查、权益曲线可视化 |
 | 策略库 | `modules/strategy/` | MA Cross、Mean Reversion、Breakout、Walk Forward 等 |
 | 信号/模拟 | `modules/signal/`、`simulation.py` | 信号日志、模拟账户、模拟交易记录 |
 | 调度 | `scheduler.py` | 定时执行事件采集、风险检查、推送等 |

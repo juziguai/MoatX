@@ -272,3 +272,90 @@ class MoatXCharts:
             "font.size": 9,
             "font.family": "Microsoft YaHei",
         })
+
+
+def plot_backtest(
+    equity_curve: list[dict],
+    orders: list,
+    benchmark_curve=None,
+    title: str = "回测结果",
+    save_path: str | None = None,
+    style: str = "dark",
+    figsize: tuple = (16, 10),
+) -> str | None:
+    """绘制回测权益曲线和交易标记。
+
+    Args:
+        equity_curve: 权益曲线数据 [{date, total_value, ...}]
+        orders: 交易记录 [Order]
+        benchmark_curve: 基准权益曲线 DataFrame (可选)
+        title: 图表标题
+        save_path: 保存路径
+        style: "dark" 或 "light"
+        figsize: 图表尺寸
+
+    Returns:
+        保存路径，未保存则返回 None
+    """
+    import pandas as pd
+
+    if not equity_curve:
+        return None
+
+    if style == "dark":
+        MoatXCharts._apply_dark_style()
+    else:
+        MoatXCharts._apply_light_style()
+
+    df = pd.DataFrame(equity_curve)
+    df["date"] = pd.to_datetime(df["date"])
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize, height_ratios=[3, 1],
+                                    facecolor="#1a1a2e" if style == "dark" else "white",
+                                    gridspec_kw={"hspace": 0.15})
+
+    # 上图：权益曲线
+    ax1.plot(df["date"], df["total_value"], color="#00d4aa", linewidth=1.5, label="策略")
+    ax1.fill_between(df["date"], df["total_value"], df["total_value"].iloc[0],
+                     alpha=0.1, color="#00d4aa")
+
+    # 基准曲线
+    if benchmark_curve is not None and not benchmark_curve.empty:
+        bm = benchmark_curve.copy()
+        bm["date"] = pd.to_datetime(bm["date"])
+        ax1.plot(bm["date"], bm["total_value"], color="#ff6b6b", linewidth=1, alpha=0.7, label="沪深300")
+        ax1.legend(loc="upper left")
+
+    # 买卖标记
+    for order in orders:
+        if order.direction == "buy":
+            ax1.scatter(order.date, order.total_value if hasattr(order, 'total_value') else order.price,
+                       marker="^", color="#00ff88", s=80, zorder=5, alpha=0.8)
+        else:
+            ax1.scatter(order.date, order.total_value if hasattr(order, 'total_value') else order.price,
+                       marker="v", color="#ff4444", s=80, zorder=5, alpha=0.8)
+
+    ax1.set_title(title, fontsize=14, fontweight="bold")
+    ax1.set_ylabel("资产价值")
+    ax1.grid(True, alpha=0.3)
+    ax1.axhline(y=df["total_value"].iloc[0], color="#666666", linestyle="--", alpha=0.5)
+
+    # 下图：回撤水下图
+    peak = df["total_value"].cummax()
+    drawdown = (df["total_value"] - peak) / peak * 100
+    ax2.fill_between(df["date"], drawdown, 0, color="#ff4444", alpha=0.4)
+    ax2.plot(df["date"], drawdown, color="#ff4444", linewidth=0.8)
+    ax2.set_ylabel("回撤 (%)")
+    ax2.set_xlabel("日期")
+    ax2.grid(True, alpha=0.3)
+    ax2.set_ylim(min(drawdown) * 1.1, 0)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+        plt.close()
+        return save_path
+    else:
+        plt.show()
+        return None

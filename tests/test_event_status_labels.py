@@ -30,7 +30,7 @@ def test_event_status_label_maps_internal_codes_to_chinese():
     assert event_status_label("resolved") == "已缓和"
 
 
-def test_event_report_renders_chinese_status_labels():
+def test_event_report_uses_strict_news_push_template_without_status_table():
     db = MemoryDB()
     try:
         db.event().upsert_state(
@@ -45,7 +45,9 @@ def test_event_report_renders_chinese_status_labels():
 
         report = EventReporter(db=db).report(limit=5)
 
-        assert "已确认" in report
+        assert "热点速览 |" in report
+        assert "无触发阈值" in report
+        assert "confirmed" not in report
         assert "| 霍尔木兹关闭风险 | 95% | 90% | confirmed |" not in report
     finally:
         db.close()

@@ -396,21 +396,29 @@ class SectorTagProvider:
         return str(self._graph().get("version", ""))
 
     def _graph_members(self, target: str) -> pd.DataFrame:
+        exact_rows: list[dict[str, str]] = []
         rows: list[dict[str, str]] = []
+        target_value = str(target or "").strip()
         for node in self._graph().get("nodes", []):
             tag = str(node.get("tag", ""))
             aliases = [str(x) for x in node.get("aliases", [])]
-            if not any(self.tag_matches(candidate, target) for candidate in [tag] + aliases):
+            candidates = [tag] + aliases
+            is_exact = bool(target_value) and target_value in candidates
+            if not is_exact and not any(self.tag_matches(candidate, target) for candidate in candidates):
                 continue
             for member in node.get("members", []):
-                rows.append(
-                    {
-                        "code": self.normalize_code(str(member.get("code", ""))),
-                        "name": str(member.get("name", "")),
-                        "source": "sector_graph",
-                        "tag": tag,
-                    }
-                )
+                row = {
+                    "code": self.normalize_code(str(member.get("code", ""))),
+                    "name": str(member.get("name", "")),
+                    "source": "sector_graph",
+                    "tag": tag,
+                }
+                if is_exact:
+                    exact_rows.append(row)
+                else:
+                    rows.append(row)
+        if exact_rows:
+            return pd.DataFrame(exact_rows).drop_duplicates(subset=["code"]).reset_index(drop=True)
         if not rows:
             return pd.DataFrame()
         return pd.DataFrame(rows).drop_duplicates(subset=["code"]).reset_index(drop=True)

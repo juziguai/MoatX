@@ -74,6 +74,7 @@ class Portfolio:
     positions: dict[str, Position] = field(default_factory=dict)
     orders: list[Order] = field(default_factory=list)
     _equity_curve: list[dict] = field(default_factory=list)
+    slippage_pct: float = 0.001
 
     def __post_init__(self):
         self.cash = self.initial_capital
@@ -83,24 +84,25 @@ class Portfolio:
         shares = fees.round_lot(shares)
         if shares <= 0:
             return None
-        cost = fees.calc_buy_cost(price, shares)
+        adjusted_price = fees.apply_slippage(price, "buy", self.slippage_pct)
+        cost = fees.calc_buy_cost(adjusted_price, shares)
         if cost > self.cash:
             # buy max affordable
-            shares = fees.round_lot(int(self.cash / (price * 1.001)))
+            shares = fees.round_lot(int(self.cash / (adjusted_price * 1.001)))
             if shares <= 0:
                 return None
-            cost = fees.calc_buy_cost(price, shares)
-        order = Order(symbol=symbol, direction="buy", price=price, shares=shares, date=date)
+            cost = fees.calc_buy_cost(adjusted_price, shares)
+        order = Order(symbol=symbol, direction="buy", price=adjusted_price, shares=shares, date=date)
         self.cash -= cost
         self.orders.append(order)
 
         if symbol in self.positions:
             pos = self.positions[symbol]
-            total_cost = pos.avg_cost * pos.shares + price * shares
+            total_cost = pos.avg_cost * pos.shares + adjusted_price * shares
             pos.shares += shares
             pos.avg_cost = total_cost / pos.shares
         else:
-            self.positions[symbol] = Position(symbol=symbol, shares=shares, avg_cost=price)
+            self.positions[symbol] = Position(symbol=symbol, shares=shares, avg_cost=adjusted_price)
         return order
 
     def sell(self, symbol: str, price: float, shares: int = 0, date: date | None = None) -> Order | None:
@@ -111,8 +113,9 @@ class Portfolio:
         shares = min(shares, pos.shares) if shares > 0 else pos.shares
         if shares <= 0:
             return None
-        proceeds = fees.calc_sell_proceeds(price, shares)
-        order = Order(symbol=symbol, direction="sell", price=price, shares=shares, date=date)
+        adjusted_price = fees.apply_slippage(price, "sell", self.slippage_pct)
+        proceeds = fees.calc_sell_proceeds(adjusted_price, shares)
+        order = Order(symbol=symbol, direction="sell", price=adjusted_price, shares=shares, date=date)
         self.cash += proceeds
         self.orders.append(order)
 
@@ -142,6 +145,20 @@ class Portfolio:
         for pos in self.positions.values():
             val += pos.market_value_at(current_price)
         return val
+
+    def position_ratio(self, current_prices: dict[str, float] | None = None) -> float:
+        """计算当前仓位比例（持仓市值 / 总资产）。"""
+        if not self.positions:
+            return 0.0
+        prices = current_prices or {}
+        holdings = sum(
+            pos.market_value_at(prices.get(sym, pos.avg_cost))
+            for sym, pos in self.positions.items()
+        )
+        total = self.cash + holdings
+        if total <= 0:
+            return 0.0
+        return holdings / total
 
     def snapshot(self, date: date, prices: dict[str, float]) -> dict:
         total = self.cash

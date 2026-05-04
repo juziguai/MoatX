@@ -259,6 +259,21 @@ def event_scan_opportunities(*args, **kwargs) -> _SubprocessResult:
     )
 
 
+def event_news_factors(*args, **kwargs) -> _SubprocessResult:
+    """Build and persist news intelligence sector factors."""
+    return _run_module("modules.cli", ["tool", "event", "news-factors", "--json"])
+
+
+def event_topic_memory(*args, **kwargs) -> _SubprocessResult:
+    """Update topic memory and materialized topic events."""
+    return _run_module("modules.cli", ["tool", "event", "topics", "--json"])
+
+
+def event_llm_review_dry_run(*args, **kwargs) -> _SubprocessResult:
+    """Preview LLM semantic-review candidates without external model calls."""
+    return _run_module("modules.cli", ["tool", "event", "llm-review", "--json"])
+
+
 def event_cycle(*args, **kwargs) -> _SubprocessResult:
     """Run event intelligence cycle and dry-run notification candidates."""
     settings = cfg().event_intelligence
@@ -424,6 +439,27 @@ TASKS: list[TaskDict] = [
         "fn": _log_task("event_scan_opportunities", "宏观事件机会扫描", event_scan_opportunities),
         "trigger": IntervalTrigger(minutes=10),
         "enabled": True,
+    },
+    {
+        "id": "event_news_factors",
+        "name": "新闻情报因子物化",
+        "fn": _log_task("event_news_factors", "新闻情报因子物化", event_news_factors),
+        "trigger": IntervalTrigger(minutes=10),
+        "enabled": True,
+    },
+    {
+        "id": "event_topic_memory",
+        "name": "新闻主题记忆更新",
+        "fn": _log_task("event_topic_memory", "新闻主题记忆更新", event_topic_memory),
+        "trigger": IntervalTrigger(minutes=15),
+        "enabled": True,
+    },
+    {
+        "id": "event_llm_review_dry_run",
+        "name": "LLM语义评审预览",
+        "fn": _log_task("event_llm_review_dry_run", "LLM语义评审预览", event_llm_review_dry_run),
+        "trigger": IntervalTrigger(minutes=30),
+        "enabled": False,
     },
     {
         "id": "event_cycle",
