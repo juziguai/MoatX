@@ -61,6 +61,31 @@ def save_params_to_json(
     return path
 
 
+def _apply_volatility_penalty(result: dict, metric: str) -> float:
+    """对 metric 值施加波动率一致性惩罚。
+
+    公式: adjusted = raw_metric * (1 / (1 + volatility))
+    高波动的参数组合被降权，防止过拟合到单一窗口。
+    """
+    raw = result.get(metric, -999)
+    if raw <= -999:
+        return raw
+    # 从权益曲线计算日收益率波动率
+    equity_curve = result.get("_equity_curve", [])
+    if len(equity_curve) < 5:
+        return raw
+    values = [snap.get("total_value", 0) for snap in equity_curve]
+    returns = []
+    for i in range(1, len(values)):
+        if values[i - 1] > 0:
+            returns.append(values[i] / values[i - 1] - 1)
+    if not returns:
+        return raw
+    import numpy as np
+    volatility = float(np.std(returns))
+    return raw * (1.0 / (1.0 + volatility))
+
+
 def _run_single_subprocess(
     strategy_cls_path: str,
     params: dict,
@@ -69,6 +94,7 @@ def _run_single_subprocess(
     end: str,
     capital: float,
     metric: str,
+    penalize_vol: bool = False,
 ) -> dict:
     """Run single backtest in a subprocess (used by ProcessPoolExecutor)."""
     mod_path, cls_name = strategy_cls_path.rsplit(".", 1)
@@ -83,7 +109,13 @@ def _run_single_subprocess(
         initial_capital=capital,
     )
     result = engine.run(strategy)
-    return {"params": params, "metric_value": result.get(metric, -999), **result}
+    raw_metric = result.get(metric, -999)
+    if penalize_vol:
+        result["_equity_curve"] = engine.portfolio.equity_curve if engine.portfolio else []
+        adj_metric = _apply_volatility_penalty(result, metric)
+    else:
+        adj_metric = raw_metric
+    return {"params": params, "metric_value": adj_metric, "raw_metric": raw_metric, **result}
 
 
 class StrategyOptimizer:
@@ -136,19 +168,22 @@ class StrategyOptimizer:
         num_params = len(param_grid)
         start_time = time.time()
 
+        # 检查是否有参数启用了波动率惩罚
+        penalize_vol = any(s.penalize_volatility for s in strategy_cls.param_specs())
+
         cls_path = f"{strategy_cls.__module__}.{strategy_cls.__qualname__}"
         all_results: list[dict] = []
 
         if num_params <= 4:
             for params in param_grid:
-                result = self._run_single_local(strategy_cls, params, symbols, start, end, initial_capital, metric)
+                result = self._run_single_local(strategy_cls, params, symbols, start, end, initial_capital, metric, penalize_vol)
                 all_results.append(result)
         else:
             with ProcessPoolExecutor(max_workers=max_workers) as ex:
                 futures = {
                     ex.submit(
                         _run_single_subprocess, cls_path, params, symbols,
-                        start.isoformat(), end.isoformat(), initial_capital, metric,
+                        start.isoformat(), end.isoformat(), initial_capital, metric, penalize_vol,
                     ): params for params in param_grid
                 }
                 for future in as_completed(futures):
@@ -197,7 +232,7 @@ class StrategyOptimizer:
             "duration_ms": elapsed,
         }
 
-    def _run_single_local(self, strategy_cls, params, symbols, start, end, capital, metric) -> dict:
+    def _run_single_local(self, strategy_cls, params, symbols, start, end, capital, metric, penalize_vol=False) -> dict:
         strategy = strategy_cls()
         strategy.set_params(**params)
         engine = BacktestEngine(
@@ -208,6 +243,12 @@ class StrategyOptimizer:
         )
         try:
             result = engine.run(strategy)
-            return {"params": params, "metric_value": result.get(metric, -999), **result}
+            raw_metric = result.get(metric, -999)
+            if penalize_vol:
+                result["_equity_curve"] = engine.portfolio.equity_curve if engine.portfolio else []
+                adj_metric = _apply_volatility_penalty(result, metric)
+            else:
+                adj_metric = raw_metric
+            return {"params": params, "metric_value": adj_metric, "raw_metric": raw_metric, **result}
         except Exception as e:
             return {"params": params, "error": str(e), "metric_value": -999}

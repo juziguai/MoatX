@@ -70,6 +70,25 @@ class BacktestEngine:
         max_position_pct = getattr(risk_cfg, 'max_position_pct', 1.0) if risk_cfg else 1.0
         max_daily_drawdown_pct = getattr(risk_cfg, 'max_daily_drawdown_pct', 100.0) if risk_cfg else 100.0
 
+        # 涨跌停配置
+        backtest_cfg = cfg().backtest if hasattr(cfg(), 'backtest') else None
+        limit_pct = getattr(backtest_cfg, 'limit_up_pct', 0.095) if backtest_cfg else 0.095
+        prev_closes: dict[str, float] = {}
+
+        def _limit_checker(symbol: str, current_price: float, direction: str) -> bool:
+            """涨停不能买，跌停不能卖"""
+            prev = prev_closes.get(symbol)
+            if prev is None or prev <= 0:
+                return False
+            pct = (current_price - prev) / prev
+            if direction == "buy" and pct >= limit_pct:
+                return True  # 涨停，拒绝买入
+            if direction == "sell" and pct <= -limit_pct:
+                return True  # 跌停，拒绝卖出
+            return False
+
+        portfolio._limit_checker = _limit_checker
+
         # Main loop
         for bar_idx, day in enumerate(trading_days):
             current_prices: dict[str, float] = {}
@@ -132,6 +151,9 @@ class BacktestEngine:
 
             # Snapshot
             portfolio.snapshot(day, current_prices)
+
+            # 更新前收盘价（用于下一日涨跌停判断）
+            prev_closes.update(current_prices)
 
         self._results = self._calc_results()
         return self._results

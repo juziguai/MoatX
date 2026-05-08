@@ -235,6 +235,7 @@ class BacktestSettings:
     benchmark: str = "000300"             # 基准指数（沪深300）
     commission_rate: float = 0.0003       # 佣金费率
     slippage_pct: float = 0.001          # 滑点（千分之一）
+    limit_up_pct: float = 0.095          # 涨停阈值（9.5%）
 
     def __post_init__(self) -> None:
         if self.initial_capital <= 0:

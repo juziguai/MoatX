@@ -1,7 +1,8 @@
-"""订单与持仓模拟"""
+"""订单与持仓模拟 — 支持 A 股 T+1 制度和涨跌停约束"""
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Literal
@@ -36,10 +37,47 @@ class Order:
 
 
 @dataclass
+class _Lot:
+    """单笔买入记录 — 用于 T+1 可卖股数计算"""
+    shares: int
+    buy_date: date
+
+
+@dataclass
 class Position:
     symbol: str
     shares: int = 0
     avg_cost: float = 0.0
+    _lots: deque[_Lot] = field(default_factory=deque)
+
+    @property
+    def buy_date(self) -> date | None:
+        """最早一笔持仓的买入日期"""
+        return self._lots[0].buy_date if self._lots else None
+
+    def sellable_shares(self, current_date: date) -> int:
+        """T+1：返回当前日期可卖出的股数（今日买入的不可卖）"""
+        return sum(lot.shares for lot in self._lots if lot.buy_date < current_date)
+
+    def consume_sell(self, shares: int, current_date: date) -> int:
+        """按先进先出消耗可卖持仓，返回实际消耗股数"""
+        remaining = shares
+        new_lots: deque[_Lot] = deque()
+        for lot in self._lots:
+            if remaining <= 0:
+                new_lots.append(lot)
+                continue
+            if lot.buy_date >= current_date:
+                new_lots.append(lot)
+                continue
+            if lot.shares <= remaining:
+                remaining -= lot.shares
+            else:
+                lot.shares -= remaining
+                remaining = 0
+                new_lots.append(lot)
+        self._lots = new_lots
+        return shares - remaining
 
     @property
     def market_value(self) -> float:
@@ -67,7 +105,7 @@ class Position:
 
 @dataclass
 class Portfolio:
-    """模拟账户 — 持仓与现金管理。"""
+    """模拟账户 — 持仓与现金管理（A 股 T+1）。"""
 
     initial_capital: float = 100_000.0
     cash: float = field(default=100_000.0)
@@ -75,16 +113,21 @@ class Portfolio:
     orders: list[Order] = field(default_factory=list)
     _equity_curve: list[dict] = field(default_factory=list)
     slippage_pct: float = 0.001
+    # 回调：(symbol, current_price, direction) -> True 表示被限制（涨停/跌停）
+    _limit_checker: object = field(default=None, repr=False)
 
     def __post_init__(self):
         self.cash = self.initial_capital
 
     def buy(self, symbol: str, price: float, shares: int, date: date) -> Order | None:
-        """Buy shares. Returns Order if filled, None if insufficient cash."""
+        """Buy shares. Returns Order if filled, None if insufficient cash or limit-up."""
         shares = fees.round_lot(shares)
         if shares <= 0:
             return None
         adjusted_price = fees.apply_slippage(price, "buy", self.slippage_pct)
+        # 涨跌停检查
+        if self._limit_checker and self._limit_checker(symbol, price, "buy"):
+            return None
         cost = fees.calc_buy_cost(adjusted_price, shares)
         if cost > self.cash:
             # buy max affordable
@@ -103,14 +146,23 @@ class Portfolio:
             pos.avg_cost = total_cost / pos.shares
         else:
             self.positions[symbol] = Position(symbol=symbol, shares=shares, avg_cost=adjusted_price)
+            pos = self.positions[symbol]
+        pos._lots.append(_Lot(shares=shares, buy_date=date))
         return order
 
     def sell(self, symbol: str, price: float, shares: int = 0, date: date | None = None) -> Order | None:
-        """Sell shares. shares=0 means sell all."""
+        """Sell shares. shares=0 means sell all (T+1: only shares bought before *date*)."""
         if symbol not in self.positions:
             return None
+        # 涨跌停检查
+        if self._limit_checker and self._limit_checker(symbol, price, "sell"):
+            return None
         pos = self.positions[symbol]
-        shares = min(shares, pos.shares) if shares > 0 else pos.shares
+        if date is None:
+            sellable = pos.shares
+        else:
+            sellable = pos.sellable_shares(date)
+        shares = min(shares, sellable) if shares > 0 else sellable
         if shares <= 0:
             return None
         adjusted_price = fees.apply_slippage(price, "sell", self.slippage_pct)
@@ -119,6 +171,8 @@ class Portfolio:
         self.cash += proceeds
         self.orders.append(order)
 
+        if date is not None:
+            pos.consume_sell(shares, date)
         pos.shares -= shares
         if pos.shares <= 0:
             del self.positions[symbol]
