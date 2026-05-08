@@ -219,6 +219,8 @@ class ScoringEngine:
 
     # Default weights (before market regime adjustment)
     _BASE_WEIGHTS = {"quality": 0.50, "timing": 0.35, "sentiment": 0.15}
+    _EVENT_TIMEOUT_SECONDS = 5.0
+    _PROFITABILITY_TIMEOUT_SECONDS = 10.0
 
     def __init__(self, sim_cfg=None):
         self._cfg = sim_cfg or cfg().simulation
@@ -229,6 +231,34 @@ class ScoringEngine:
         self._industry_map = None  # cached {code: industry} reverse map
         self._northbound_set: set[str] | None = None   # HSGT northbound held stocks
         self._limitup_set: set[str] | None = None       # today's limit-up stocks
+        self._spot_data: pd.DataFrame | None = None     # cached full-market spot
+        self._risk_cache: dict[str, dict] = {}          # cached check_financial_risk results
+
+    # ──────────────────────────────────────────
+    # Instance-level caching helpers
+    # ──────────────────────────────────────────
+
+    def _get_spot_cached(self) -> pd.DataFrame:
+        """Return cached full-market spot data, fetching once per instance."""
+        if self._spot_data is not None:
+            return self._spot_data
+        try:
+            self._spot_data = self._sd.get_spot()
+        except Exception as e:
+            _logger.warning("_get_spot_cached: get_spot() failed: %s", e)
+            self._spot_data = pd.DataFrame()
+        return self._spot_data
+
+    def _get_risk_cached(self, symbol: str) -> dict:
+        """Return cached financial risk result, fetching once per symbol per instance."""
+        if symbol in self._risk_cache:
+            return self._risk_cache[symbol]
+        try:
+            result = self._sd.check_financial_risk(symbol)
+            self._risk_cache[symbol] = result
+            return result
+        except Exception:
+            return {"risk_score": 0, "warnings": []}
 
     # ──────────────────────────────────────────
     # P2: Feedback Learning — public entry points for simulation.py
@@ -267,6 +297,10 @@ class ScoringEngine:
     # Public API
     # ──────────────────────────────────────────
 
+    def _stopped(self) -> bool:
+        """Return True if score_symbols timeout has been triggered."""
+        return hasattr(self, "_stop_event") and self._stop_event is not None and self._stop_event.is_set()
+
     def score_batch(
         self, candidates: pd.DataFrame, existing_holdings: list[str] | None = None
     ) -> pd.DataFrame:
@@ -297,8 +331,14 @@ class ScoringEngine:
         if active.empty:
             return self._attach_action_columns(self._finalize_score_output(df))
 
+        if self._stopped():
+            return self._attach_action_columns(self._finalize_score_output(df))
+
         # Layer 2: Timing (needs daily data, slow — parallelize)
         active = self._score_timing_batch(active, regime)
+
+        if self._stopped():
+            return self._attach_action_columns(self._finalize_score_output(df))
 
         # Layer 3: Sentiment
         active = self._score_sentiment_batch(active, regime)
@@ -310,6 +350,14 @@ class ScoringEngine:
              active["timing"] / 35 * weights["timing"] +
              active["sentiment"] / 15 * weights["sentiment"]) * 100
         )
+
+        if self._stopped():
+            active["total"] = active["total"].clip(0, 140).round(1)
+            active["event_multiplier"] = 1.0
+            df.loc[veto_mask, "total"] = 0.0
+            final = pd.concat([df[veto_mask], active], ignore_index=True
+                              ).sort_values("total", ascending=False, na_position="last")
+            return self._attach_action_columns(self._finalize_score_output(final))
 
         # Layer 4: Event multiplier (macro news + individual announcements)
         # Apply before clip so high-conviction signals (total near 100) remain distinguishable
@@ -371,6 +419,98 @@ class ScoringEngine:
         df["action"] = action_vals
         df["suggested_weight"] = weight_vals
         return df
+
+    def score_symbols(
+        self, symbols: list[str], existing_holdings: list[str] | None = None
+    ) -> dict[str, ScoreBreakdown]:
+        """Batch score a list of symbols. 10-50x faster than calling score_single() in a loop.
+
+        Reuses score_batch() internally which parallelizes data fetching via ThreadPoolExecutor.
+        Overall timeout: 120 seconds. Uses daemon thread + stop event to prevent CPU runaway.
+        """
+        if not symbols:
+            return {}
+
+        import threading
+
+        # Stop signal: set on timeout to abort expensive operations
+        stop = threading.Event()
+        self._stop_event = stop  # expose to _ensure_* methods
+        result_holder: dict[str, ScoreBreakdown] | list = [None]  # mutable container for thread result
+        error_holder = [None]
+
+        def _do_score():
+            try:
+                # Fetch spot data once, cache on instance, filter to requested symbols
+                spot = self._get_spot_cached()
+                if spot.empty or stop.is_set():
+                    result_holder[0] = {s: ScoreBreakdown(symbol=s, total=0, quality=0, timing=0, sentiment=0)
+                                        for s in symbols}
+                    return
+
+                codes_set = set(str(c) for c in symbols)
+                spot_filtered = spot[spot["code"].astype(str).isin(codes_set)].copy()
+
+                if spot_filtered.empty:
+                    result_holder[0] = {s: ScoreBreakdown(symbol=s, total=0, quality=0, timing=0, sentiment=0)
+                                        for s in symbols}
+                    return
+
+                # Ensure required columns exist for score_batch()
+                for col in ("name", "price", "pct_change", "pe", "pb", "turnover"):
+                    if col not in spot_filtered.columns:
+                        spot_filtered[col] = 0.0 if col != "name" else ""
+
+                df = spot_filtered.rename(columns={"code": "code"})
+                result_df = self.score_batch(df, existing_holdings=existing_holdings)
+
+                # Convert DataFrame rows back to ScoreBreakdown
+                out: dict[str, ScoreBreakdown] = {}
+                for _, row in result_df.iterrows():
+                    sym = str(row["code"])
+                    out[sym] = ScoreBreakdown(
+                        symbol=sym,
+                        total=float(row.get("total", 0)),
+                        quality=float(row.get("quality", 0)),
+                        timing=float(row.get("timing", 0)),
+                        sentiment=float(row.get("sentiment", 0)),
+                        event_multiplier=float(row.get("event_multiplier", 1.0)),
+                        vetoed=bool(row.get("vetoed", False)),
+                        veto_reason=str(row.get("veto_reason", "")),
+                        action=str(row.get("action", "no_buy")),
+                        suggested_weight=float(row.get("suggested_weight", 0)),
+                    )
+
+                # Fill in any missing symbols
+                for s in symbols:
+                    if s not in out:
+                        out[s] = ScoreBreakdown(symbol=s, total=0, quality=0, timing=0, sentiment=0)
+                result_holder[0] = out
+            except Exception as e:
+                error_holder[0] = e
+
+        # Daemon thread: dies when main process exits, no zombie threads
+        t = threading.Thread(target=_do_score, daemon=True)
+        t.start()
+        t.join(timeout=120)
+
+        if t.is_alive():
+            # Timeout: signal stop and return empty
+            stop.set()
+            _logger.error("score_symbols 超时 (120s)，后台线程已标记停止")
+            self._stop_event = None
+            return {s: ScoreBreakdown(symbol=s, total=0, quality=0, timing=0, sentiment=0,
+                                     veto_reason="评分超时")
+                    for s in symbols}
+
+        self._stop_event = None
+
+        if error_holder[0] is not None:
+            _logger.error("score_symbols 异常: %s", error_holder[0])
+            return {s: ScoreBreakdown(symbol=s, total=0, quality=0, timing=0, sentiment=0)
+                    for s in symbols}
+
+        return result_holder[0]
 
     def score_single(self, symbol: str) -> ScoreBreakdown:
         """Deep scoring for a single held stock (used for sell decisions)."""
@@ -456,16 +596,13 @@ class ScoringEngine:
     # ──────────────────────────────────────────
 
     def _check_veto(self, symbol: str) -> tuple[bool, str]:
-        """Returns (vetoed, reason)."""
-        try:
-            risk = self._sd.check_financial_risk(symbol)
-            if risk.get("risk_score", 0) >= 30:
-                return True, f"高风险 {risk['risk_score']}分 {risk.get('risk_level','')}"
-            name = risk.get("symbol", symbol)
-            if "ST" in str(name) or "*ST" in str(name):
-                return True, "ST 股票"
-        except Exception:
-            pass
+        """Returns (vetoed, reason). Uses cached risk result."""
+        risk = self._get_risk_cached(symbol)
+        if risk.get("risk_score", 0) >= 30:
+            return True, f"高风险 {risk['risk_score']}分 {risk.get('risk_level','')}"
+        name = risk.get("symbol", symbol)
+        if "ST" in str(name) or "*ST" in str(name):
+            return True, "ST 股票"
         return False, ""
 
     # ──────────────────────────────────────────
@@ -502,12 +639,15 @@ class ScoringEngine:
         active_idx = df[active_mask].index
 
         # ── Valuation score (max 25 pts) — full-market ranking, same as _quality_single ──
-        # Fetch full spot for market-wide percentile rank (not just candidate-internal)
+        # Use cached spot for market-wide percentile rank (avoid redundant fetch)
         try:
-            spot = self._sd.get_spot()
-            spot_pe = spot["pe"].where(lambda x: (x > 0) & pd.notna(x))
-            spot_pb = spot["pb"].where(lambda x: (x > 0) & pd.notna(x))
-            spot_index = {str(c): i for i, c in enumerate(spot["code"].astype(str))}
+            spot = self._get_spot_cached()
+            if spot.empty:
+                spot = None
+            else:
+                spot_pe = spot["pe"].where(lambda x: (x > 0) & pd.notna(x))
+                spot_pb = spot["pb"].where(lambda x: (x > 0) & pd.notna(x))
+                spot_index = {str(c): i for i, c in enumerate(spot["code"].astype(str))}
         except Exception:
             spot = None
 
@@ -515,7 +655,7 @@ class ScoringEngine:
         pb_values = df.loc[active_mask, "pb"].copy()
 
         val_scores = pd.Series(0.0, index=df.index)
-        quality_reasons = [""] * len(df)
+        quality_reasons: dict[int, str] = {}
         for idx in active_idx:
             score = 0.0
             r = []
@@ -565,7 +705,7 @@ class ScoringEngine:
 
         # ── Combine ──
         df["quality"] = (val_scores + prof_scores).clip(0, 50).round(1)
-        df["quality_reasons"] = quality_reasons
+        df["quality_reasons"] = df.index.map(quality_reasons).fillna("")
 
         # P3: Liquidity penalty — stocks with daily turnover < 5000万 get 30% quality penalty
         if "amount" in df.columns:
@@ -584,23 +724,62 @@ class ScoringEngine:
 
     def _score_profitability_batch(self, df: pd.DataFrame, active_idx) -> pd.Series:
         """Fetch fundamentals in parallel and score ROE/margin/cash-flow/debt (max 25 pts)."""
+        import queue
+        import threading
+        import time
+
         symbols = df.loc[active_idx, "code"].tolist()
         prices = df.loc[active_idx, "price"].tolist()
 
         scores: dict[int, float] = {i: 0.0 for i in active_idx}
+        if not symbols:
+            return pd.Series(scores, dtype=float)
 
-        with ThreadPoolExecutor(max_workers=min(len(symbols), 8)) as ex:
-            futures = {
-                ex.submit(self._profitability_single, sym, price): (i, sym)
-                for i, (sym, price) in zip(active_idx, zip(symbols, prices))
-            }
-            for fut in as_completed(futures):
-                idx, sym = futures[fut]
+        task_queue: queue.Queue[tuple[int, str, float]] = queue.Queue()
+        result_queue: queue.Queue[tuple[int, float]] = queue.Queue()
+        stop = threading.Event()
+        for idx, (sym, price) in zip(active_idx, zip(symbols, prices)):
+            task_queue.put((idx, sym, price))
+
+        def _worker() -> None:
+            while not stop.is_set():
                 try:
-                    pts, _ = fut.result()
-                    scores[idx] = pts
+                    idx, sym, price = task_queue.get_nowait()
+                except queue.Empty:
+                    return
+                try:
+                    pts, _ = self._profitability_single(sym, price)
+                    result_queue.put((idx, pts), block=False)
                 except Exception:
-                    scores[idx] = 0.0
+                    result_queue.put((idx, 0.0), block=False)
+
+        threads = [
+            threading.Thread(target=_worker, daemon=True)
+            for _ in range(min(len(symbols), 8))
+        ]
+        for thread in threads:
+            thread.start()
+
+        deadline = time.time() + self._PROFITABILITY_TIMEOUT_SECONDS
+        for thread in threads:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+            thread.join(timeout=remaining)
+
+        if any(thread.is_alive() for thread in threads):
+            stop.set()
+            _logger.warning(
+                "profitability scoring timed out (%.0fs); using defaults for unfinished symbols",
+                self._PROFITABILITY_TIMEOUT_SECONDS,
+            )
+
+        while True:
+            try:
+                idx, pts = result_queue.get_nowait()
+            except queue.Empty:
+                break
+            scores[idx] = pts
 
         result = pd.Series(scores, dtype=float)
         return result
@@ -650,7 +829,7 @@ class ScoringEngine:
 
         # Debt ratio (5 pts): healthy if no warnings from risk checker
         try:
-            risk = self._sd.check_financial_risk(symbol)
+            risk = self._get_risk_cached(symbol)
             if not risk.get("warnings"):
                 score += 5
                 reasons.append("财务健康")
@@ -666,7 +845,9 @@ class ScoringEngine:
 
         # Valuation via spot — same ranking method as _score_quality_batch
         try:
-            spot = self._sd.get_spot()
+            spot = self._get_spot_cached()
+            if spot.empty:
+                raise ValueError("no spot data")
             row = spot[spot["code"] == symbol]
             if not row.empty:
                 pe = row.iloc[0].get("pe")
@@ -731,8 +912,7 @@ class ScoringEngine:
 
         # Debt ratio (already checked in risk but add quality bonus)
         try:
-            risk = self._sd.check_financial_risk(symbol)
-            # If risk < 30 and debt warnings empty, bonus for healthy balance sheet
+            risk = self._get_risk_cached(symbol)
             if not risk.get("warnings"):
                 score += 5
                 reasons.append("财务健康")
@@ -892,9 +1072,11 @@ class ScoringEngine:
                 except Exception:
                     fund_scores[sym] = 0.0
 
-        # Pre-cache A-share signals (session-level, reused across all candidates)
-        northbound = self._ensure_northbound_set()
-        limitup = self._ensure_limitup_set()
+        # A-share signals (northbound +2, limitup +3) are optional bonuses.
+        # Skipped in batch mode — akshare calls take 30-60s, not worth the 5 pts.
+        # Use _sentiment_single() for deep scoring with these bonuses included.
+        northbound: set[str] = set()
+        limitup: set[str] = set()
 
         scores = []
         for _, row in df.iterrows():
@@ -1081,20 +1263,57 @@ class ScoringEngine:
 
     def _apply_event_multiplier(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply event-based score multiplier from EventDriver."""
-        from modules.event_driver import EventDriver
-        try:
+        if self._stopped():
+            df["event_multiplier"] = 1.0
+            return df
+        import queue
+        import threading
+
+        def _score_events(frame: pd.DataFrame) -> pd.DataFrame:
+            from modules.event_driver import EventDriver
+
+            scored = frame.copy()
             driver = EventDriver()
-            symbols = df["code"].tolist()
+            symbols = scored["code"].tolist()
             boosts = driver.score_batch(symbols)
-            for idx in df.index:
-                sym = str(df.at[idx, "code"])
+            for idx in scored.index:
+                sym = str(scored.at[idx, "code"])
                 boost = boosts.get(sym, 0)
                 multiplier = 1.0 + boost / 100
-                df.at[idx, "total"] *= multiplier
-                df.at[idx, "event_multiplier"] = round(multiplier, 2)
-        except Exception as e:
-            _logger.warning("事件驱动评分失败: %s", e)
+                scored.at[idx, "total"] *= multiplier
+                scored.at[idx, "event_multiplier"] = round(multiplier, 2)
+            return scored
+
+        result_queue: queue.Queue[tuple[str, pd.DataFrame | Exception]] = queue.Queue(maxsize=1)
+
+        def _worker() -> None:
+            try:
+                result_queue.put(("ok", _score_events(df)), block=False)
+            except Exception as e:
+                result_queue.put(("error", e), block=False)
+
+        thread = threading.Thread(target=_worker, daemon=True)
+        thread.start()
+        thread.join(timeout=self._EVENT_TIMEOUT_SECONDS)
+
+        if thread.is_alive():
+            _logger.warning("event scoring timed out (%.0fs); skipping multiplier", self._EVENT_TIMEOUT_SECONDS)
             df["event_multiplier"] = 1.0
+            return df
+
+        try:
+            status, payload = result_queue.get_nowait()
+        except queue.Empty:
+            df["event_multiplier"] = 1.0
+            return df
+
+        if status == "ok":
+            return payload
+
+        if isinstance(payload, Exception):
+            e = payload
+            _logger.warning("event scoring failed: %s", e)
+        df["event_multiplier"] = 1.0
         return df
 
     def _apply_concentration_penalty(
@@ -1148,9 +1367,13 @@ class ScoringEngine:
         """Build {stock_code: industry_name} reverse map via parallel THS lookups.
 
         Cached on self._industry_map for the lifetime of the ScoringEngine instance.
+        Skipped if stop event is set (score_symbols timeout).
         """
         if hasattr(self, "_industry_map") and self._industry_map is not None:
             return self._industry_map
+
+        if self._stopped():
+            return {}
 
         self._industry_map = self._sector_provider.build_code_to_industry()
         _logger.info("行业映射表已构建: %d 只股票 → %d 个行业",
@@ -1169,40 +1392,78 @@ class ScoringEngine:
     # ──────────────────────────────────────────
 
     def _ensure_northbound_set(self) -> set[str]:
-        """Build and cache the set of HSGT northbound-held stock codes (O(1) lookup)."""
+        """Build and cache the set of HSGT northbound-held stock codes (O(1) lookup).
+
+        Optional bonus (2 pts). Hard timeout 5s — if the akshare call is too slow,
+        we skip it rather than blocking the entire scoring pipeline.
+        """
         if self._northbound_set is not None:
             return self._northbound_set
 
-        try:
+        if self._stopped():
+            self._northbound_set = set()
+            return self._northbound_set
+
+        import concurrent.futures
+
+        def _fetch():
             import akshare as ak
             df = ak.stock_hsgt_stock_statistics_em(symbol="北向持股")
             if df is not None and not df.empty:
-                self._northbound_set = set(df["股票代码"].astype(str).tolist())
-                _logger.info("北向持股列表已缓存: %d 只", len(self._northbound_set))
-            else:
-                self._northbound_set = set()
+                return set(df["股票代码"].astype(str).tolist())
+            return set()
+
+        # Use bare executor (no `with` block) so timeout actually releases the caller.
+        # The background thread is daemon-scoped and will die on process exit.
+        ex = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        try:
+            future = ex.submit(_fetch)
+            self._northbound_set = future.result(timeout=5)
+            _logger.info("北向持股列表已缓存: %d 只", len(self._northbound_set))
+        except concurrent.futures.TimeoutError:
+            _logger.warning("北向持股列表获取超时 (5s)，跳过加分")
+            self._northbound_set = set()
         except Exception as e:
             _logger.warning("北向持股列表获取失败: %s", e)
             self._northbound_set = set()
+        finally:
+            ex.shutdown(wait=False)
 
         return self._northbound_set
 
     def _ensure_limitup_set(self) -> set[str]:
-        """Build and cache today's limit-up stock codes (O(1) lookup)."""
+        """Build and cache today's limit-up stock codes (O(1) lookup).
+
+        Optional bonus (3 pts). Hard timeout 5s — skip if too slow.
+        """
         if self._limitup_set is not None:
             return self._limitup_set
 
-        try:
+        if self._stopped():
+            self._limitup_set = set()
+            return self._limitup_set
+
+        import concurrent.futures
+
+        def _fetch():
             df = self._sd.get_limit_up()
             if df is not None and not df.empty:
-                codes = df["code"].astype(str).tolist()
-                self._limitup_set = set(codes)
-                _logger.info("今日涨停股列表已缓存: %d 只", len(self._limitup_set))
-            else:
-                self._limitup_set = set()
+                return set(df["code"].astype(str).tolist())
+            return set()
+
+        ex = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        try:
+            future = ex.submit(_fetch)
+            self._limitup_set = future.result(timeout=5)
+            _logger.info("今日涨停股列表已缓存: %d 只", len(self._limitup_set))
+        except concurrent.futures.TimeoutError:
+            _logger.warning("涨停股列表获取超时 (5s)，跳过加分")
+            self._limitup_set = set()
         except Exception as e:
             _logger.warning("涨停股列表获取失败: %s", e)
             self._limitup_set = set()
+        finally:
+            ex.shutdown(wait=False)
 
         return self._limitup_set
 
