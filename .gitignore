@@ -35,6 +35,10 @@ data/*
 # 日志
 *.log
 
+# Local handover notes
+docs/HANDOVER_2026-05-08.md
+docs/handover-cpu-fix-2026-05-09.md
+
 # Python 构建产物
 build/
 dist/
