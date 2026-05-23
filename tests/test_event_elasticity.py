@@ -6,7 +6,7 @@ from modules.db.event_store import EventStore
 from modules.db.migrations import run_migrations
 from modules.db.price_store import PriceStore
 from modules.event_intelligence.elasticity import EventElasticityBacktester
-from modules.event_intelligence.models import EventOpportunity, EventSignal, EventState
+from modules.event_intelligence.models import EventOpportunity, EventSignal
 
 
 class MemoryDB:
@@ -136,3 +136,38 @@ def test_elasticity_falls_back_to_history_related_sectors():
         assert result["summary"][0]["avg_forward_return"] == 10.0
     finally:
         db.close()
+
+
+def test_elasticity_calibration_suggests_multiplier_adjustments():
+    summary = [
+        {
+            "event_id": "strong_event",
+            "window_days": 3,
+            "sample_count": 12,
+            "avg_forward_return": 3.5,
+            "win_rate": 0.7,
+        },
+        {
+            "event_id": "weak_event",
+            "window_days": 3,
+            "sample_count": 12,
+            "avg_forward_return": -2.5,
+            "win_rate": 0.35,
+        },
+        {
+            "event_id": "thin_event",
+            "window_days": 3,
+            "sample_count": 2,
+            "avg_forward_return": 10,
+            "win_rate": 1.0,
+        },
+    ]
+
+    rows = {row["event_id"]: row for row in EventElasticityBacktester._calibration_rows(summary)}
+
+    assert rows["strong_event"]["suggested_multiplier"] == 1.1
+    assert rows["strong_event"]["action"] == "strengthen"
+    assert rows["weak_event"]["suggested_multiplier"] == 0.85
+    assert rows["weak_event"]["action"] == "cut"
+    assert rows["thin_event"]["suggested_multiplier"] == 1.0
+    assert rows["thin_event"]["confidence"] == "insufficient"

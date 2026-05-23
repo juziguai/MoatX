@@ -6,6 +6,8 @@ from datetime import date, timedelta
 
 import pandas as pd
 
+from modules.akshare_compat import import_akshare
+
 _CALENDAR_CACHE: set[date] | None = None
 
 
@@ -15,7 +17,7 @@ def _load_calendar() -> set[date]:
     if _CALENDAR_CACHE is not None:
         return _CALENDAR_CACHE
     try:
-        import akshare as ak
+        ak = import_akshare()
         df = ak.tool_trade_date_hist_sina()
         trading = df[df["trade_date"] == 1]["date"].dt.date
         _CALENDAR_CACHE = set(trading)

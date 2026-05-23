@@ -7,18 +7,27 @@ which is an internal module that breaks when akshare updates.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
-import py_mini_racer
+try:
+    from py_mini_racer import MiniRacer
+except Exception as exc:  # pragma: no cover - depends on local optional runtime
+    MiniRacer = None  # type: ignore[assignment]
+    _IMPORT_ERROR: Exception | None = exc
+else:
+    _IMPORT_ERROR = None
 
 _JS_DIR = Path(__file__).resolve().parent / "js"
 _JS_PATH = _JS_DIR / "ths.js"
-_CTX: py_mini_racer.MiniRacer | None = None
+_CTX: Any | None = None
 
 
-def _get_ctx() -> py_mini_racer.MiniRacer:
+def _get_ctx() -> Any:
     global _CTX
+    if MiniRacer is None:
+        raise RuntimeError(f"mini-racer unavailable for THS anti-crawler header: {_IMPORT_ERROR}")
     if _CTX is None:
-        _CTX = py_mini_racer.MiniRacer()
+        _CTX = MiniRacer()
         _CTX.eval(_JS_PATH.read_text(encoding="utf-8"))
     return _CTX
 

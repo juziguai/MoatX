@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime, timedelta
 
 from modules.db.event_store import EventStore
 from modules.db.migrations import run_migrations
@@ -122,3 +123,59 @@ def test_news_factor_engine_uses_latest_llm_review_decision():
         assert boosted_adjustment > 1.0
     finally:
         db.close()
+
+
+def test_news_factor_time_decay_reduces_stale_news_contribution():
+    recent = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    old = (datetime.now() - timedelta(days=8)).strftime("%Y-%m-%d %H:%M:%S")
+    insights = [
+        {
+            "affected_sectors": ["recent_sector"],
+            "sentiment": "bullish",
+            "value_score": 90,
+            "confidence": 1,
+            "impact_strength": 1,
+            "published_at": recent,
+            "topic": "AI",
+            "title": "recent",
+        },
+        {
+            "affected_sectors": ["old_sector"],
+            "sentiment": "bullish",
+            "value_score": 90,
+            "confidence": 1,
+            "impact_strength": 1,
+            "published_at": old,
+            "topic": "AI",
+            "title": "old",
+        },
+    ]
+
+    factors = {item.sector: item for item in NewsFactorEngine._aggregate(insights, {})}
+
+    assert factors["recent_sector"].factor_score > factors["old_sector"].factor_score
+    assert factors["recent_sector"].avg_time_decay == 1.0
+    assert factors["old_sector"].avg_time_decay == 0.1
+
+
+def test_news_factor_bearish_keywords_override_bullish_rule_sentiment():
+    insights = [
+        {
+            "affected_sectors": ["risk_sector"],
+            "sentiment": "bullish",
+            "value_score": 90,
+            "confidence": 1,
+            "impact_strength": 1,
+            "published_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "topic": "AI",
+            "title": "\u4e8f\u635f \u5236\u88c1 risk",
+            "summary": "",
+            "reason": "",
+        }
+    ]
+
+    factor = NewsFactorEngine._aggregate(insights, {})[0]
+
+    assert factor.sector == "risk_sector"
+    assert factor.direction == "bearish"
+    assert factor.factor_score < 0

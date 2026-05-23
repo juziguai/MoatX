@@ -22,6 +22,7 @@ data/*
 !data/event_sector_map.toml
 !data/event_transmission_map.toml
 !data/sector_graph.toml
+!data/stock_topic_exposure.toml
 !data/schedule_config.toml
 
 # 图片

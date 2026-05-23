@@ -14,6 +14,7 @@ from typing import Any
 
 import pandas as pd
 
+from modules.akshare_compat import import_akshare
 from modules.config import tomllib
 from modules.utils import _clear_all_proxy
 
@@ -116,6 +117,7 @@ class SectorTagProvider:
         graph_path: str | Path | None = None,
     ):
         self._ak = ak
+        self._ak_injected = ak is not None
         self._max_workers = max_workers
         self._graph_path = Path(graph_path) if graph_path else _PROJECT_ROOT / "data" / "sector_graph.toml"
         self._code_to_tags: dict[str, set[str]] | None = None
@@ -134,7 +136,7 @@ class SectorTagProvider:
 
     def get_members(self, target: str, target_type: str) -> pd.DataFrame:
         """Fetch board constituents and normalize to at least code/name columns."""
-        if self._ak is not None:
+        if self._ak_injected:
             live = self._live_members(target, target_type)
             if not live.empty:
                 return self._attach_member_meta(live, source="live", tag=target)
@@ -163,7 +165,7 @@ class SectorTagProvider:
             (name, "concept") for name in concept_names
         ]
         if not tasks:
-            if self._ak is None:
+            if not self._ak_injected:
                 code_to_tags.update(self._graph_code_to_tags())
             self._code_to_tags = code_to_tags
             return self._code_to_tags
@@ -182,7 +184,7 @@ class SectorTagProvider:
                 for code in members["code"].astype(str):
                     code_to_tags.setdefault(self.normalize_code(code), set()).add(board_name)
 
-        if self._ak is None:
+        if not self._ak_injected:
             for code, tags in self._graph_code_to_tags().items():
                 code_to_tags.setdefault(code, set()).update(tags)
 
@@ -198,7 +200,7 @@ class SectorTagProvider:
         code_to_industry: dict[str, str] = {}
         industry_names = self._board_names("industry")
         if not industry_names:
-            self._code_to_industry = self._graph_code_to_industry() if self._ak is None else {}
+            self._code_to_industry = self._graph_code_to_industry() if not self._ak_injected else {}
             return self._code_to_industry
 
         with ThreadPoolExecutor(max_workers=min(len(industry_names), self._max_workers)) as executor:
@@ -215,7 +217,7 @@ class SectorTagProvider:
                 for code in members["code"].astype(str):
                     code_to_industry[self.normalize_code(code)] = industry_name
 
-        if self._ak is None:
+        if not self._ak_injected:
             for code, industry in self._graph_code_to_industry().items():
                 code_to_industry.setdefault(code, industry)
 
@@ -319,7 +321,11 @@ class SectorTagProvider:
             ]
 
         for func_name in func_names:
-            func = getattr(ak, func_name, None)
+            try:
+                func = getattr(ak, func_name, None)
+            except Exception as exc:
+                _logger.debug("akshare member function unavailable [%s]: %s", func_name, exc)
+                continue
             if func is None:
                 continue
             try:
@@ -340,7 +346,11 @@ class SectorTagProvider:
 
         df = pd.DataFrame()
         for func_name in func_names:
-            func = getattr(ak, func_name, None)
+            try:
+                func = getattr(ak, func_name, None)
+            except Exception as exc:
+                _logger.debug("akshare board function unavailable [%s]: %s", func_name, exc)
+                continue
             if func is None:
                 continue
             try:
@@ -478,7 +488,5 @@ class SectorTagProvider:
         _clear_all_proxy()
         if self._ak is not None:
             return self._ak
-        import akshare as ak
-
-        self._ak = ak
-        return ak
+        self._ak = import_akshare()
+        return self._ak

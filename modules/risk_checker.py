@@ -11,12 +11,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import Any
 
-import akshare as ak
 import requests
 
+from modules.akshare_compat import import_akshare
 from modules.config import cfg
 
 _logger = logging.getLogger("moatx.risk_checker")
+ak = import_akshare()
 
 
 class FinancialRiskChecker:

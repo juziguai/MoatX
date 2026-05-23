@@ -7,6 +7,7 @@ import pandas as pd
 import logging
 from typing import Optional, Literal, Tuple
 
+from modules.akshare_compat import import_akshare
 from modules.config import cfg
 from modules.market_filters import filter_selection_universe
 
@@ -135,7 +136,7 @@ class MoatXScreener:
     ) -> pd.DataFrame:
         """扫描指定行业板块内个股（THS 数据源）"""
         try:
-            import akshare as ak
+            ak = import_akshare()
             df = ak.stock_board_industry_cons_ths(symbol=industry_name)
             if df is None or df.empty:
                 return pd.DataFrame()
@@ -167,7 +168,7 @@ class MoatXScreener:
     def scan_all_industries(self, limit_per: int = 3) -> pd.DataFrame:
         """扫描所有行业板块（THS），每个板块取前 limit_per 只"""
         try:
-            import akshare as ak
+            ak = import_akshare()
             industries = ak.stock_board_industry_name_ths()
             if industries is None or industries.empty:
                 return pd.DataFrame()

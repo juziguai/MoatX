@@ -22,7 +22,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "akshare>=1.12.0,<1.19.0",        # akshare API 变化频繁，保守锁上界 (2026-04当前: 1.18.57)
     "pandas>=2.0.0,<2.5.0",
     "numpy>=1.24.0,<3.0.0",           # numpy 2.x wheel无需编译，3.0前仍有上界保护
     "requests>=2.31.0,<2.33.0",
@@ -35,6 +34,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+akshare = [
+    "akshare>=1.12.0,<1.19.0",        # Optional enhancement source; core pipeline must run without it.
+]
 dev = [
     "pytest>=7.0.0,<8.0.0",
     "pytest-cov>=4.0.0,<5.0.0",

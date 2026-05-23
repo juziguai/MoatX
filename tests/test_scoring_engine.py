@@ -1,6 +1,14 @@
+import sys
+import types
+
 import pandas as pd
 
-from modules.scoring_engine import ScoringEngine
+try:
+    import akshare  # noqa: F401
+except Exception:
+    sys.modules["akshare"] = types.SimpleNamespace()
+
+from modules.scoring_engine import ScoringEngine, _event_multiplier_from_boost
 
 
 class FakeStockData:
@@ -29,6 +37,13 @@ def test_cheapness_score_rewards_lower_valuation():
     high_pe_score, _ = ScoringEngine._cheapness_score(market, 40.0, 15)
 
     assert low_pe_score > high_pe_score
+
+
+def test_event_multiplier_from_boost_is_capped():
+    assert _event_multiplier_from_boost(40) == 1.3
+    assert _event_multiplier_from_boost(30) == 1.3
+    assert _event_multiplier_from_boost(-80) == 0.6
+    assert _event_multiplier_from_boost(12.5) == 1.125
 
 
 def test_score_batch_all_veto_keeps_output_protocol():

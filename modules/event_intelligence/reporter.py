@@ -9,16 +9,15 @@ from difflib import SequenceMatcher
 from email.utils import parsedate_to_datetime
 
 from modules.config import cfg
+from modules.datasource import QuoteManager
 from modules.db import DatabaseManager
 from modules.sector_tags import SectorTagProvider
+from modules.utils import normalize_symbol
 
-from .history import EventHistoryRegistry
-from .llm_semantics import LLMSemanticReviewer, llm_settings_status
+from .llm_semantics import llm_settings_status
 from .models import event_status_label, now_ts
-from .news_factors import NewsFactorEngine
 from .news_intelligence import NewsIntelligenceEngine
 from .source_quality import source_recommendation
-from .topic_memory import TopicMemoryEngine
 
 
 class EventReporter:
@@ -122,12 +121,26 @@ class EventReporter:
         source_quality_all = self._db.event().list_source_quality(limit=1000)
         news_scan_limit = max(100, limit * 20)
         news_intelligence = NewsIntelligenceEngine(db=self._db).analyze(limit=news_scan_limit, min_score=45.0)
-        lines = [f"MoatX 热点速览 | {now_ts()[:10]} 盘中", ""]
+        lines = [self._report_title(), ""]
         insights = (news_intelligence.get("insights") or [])[:limit]
         lines.extend(self._strict_refresh_section(source_quality_all, news_intelligence, insights))
+        lines.extend(self._market_validation_section(insights))
         lines.extend(self._strict_hotspot_sections(insights))
         lines.append("注：本报告基于算法新闻抓取与人工增强逻辑，不构成投资建议。")
         return "\n".join(lines)
+
+    @staticmethod
+    def _report_title(now_text: str | None = None) -> str:
+        current = EventReporter._parse_time(now_text or now_ts())
+        if current is None:
+            current = datetime.now()
+        if current.time() < time(9, 30):
+            session = "盘前"
+        elif current.time() <= time(15, 0):
+            session = "盘中"
+        else:
+            session = "收盘后"
+        return f"MoatX 热点速览 | {current.strftime('%Y-%m-%d')} {session}"
 
     @staticmethod
     def _strict_refresh_section(source_quality, news_intelligence: dict, insights: list[dict]) -> list[str]:
@@ -142,9 +155,117 @@ class EventReporter:
         hot_text = "、".join(hot) if hot else "无触发阈值"
         inactive_text = f"{'、'.join(inactive[:5])}无触发阈值。" if inactive else ""
         return [
-            f"本时段扫描{sources}个源，捕获{fetched}条资讯。今日高热聚焦：{hot_text}。{inactive_text}",
+            f"新闻侧热度：本时段扫描{sources}个源，捕获{fetched}条资讯。今日高热聚焦：{hot_text}。{inactive_text}",
             "",
         ]
+
+    @staticmethod
+    def _market_validation_section(insights: list[dict]) -> list[str]:
+        rows = EventReporter._market_validation_rows(insights)
+        if not rows:
+            return ["盘面验证：行情数据暂不可用，本报告仅保留新闻侧热度。", ""]
+
+        confirmed = [row["topic"] for row in rows if row["status"] in ("资金共振", "温和确认")]
+        pending = [row["topic"] for row in rows if row["status"] == "盘面未确认"]
+        summary_parts = []
+        if confirmed:
+            summary_parts.append(f"{'、'.join(confirmed[:3])}获得盘面确认")
+        if pending:
+            summary_parts.append(f"{'、'.join(pending[:3])}新闻热但盘面未同步")
+        summary = "；".join(summary_parts) if summary_parts else "主题表现分化，需继续观察资金确认"
+
+        lines = [f"盘面验证：{summary}。", ""]
+        for row in rows[:5]:
+            lines.append(
+                f"• {row['topic']}：{row['status']}，样本{row['sample_count']}只，"
+                f"上涨{row['up']} / 下跌{row['down']} / 平盘{row['flat']}，"
+                f"平均涨跌{row['avg_pct']:+.2f}%，成交{row['amount_yi']:.2f}亿；"
+                f"最强 {row['top_name']}({row['top_code']}) {row['top_pct']:+.2f}%，"
+                f"最弱 {row['bottom_name']}({row['bottom_code']}) {row['bottom_pct']:+.2f}%。"
+            )
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _market_validation_rows(insights: list[dict]) -> list[dict]:
+        topic_codes: dict[str, dict[str, str]] = {}
+        for item in insights:
+            profile = EventReporter._event_profile(item)
+            topic = EventReporter._display_topic(item, profile)
+            if not topic:
+                continue
+            targets = EventReporter._a_share_targets(item, profile, limit=5)
+            bucket = topic_codes.setdefault(topic, {})
+            for target in targets:
+                match = re.search(r"\((\d{6})\)", target)
+                if not match:
+                    continue
+                code = match.group(1)
+                name = target.split("(", 1)[0].strip()
+                bucket.setdefault(code, name)
+
+        all_codes: list[str] = []
+        for codes in topic_codes.values():
+            for code in codes:
+                if code not in all_codes:
+                    all_codes.append(code)
+        if not all_codes:
+            return []
+
+        try:
+            quotes = QuoteManager(source_names=["sina"], mode="single").fetch_quotes(all_codes[:40])
+        except Exception:
+            return []
+        quotes_by_code = {normalize_symbol(key): value for key, value in quotes.items() if value}
+        rows: list[dict] = []
+        for topic, code_names in topic_codes.items():
+            items = []
+            for code, fallback_name in code_names.items():
+                quote = quotes_by_code.get(code)
+                if not quote:
+                    continue
+                pct = float(quote.get("change_pct") or 0)
+                amount = float(quote.get("amount") or 0) / 100000000
+                items.append({
+                    "code": code,
+                    "name": str(quote.get("name") or fallback_name),
+                    "pct": pct,
+                    "amount_yi": amount,
+                })
+            if not items:
+                continue
+            up = sum(1 for item in items if item["pct"] > 0)
+            down = sum(1 for item in items if item["pct"] < 0)
+            flat = len(items) - up - down
+            avg_pct = sum(item["pct"] for item in items) / len(items)
+            up_ratio = up / len(items)
+            if avg_pct >= 1.0 and up_ratio >= 0.6:
+                status = "资金共振"
+            elif avg_pct > 0 and up > down:
+                status = "温和确认"
+            elif avg_pct <= -0.5 or down > up:
+                status = "盘面未确认"
+            else:
+                status = "分化观察"
+            top = max(items, key=lambda item: item["pct"])
+            bottom = min(items, key=lambda item: item["pct"])
+            rows.append({
+                "topic": topic,
+                "status": status,
+                "sample_count": len(items),
+                "up": up,
+                "down": down,
+                "flat": flat,
+                "avg_pct": round(avg_pct, 2),
+                "amount_yi": round(sum(item["amount_yi"] for item in items), 2),
+                "top_name": top["name"],
+                "top_code": top["code"],
+                "top_pct": round(top["pct"], 2),
+                "bottom_name": bottom["name"],
+                "bottom_code": bottom["code"],
+                "bottom_pct": round(bottom["pct"], 2),
+            })
+        return sorted(rows, key=lambda row: (-row["avg_pct"], -row["sample_count"]))
 
     @staticmethod
     def _strict_hotspot_sections(insights: list[dict]) -> list[str]:

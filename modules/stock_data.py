@@ -8,12 +8,12 @@ import time as _time
 import requests
 import logging
 import threading
-import akshare as ak
 import pandas as pd
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Dict, List, Literal, Optional
 
+from modules.akshare_compat import import_akshare
 from modules.crawler.eastmoney import fetch_stock_info as _em_stock_info
 from modules.crawler.fundflow import get_money_flow_summary
 from modules.config import cfg
@@ -24,6 +24,7 @@ from modules.utils import _clear_all_proxy, to_full_code
 
 _logger = logging.getLogger("moatx.stock_data")
 _logger.setLevel(logging.WARNING)
+ak = import_akshare()
 
 
 def retry_on_network_error(max_retries: int = 2, base_delay: float = 1.0):
@@ -229,7 +230,7 @@ class StockData:
             except Exception:
                 pass  # fall through to network fetch
 
-        # 主数据源：新浪（akshare），备用：腾讯财经（支持 ETF）
+        # 主数据源：新浪（akshare 可选增强），备用：腾讯财经（支持 ETF）
         df = self._get_daily_sina(code, start_date, end_date, adjust)
         if df is None or df.empty:
             df = self._get_daily_tencent(code, start_date, end_date, adjust)
@@ -454,7 +455,7 @@ class StockData:
 
     def get_money_flow(self, symbol: str) -> Dict[str, Any]:
         """
-        获取个股资金流向（EastMoney 数据中心，走 akshare stock_individual_fund_flow）
+        获取个股资金流向（EastMoney 直连，akshare 仅作为可选 fallback）
         """
         try:
             return get_money_flow_summary(symbol, use_cache=True)

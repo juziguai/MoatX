@@ -6,23 +6,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-from modules.event_intelligence.collector import EventNewsCollector
-from modules.event_intelligence.context import EventContextBuilder
-from modules.event_intelligence.elasticity import EventElasticityBacktester
-from modules.event_intelligence.extractor import EventExtractor
-from modules.event_intelligence.llm_semantics import LLMSemanticReviewer, llm_settings_status
-from modules.event_intelligence.manual_ingest import ingest_manual_news, ingest_news_file
-from modules.event_intelligence.news_factors import NewsFactorEngine
-from modules.event_intelligence.news_intelligence import NewsIntelligenceEngine
-from modules.event_intelligence.notifier import EventNotifier
-from modules.event_intelligence.opportunity import EventOpportunityScanner
-from modules.event_intelligence.probability import EventProbabilityEngine
-from modules.event_intelligence.reporter import EventReporter
-from modules.event_intelligence.service import EventIntelligenceService
-from modules.event_intelligence.source_registry import SourceRegistry
-from modules.event_intelligence.summary import build_event_monitor_summary
-from modules.event_intelligence.topic_memory import TopicMemoryEngine
-
 
 def cmd_event(args) -> None:
     """Run event intelligence actions from CLI."""
@@ -30,8 +13,12 @@ def cmd_event(args) -> None:
     payload: dict[str, Any] | str
 
     if action == "collect":
+        from modules.event_intelligence.collector import EventNewsCollector
+
         payload = EventNewsCollector().collect()
     elif action == "ingest":
+        from modules.event_intelligence.manual_ingest import ingest_manual_news, ingest_news_file
+
         if args.file:
             payload = ingest_news_file(args.file, source=args.source)
         else:
@@ -43,55 +30,79 @@ def cmd_event(args) -> None:
                 published_at=args.published_at or "",
             )
     elif action == "extract":
+        from modules.event_intelligence.extractor import EventExtractor
+
         payload = EventExtractor().extract_unprocessed(limit=args.limit)
     elif action == "states":
+        from modules.event_intelligence.probability import EventProbabilityEngine
+
         payload = EventProbabilityEngine().update_states()
     elif action == "opportunities":
+        from modules.event_intelligence.opportunity import EventOpportunityScanner
+
         payload = EventOpportunityScanner().scan(
             min_probability=args.min_probability,
             per_effect_limit=args.per_effect_limit,
         )
     elif action == "report":
+        from modules.event_intelligence.reporter import EventReporter
+
         payload = EventReporter().report(limit=args.limit)
     elif action == "news":
+        from modules.event_intelligence.service import EventIntelligenceService
+
         payload = EventIntelligenceService().news_intelligence(
             limit=args.limit,
             topic=args.topic or None,
             min_score=args.min_score,
         )
     elif action == "news-report":
+        from modules.event_intelligence.news_intelligence import NewsIntelligenceEngine
+
         payload = NewsIntelligenceEngine().report(
             limit=args.limit,
             topic=args.topic or None,
             min_score=args.min_score,
         )
     elif action == "news-factors":
+        from modules.event_intelligence.service import EventIntelligenceService
+
         payload = EventIntelligenceService().news_factors(
             limit=args.limit,
             min_score=args.min_score,
             top_n=args.top_events or 20,
         )
     elif action == "topics":
+        from modules.event_intelligence.service import EventIntelligenceService
+
         payload = EventIntelligenceService().topic_memory(
             limit=args.limit,
             min_score=args.min_score,
             top_n=args.top_events or 30,
         )
     elif action == "topic-snapshots":
+        from modules.event_intelligence.topic_memory import TopicMemoryEngine
+
         payload = {
             "engine": "topic_memory_v1",
             "topic": args.topic or "",
             "snapshots": TopicMemoryEngine().snapshots(topic=args.topic or "", limit=args.limit),
         }
     elif action == "llm-status":
+        from modules.event_intelligence.llm_semantics import llm_settings_status
+
         payload = llm_settings_status()
     elif action == "llm-review":
+        from modules.event_intelligence.service import EventIntelligenceService
+
         payload = EventIntelligenceService().llm_review(
             limit=args.limit,
             min_score=args.min_score,
             send=args.send,
         )
     elif action == "llm-reviews":
+        from modules.event_intelligence.llm_semantics import LLMSemanticReviewer
+
         payload = {
             "engine": "llm_semantic_review_v1",
             "reviews": LLMSemanticReviewer().list_reviews(limit=args.limit),
@@ -99,6 +110,8 @@ def cmd_event(args) -> None:
     elif action == "sources":
         payload = _source_snapshot(limit=args.limit)
     elif action == "notify":
+        from modules.event_intelligence.notifier import EventNotifier
+
         payload = EventNotifier().notify(
             send=args.send,
             probability_threshold=args.probability_threshold,
@@ -106,20 +119,36 @@ def cmd_event(args) -> None:
             limit=args.limit,
         )
     elif action == "context":
+        from modules.event_intelligence.context import EventContextBuilder
+
         payload = EventContextBuilder().build(limit=args.limit)
     elif action == "summary":
+        from modules.event_intelligence.summary import build_event_monitor_summary
+
         payload = build_event_monitor_summary(
             top_n=args.top_events,
             probability_threshold=args.probability_threshold,
             opportunity_threshold=args.opportunity_threshold,
         )
     elif action == "elasticity":
+        from modules.event_intelligence.elasticity import EventElasticityBacktester
+
         payload = EventElasticityBacktester().run(
             event_id=args.event_id or "",
             windows=_parse_windows(args.windows),
             limit=args.limit,
         )
+    elif action == "calibration":
+        from modules.event_intelligence.elasticity import EventElasticityBacktester
+
+        payload = EventElasticityBacktester().calibrate(
+            event_id=args.event_id or "",
+            windows=_parse_windows(args.windows),
+            limit=args.limit,
+        )
     elif action == "run":
+        from modules.event_intelligence.service import EventIntelligenceService
+
         service = EventIntelligenceService()
         payload = service.run_event_cycle(
             limit=args.limit,
@@ -156,6 +185,9 @@ def _parse_windows(value: str) -> list[int]:
 
 def _source_snapshot(limit: int = 200) -> dict[str, Any]:
     """Return configured sources plus recent quality statistics."""
+    from modules.event_intelligence.context import EventContextBuilder
+    from modules.event_intelligence.source_registry import SourceRegistry
+
     registry = SourceRegistry()
     sources = registry.load()
     quality = EventContextBuilder().build(limit=limit).get("source_quality", [])

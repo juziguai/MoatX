@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 from modules.config import cfg
@@ -11,6 +13,16 @@ from modules.db import DatabaseManager
 
 from .models import now_ts
 from .news_intelligence import NewsIntelligenceEngine
+
+_BEARISH_KEYWORDS = (
+    "下跌", "下滑", "亏损", "预亏", "减持", "处罚", "立案", "调查", "制裁", "禁令",
+    "不及预期", "暴跌", "风险", "违约", "退市", "召回", "事故", "停产", "降级",
+    "债务", "商誉减值", "资产减值",
+)
+
+_SEVERE_BEARISH_KEYWORDS = (
+    "立案", "制裁", "禁令", "违约", "退市", "召回", "停产", "商誉减值", "资产减值",
+)
 
 
 @dataclass(slots=True)
@@ -25,6 +37,7 @@ class NewsSectorFactor:
     top_topic: str
     top_titles: list[str] = field(default_factory=list)
     llm_adjustment: float = 1.0
+    avg_time_decay: float = 1.0
 
 
 class NewsFactorEngine:
@@ -112,11 +125,13 @@ class NewsFactorEngine:
             sectors = item.get("affected_sectors") or []
             if not sectors:
                 continue
-            sign = -1.0 if item.get("sentiment") == "bearish" else 1.0
+            sign, bearish_hits = NewsFactorEngine._sentiment_sign(item)
             llm_multiplier = NewsFactorEngine._llm_multiplier(item, reviews)
             if llm_multiplier <= 0:
                 continue
-            contribution = NewsFactorEngine._contribution(item) * sign * llm_multiplier
+            time_decay = NewsFactorEngine._time_decay(item.get("published_at") or item.get("created_at") or "")
+            bearish_multiplier = 1.2 if bearish_hits & set(_SEVERE_BEARISH_KEYWORDS) else (1.1 if bearish_hits else 1.0)
+            contribution = NewsFactorEngine._contribution(item) * sign * llm_multiplier * time_decay * bearish_multiplier
             for sector in sectors:
                 sector_name = str(sector).strip()
                 if not sector_name:
@@ -131,6 +146,7 @@ class NewsFactorEngine:
                         "titles": [],
                         "llm_total": 0.0,
                         "llm_count": 0,
+                        "time_total": 0.0,
                     },
                 )
                 bucket["score"] += contribution
@@ -143,6 +159,7 @@ class NewsFactorEngine:
                     bucket["titles"].append(title)
                 bucket["llm_total"] += llm_multiplier
                 bucket["llm_count"] += 1
+                bucket["time_total"] += time_decay
 
         factors: list[NewsSectorFactor] = []
         for sector, bucket in buckets.items():
@@ -162,6 +179,7 @@ class NewsFactorEngine:
                     top_topic=top_topic,
                     top_titles=bucket["titles"][:3],
                     llm_adjustment=round(bucket["llm_total"] / max(1, bucket["llm_count"]), 3),
+                    avg_time_decay=round(bucket["time_total"] / max(1, bucket["count"]), 3),
                 )
             )
 
@@ -175,6 +193,56 @@ class NewsFactorEngine:
         impact_strength = float(item.get("impact_strength") or 0.0)
         score_part = max(0.0, value_score - 45.0) / 55.0
         return min(18.0, score_part * 24.0 * confidence * impact_strength)
+
+    @staticmethod
+    def _sentiment_sign(item: dict[str, Any]) -> tuple[float, set[str]]:
+        text = " ".join(
+            str(item.get(key) or "")
+            for key in ("title", "summary", "reason")
+        )
+        bearish_hits = {keyword for keyword in _BEARISH_KEYWORDS if keyword in text}
+        if str(item.get("sentiment") or "").lower() == "bearish" or bearish_hits:
+            return -1.0, bearish_hits
+        return 1.0, set()
+
+    @staticmethod
+    def _time_decay(value: Any) -> float:
+        parsed = NewsFactorEngine._parse_time(value)
+        if parsed is None:
+            return 0.85
+        age_hours = max(0.0, (datetime.now() - parsed).total_seconds() / 3600)
+        if age_hours <= 12:
+            return 1.0
+        if age_hours <= 24:
+            return 0.9
+        if age_hours <= 48:
+            return 0.7
+        if age_hours <= 72:
+            return 0.5
+        if age_hours <= 168:
+            return 0.25
+        return 0.1
+
+    @staticmethod
+    def _parse_time(value: Any) -> datetime | None:
+        text = str(value or "").strip()
+        if not text:
+            return None
+        text = text.replace("T", " ").replace("Z", "")
+        if "." in text:
+            text = text.split(".", 1)[0]
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(text, fmt)
+            except ValueError:
+                continue
+        try:
+            parsed = parsedate_to_datetime(text)
+            if parsed is None:
+                return None
+            return parsed.replace(tzinfo=None) if parsed.tzinfo is not None else parsed
+        except (TypeError, ValueError):
+            return None
 
     @staticmethod
     def _llm_multiplier(

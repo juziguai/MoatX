@@ -29,9 +29,14 @@ from modules.config import cfg
 from modules.indicators import IndicatorEngine
 from modules.market_filters import filter_selection_universe
 from modules.sector_tags import SectorTagProvider
-from modules.stock_data import StockData
 
 _logger = logging.getLogger("moatx.scoring")
+_EVENT_MULTIPLIER_MIN = 0.6
+_EVENT_MULTIPLIER_MAX = 1.3
+
+
+def _event_multiplier_from_boost(boost: float) -> float:
+    return max(_EVENT_MULTIPLIER_MIN, min(_EVENT_MULTIPLIER_MAX, 1.0 + float(boost) / 100))
 
 
 @dataclass
@@ -223,6 +228,8 @@ class ScoringEngine:
     _PROFITABILITY_TIMEOUT_SECONDS = 10.0
 
     def __init__(self, sim_cfg=None):
+        from modules.stock_data import StockData
+
         self._cfg = sim_cfg or cfg().simulation
         self._sd = StockData()
         self._ind = IndicatorEngine()
@@ -547,7 +554,7 @@ class ScoringEngine:
         try:
             driver = EventDriver()
             boost = driver.score_single(symbol)
-            multiplier = 1.0 + boost / 100
+            multiplier = _event_multiplier_from_boost(boost)
             total *= multiplier
         except Exception:
             multiplier = 1.0
@@ -1279,7 +1286,7 @@ class ScoringEngine:
             for idx in scored.index:
                 sym = str(scored.at[idx, "code"])
                 boost = boosts.get(sym, 0)
-                multiplier = 1.0 + boost / 100
+                multiplier = _event_multiplier_from_boost(boost)
                 scored.at[idx, "total"] *= multiplier
                 scored.at[idx, "event_multiplier"] = round(multiplier, 2)
             return scored
@@ -1407,7 +1414,9 @@ class ScoringEngine:
         import concurrent.futures
 
         def _fetch():
-            import akshare as ak
+            from modules.akshare_compat import import_akshare
+
+            ak = import_akshare()
             df = ak.stock_hsgt_stock_statistics_em(symbol="北向持股")
             if df is not None and not df.empty:
                 return set(df["股票代码"].astype(str).tolist())

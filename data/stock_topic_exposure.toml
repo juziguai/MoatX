@@ -1,0 +1,51 @@
+version = "2026-05-23"
+
+[[exposures]]
+symbol = "600584"
+stock_name = "长电科技"
+topic = "半导体"
+sector_tag = "半导体"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-23"
+
+[[exposures]]
+symbol = "000977"
+stock_name = "浪潮信息"
+topic = "算力基础设施"
+sector_tag = "算力"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-23"
+
+[[exposures]]
+symbol = "601138"
+stock_name = "工业富联"
+topic = "AI大模型"
+sector_tag = "算力"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-23"
+
+[[exposures]]
+symbol = "002230"
+stock_name = "科大讯飞"
+topic = "AI大模型"
+sector_tag = "AI应用"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-23"
+
+[[exposures]]
+symbol = "600339"
+stock_name = "中油工程"
+topic = "能源商品"
+sector_tag = "石油行业"
+exposure = 1.0
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-23"

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from modules.akshare_compat import import_akshare
 from modules.backtest.calendar import (
     is_trading_day as _backtest_is_trading_day,
     previous_trading_day,
@@ -35,7 +36,7 @@ def _save_cache(data: dict) -> None:
 def _refresh_calendar() -> set[date]:
     """Fetch trading calendar from akshare, cache to JSON."""
     try:
-        import akshare as ak
+        ak = import_akshare()
         df = ak.tool_trade_date_hist_sina()
         trading = set(pd.to_datetime(df[df["trade_date"] == 1]["date"]).dt.date)
         today = date.today()

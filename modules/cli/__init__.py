@@ -13,11 +13,9 @@ import logging
 from datetime import datetime
 
 from .portfolio import cmd_import, cmd_batch_import, cmd_list, cmd_remove, cmd_refresh, cmd_trade, cmd_summary
-from .quote import cmd_quote
 from .market import cmd_market
 from .alerter import cmd_alert_check, cmd_alert_watch, cmd_alert_history
 from .risk import cmd_risk_check, cmd_risk_status, cmd_risk_history
-from .tool import cmd_diagnose, cmd_event, cmd_probe_api, cmd_signal, cmd_paper
 from .tool.monitor import cmd_monitor
 
 # CLI logging配置
@@ -140,6 +138,11 @@ def main():
     p_paper.add_argument("action", choices=["status", "pnl", "holdings", "trades", "snapshot"],
                          help="status=账户概要, pnl=盈亏报告, holdings=持仓, trades=成交记录, snapshot=记录当日快照")
 
+    p_stock_report = p_tool_sub.add_parser("stock-report", help="单股综合决策报告")
+    p_stock_report.add_argument("symbol", help="股票代码，如 600519 或 002342")
+    p_stock_report.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
+    p_stock_report.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
+
     args = parser.parse_args()
     cmd = args.cmd
 
@@ -161,6 +164,8 @@ def main():
 
     # ── 行情 ────────────────────────────────────────────
     elif cmd == "quote":
+        from .quote import cmd_quote
+
         cmd_quote(args)
     elif cmd == "market":
         cmd_market(args)
@@ -194,8 +199,12 @@ def main():
     # ── 工具 ────────────────────────────────────────────
     elif cmd == "tool":
         if args.tool_action == "diagnose":
+            from .tool import cmd_diagnose
+
             cmd_diagnose(args)
         elif args.tool_action == "probe":
+            from .tool import cmd_probe_api
+
             cmd_probe_api(args)
         elif args.tool_action == "schedule":
             from modules.scheduler import list_tasks, build_scheduler
@@ -209,11 +218,21 @@ def main():
                 except KeyboardInterrupt:
                     print("\n调度器已停止")
         elif args.tool_action == "signal":
+            from .tool import cmd_signal
+
             cmd_signal(args)
         elif args.tool_action == "event":
+            from .tool import cmd_event
+
             cmd_event(args)
         elif args.tool_action == "paper":
+            from .tool import cmd_paper
+
             cmd_paper(args)
+        elif args.tool_action == "stock-report":
+            from .tool import cmd_stock_report
+
+            cmd_stock_report(args)
 
     else:
         parser.print_help()
@@ -292,9 +311,10 @@ def _build_event_parser(p_event):
             "context",
             "summary",
             "elasticity",
+            "calibration",
             "run",
         ],
-        help="collect/ingest/extract/states/opportunities/report/news/news-report/news-factors/topics/topic-snapshots/llm-status/llm-review/llm-reviews/sources/notify/context/summary/elasticity/run",
+        help="collect/ingest/extract/states/opportunities/report/news/news-report/news-factors/topics/topic-snapshots/llm-status/llm-review/llm-reviews/sources/notify/context/summary/elasticity/calibration/run",
     )
     p_event.add_argument("--limit", type=int, default=200, help="news/report limit")
     p_event.add_argument("--topic", default="", help="news intelligence topic/category filter")

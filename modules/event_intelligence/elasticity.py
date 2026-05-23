@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import pandas as pd
 
 from modules.config import cfg
 from modules.db import DatabaseManager
 from modules.sector_tags import SectorTagProvider
-from modules.stock_data import StockData
 
 from .history import EventHistoryRegistry
+from .models import now_ts
 from .transmission import EventTransmissionMap
+
+if TYPE_CHECKING:
+    from modules.stock_data import StockData
 
 
 class EventElasticityBacktester:
@@ -22,13 +25,13 @@ class EventElasticityBacktester:
     def __init__(
         self,
         db: DatabaseManager | None = None,
-        stock_data: StockData | None = None,
+        stock_data: "StockData | None" = None,
         sector_provider: SectorTagProvider | None = None,
         transmission_map: EventTransmissionMap | None = None,
         history_registry: EventHistoryRegistry | None = None,
     ):
         self._db = db or DatabaseManager(cfg().data.warehouse_path)
-        self._sd = stock_data or StockData()
+        self._sd = stock_data or self._build_stock_data()
         self._sector_provider = sector_provider or SectorTagProvider()
         self._map = transmission_map or EventTransmissionMap()
         self._history = history_registry or EventHistoryRegistry()
@@ -98,6 +101,38 @@ class EventElasticityBacktester:
         result["samples"] = len(samples)
         result["summary"] = summary
         return result
+
+    def calibrate(
+        self,
+        *,
+        event_id: str = "",
+        windows: list[int] | None = None,
+        limit: int = 100,
+        per_event_limit: int = 20,
+    ) -> dict[str, Any]:
+        """Run event replay and produce conservative multiplier suggestions."""
+        replay = self.run(
+            event_id=event_id,
+            windows=windows,
+            limit=limit,
+            per_event_limit=per_event_limit,
+        )
+        return {
+            "engine": "event_calibration_v1",
+            "generated_at": now_ts(),
+            "event_id": event_id,
+            "replay": replay,
+            "calibration": self._calibration_rows(replay.get("summary") or []),
+        }
+
+    @staticmethod
+    def _build_stock_data() -> Any:
+        try:
+            from modules.stock_data import StockData
+
+            return StockData()
+        except Exception:
+            return None
 
     def _trigger_points(self, *, event_id: str, limit: int) -> list[dict[str, str]]:
         signals = self._db.event().list_signals(event_id=event_id or None, limit=limit)
@@ -217,7 +252,7 @@ class EventElasticityBacktester:
         if trigger_ready_date.date() > datetime.now().date():
             return df if not df.empty else pd.DataFrame()
 
-        if df.empty or len(df) <= max_window:
+        if self._sd is not None and (df.empty or len(df) <= max_window):
             try:
                 fetched = self._sd.get_daily(
                     symbol,
@@ -307,6 +342,58 @@ class EventElasticityBacktester:
         return rows
 
     @staticmethod
+    def _calibration_rows(summary: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for item in summary:
+            sample_count = int(item.get("sample_count") or 0)
+            avg_return = float(item.get("avg_forward_return") or 0.0)
+            win_rate = float(item.get("win_rate") or 0.0)
+            multiplier, action = EventElasticityBacktester._suggest_multiplier(
+                sample_count=sample_count,
+                avg_return=avg_return,
+                win_rate=win_rate,
+            )
+            rows.append(
+                {
+                    "event_id": str(item.get("event_id") or ""),
+                    "window_days": int(item.get("window_days") or 0),
+                    "sample_count": sample_count,
+                    "avg_forward_return": round(avg_return, 4),
+                    "win_rate": round(win_rate, 4),
+                    "confidence": EventElasticityBacktester._sample_confidence(sample_count),
+                    "suggested_multiplier": multiplier,
+                    "boost_adjustment": round((multiplier - 1.0) * 100, 2),
+                    "action": action,
+                }
+            )
+        rows.sort(key=lambda row: (row["event_id"], row["window_days"]))
+        return rows
+
+    @staticmethod
+    def _suggest_multiplier(*, sample_count: int, avg_return: float, win_rate: float) -> tuple[float, str]:
+        if sample_count < 3:
+            return 1.0, "observe_more_samples"
+        if avg_return >= 3.0 and win_rate >= 0.6:
+            return 1.1, "strengthen"
+        if avg_return >= 1.0 and win_rate >= 0.55:
+            return 1.05, "mild_strengthen"
+        if avg_return <= -2.0 or win_rate < 0.4:
+            return 0.85, "cut"
+        if avg_return < 0.0 or win_rate < 0.48:
+            return 0.95, "mild_cut"
+        return 1.0, "keep"
+
+    @staticmethod
+    def _sample_confidence(sample_count: int) -> str:
+        if sample_count >= 30:
+            return "high"
+        if sample_count >= 10:
+            return "medium"
+        if sample_count >= 3:
+            return "low"
+        return "insufficient"
+
+    @staticmethod
     def _date_part(value: Any) -> str:
         text = str(value or "")
         return text[:10] if len(text) >= 10 else ""
@@ -319,3 +406,12 @@ def run_event_elasticity(
 ) -> dict[str, Any]:
     """Convenience entry point for CLI."""
     return EventElasticityBacktester().run(event_id=event_id, windows=windows, limit=limit)
+
+
+def run_event_calibration(
+    event_id: str = "",
+    windows: list[int] | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Convenience entry point for event replay calibration."""
+    return EventElasticityBacktester().calibrate(event_id=event_id, windows=windows, limit=limit)
