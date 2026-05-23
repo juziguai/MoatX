@@ -1,6 +1,6 @@
 """Unified fund flow data source with multi-source fallback.
 
-Priority: EastMoney direct -> akshare optional fallback -> stale cache.
+Priority: EastMoney historical -> EastMoney realtime -> akshare optional fallback -> stale cache.
 """
 
 from __future__ import annotations
@@ -108,6 +108,84 @@ def _fetch_eastmoney_individual_fund_flow(code: str, market: str) -> pd.DataFram
     return _normalize_fund_flow_frame(df)
 
 
+def _fetch_eastmoney_realtime_fund_flow(code: str, market: str) -> pd.DataFrame:
+    """Fetch today's fund-flow snapshot from EastMoney quote fields."""
+    secid = _eastmoney_secid(code, market)
+    session = requests.Session()
+    session.trust_env = False
+    session.proxies = {"http": None, "https": None}
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://quote.eastmoney.com/",
+    }
+    params = {
+        "fltt": 2,
+        "secids": secid,
+        "fields": ",".join(
+            [
+                "f2",
+                "f3",
+                "f12",
+                "f14",
+                "f62",
+                "f66",
+                "f69",
+                "f72",
+                "f75",
+                "f78",
+                "f81",
+                "f84",
+                "f87",
+                "f184",
+            ]
+        ),
+        "_": int(time.time() * 1000),
+    }
+    last_error: Exception | None = None
+    for url in (
+        "http://push2.eastmoney.com/api/qt/ulist.np/get",
+        "https://push2.eastmoney.com/api/qt/ulist.np/get",
+    ):
+        try:
+            resp = session.get(url, params=params, headers=headers, timeout=cfg().crawler.timeout)
+            resp.raise_for_status()
+            items = (resp.json().get("data") or {}).get("diff") or []
+            if not items:
+                continue
+            row = items[0]
+            return _normalize_fund_flow_frame(
+                pd.DataFrame(
+                    [
+                        {
+                            "date": cache.beijing_now().date().isoformat(),
+                            "close": _safe_float(row.get("f2")),
+                            "pct_change": _safe_float(row.get("f3")),
+                            "main_net_inflow": _safe_float(row.get("f62")),
+                            "main_net_inflow_pct": _safe_float(row.get("f184")),
+                            "super_large_net": _safe_float(row.get("f66")),
+                            "super_large_net_pct": _safe_float(row.get("f69")),
+                            "large_net": _safe_float(row.get("f72")),
+                            "large_net_pct": _safe_float(row.get("f75")),
+                            "medium_net": _safe_float(row.get("f78")),
+                            "medium_net_pct": _safe_float(row.get("f81")),
+                            "small_net": _safe_float(row.get("f84")),
+                            "small_net_pct": _safe_float(row.get("f87")),
+                        }
+                    ]
+                )
+            )
+        except Exception as exc:
+            last_error = exc
+    raise RuntimeError(f"eastmoney realtime fundflow unavailable: {last_error}") from last_error
+
+
+def _eastmoney_secid(code: str, market: str) -> str:
+    market_map = {"sh": 1, "sz": 0, "bj": 0}
+    if market not in market_map:
+        raise ValueError(f"unsupported market: {market}")
+    return f"{market_map[market]}.{code}"
+
+
 def _fetch_eastmoney_latest_main_pct(
     session: requests.Session,
     code: str,
@@ -171,13 +249,24 @@ def _normalize_fund_flow_frame(df: pd.DataFrame) -> pd.DataFrame:
 
 def _fetch_fund_flow_with_optional_akshare(code: str, market: str) -> tuple[pd.DataFrame, str]:
     try:
-        return _fetch_eastmoney_individual_fund_flow(code, market), "eastmoney_direct"
+        df = _fetch_eastmoney_individual_fund_flow(code, market)
+        if not df.empty:
+            return df, "eastmoney_direct"
+        raise RuntimeError("eastmoney historical fundflow empty")
     except Exception as direct_exc:
         try:
-            df = ak.stock_individual_fund_flow(stock=code, market=market)
-            return _normalize_fund_flow_frame(df), "akshare"
-        except Exception as ak_exc:
-            raise RuntimeError(f"eastmoney_direct={direct_exc}; akshare={ak_exc}") from ak_exc
+            realtime = _fetch_eastmoney_realtime_fund_flow(code, market)
+            if not realtime.empty:
+                return realtime, "eastmoney_realtime"
+            raise RuntimeError("eastmoney realtime fundflow empty")
+        except Exception as realtime_exc:
+            try:
+                df = ak.stock_individual_fund_flow(stock=code, market=market)
+                return _normalize_fund_flow_frame(df), "akshare"
+            except Exception as ak_exc:
+                raise RuntimeError(
+                    f"eastmoney_direct={direct_exc}; eastmoney_realtime={realtime_exc}; akshare={ak_exc}"
+                ) from ak_exc
 
 
 def get_individual_fund_flow(

@@ -9,14 +9,19 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
-from modules.akshare_compat import import_akshare
+from modules.akshare_compat import import_akshare, ensure_py_mini_racer_compat
 from modules.config import tomllib
+from modules.config import cfg
 from modules.utils import _clear_all_proxy
+from modules.crawler.ths_fund_flow import get_hexin_v_header
 
 _logger = logging.getLogger("moatx.sector_tags")
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -115,6 +120,7 @@ class SectorTagProvider:
         ak: Any | None = None,
         max_workers: int = 8,
         graph_path: str | Path | None = None,
+        enable_live_bulk: bool | None = None,
     ):
         self._ak = ak
         self._ak_injected = ak is not None
@@ -122,44 +128,75 @@ class SectorTagProvider:
         self._graph_path = Path(graph_path) if graph_path else _PROJECT_ROOT / "data" / "sector_graph.toml"
         self._code_to_tags: dict[str, set[str]] | None = None
         self._code_to_industry: dict[str, str] | None = None
+        self._member_cache: dict[tuple[str, str], pd.DataFrame] = {}
+        self._board_code_cache: dict[str, dict[str, str]] = {}
+        self._enable_live_bulk = self._ak_injected if enable_live_bulk is None else enable_live_bulk
 
     def get_tags(self, symbol: str) -> set[str]:
         """Return all known industry/concept tags for one stock code."""
         code = self.normalize_code(symbol)
-        code_to_tags = self.build_code_to_tags()
-        if code in code_to_tags:
-            return set(code_to_tags[code])
+        if self._ak_injected:
+            code_to_tags = self.build_code_to_tags()
+            if code in code_to_tags:
+                return set(code_to_tags[code])
+            return {self.market_fallback_tag(code)}
+
         graph_tags = self._graph_tags_for_code(code)
         if graph_tags:
             return graph_tags
+        code_to_tags = self.build_code_to_tags()
+        if code in code_to_tags:
+            return set(code_to_tags[code])
         return {self.market_fallback_tag(code)}
 
     def get_members(self, target: str, target_type: str) -> pd.DataFrame:
         """Fetch board constituents and normalize to at least code/name columns."""
+        cache_key = (str(target or ""), str(target_type or ""))
+        if cache_key in self._member_cache:
+            return self._member_cache[cache_key].copy()
+
         if self._ak_injected:
             live = self._live_members(target, target_type)
             if not live.empty:
-                return self._attach_member_meta(live, source="live", tag=target)
-            return pd.DataFrame()
+                result = self._attach_member_meta(live, source="live", tag=target)
+                self._member_cache[cache_key] = result
+                return result.copy()
+            result = pd.DataFrame()
+            self._member_cache[cache_key] = result
+            return result.copy()
 
         graph = self._graph_members(target)
         if not graph.empty:
-            return graph
+            self._member_cache[cache_key] = graph
+            return graph.copy()
 
         live = self._live_members(target, target_type)
         if not live.empty:
-            return self._attach_member_meta(live, source="live", tag=target)
+            result = self._attach_member_meta(live, source="live", tag=target)
+            self._member_cache[cache_key] = result
+            return result.copy()
 
-        return self._fallback_members(target)
+        result = self._fallback_members(target)
+        self._member_cache[cache_key] = result
+        return result.copy()
+
+    def graph_nodes(self) -> list[dict[str, Any]]:
+        """Return configured local sector graph nodes."""
+        return [dict(node) for node in self._graph().get("nodes", [])]
 
     def build_code_to_tags(self, force: bool = False) -> dict[str, set[str]]:
         """Build and cache {stock_code: {industry, concept, ...}}."""
         if self._code_to_tags is not None and not force:
             return self._code_to_tags
 
+        code_to_tags: dict[str, set[str]] = {}
+        if not self._enable_live_bulk:
+            code_to_tags.update(self._graph_code_to_tags())
+            self._code_to_tags = code_to_tags
+            return self._code_to_tags
+
         industry_names = self._board_names("industry")
         concept_names = self._board_names("concept")
-        code_to_tags: dict[str, set[str]] = {}
 
         tasks = [(name, "industry") for name in industry_names] + [
             (name, "concept") for name in concept_names
@@ -198,6 +235,10 @@ class SectorTagProvider:
             return self._code_to_industry
 
         code_to_industry: dict[str, str] = {}
+        if not self._enable_live_bulk:
+            self._code_to_industry = self._graph_code_to_industry()
+            return self._code_to_industry
+
         industry_names = self._board_names("industry")
         if not industry_names:
             self._code_to_industry = self._graph_code_to_industry() if not self._ak_injected else {}
@@ -304,6 +345,14 @@ class SectorTagProvider:
         return out
 
     def _live_members(self, target: str, target_type: str) -> pd.DataFrame:
+        eastmoney = self._eastmoney_members(target, target_type)
+        if not eastmoney.empty:
+            return eastmoney
+
+        ths_detail = self._ths_detail_members(target, target_type)
+        if not ths_detail.empty:
+            return ths_detail
+
         ak = self._akshare()
         if target_type == "concept":
             func_names = [
@@ -336,6 +385,211 @@ class SectorTagProvider:
             except Exception as exc:
                 _logger.debug("board members fetch failed [%s/%s]: %s", target_type, target, exc)
         return pd.DataFrame()
+
+    def _eastmoney_members(self, target: str, target_type: str) -> pd.DataFrame:
+        board_type = "concept" if target_type in ("concept", "theme") else "industry"
+        code_map = self._eastmoney_board_code_map(board_type)
+        board_code = self._match_board_code(str(target or ""), code_map)
+        if not board_code:
+            return pd.DataFrame()
+
+        rows = self._fetch_eastmoney_clist(
+            fs=f"b:{board_code} f:!50",
+            fields=(
+                "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,"
+                "f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,"
+                "f115,f152,f45"
+            ),
+            fid="f3",
+            page_size=100,
+        )
+        if not rows:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(
+            [
+                {
+                    "code": str(row.get("f12") or "").zfill(6),
+                    "name": row.get("f14") or "",
+                    "price": row.get("f2"),
+                    "pct_change": row.get("f3"),
+                    "turnover": row.get("f8"),
+                    "amount": row.get("f6"),
+                    "source": "eastmoney_board",
+                    "tag": str(target or ""),
+                }
+                for row in rows
+                if row.get("f12")
+            ]
+        )
+        return self.normalize_members(df)
+
+    def _eastmoney_board_code_map(self, board_type: str) -> dict[str, str]:
+        cache_key = f"eastmoney_{board_type}"
+        if cache_key in self._board_code_cache:
+            return self._board_code_cache[cache_key]
+
+        rows = self._fetch_eastmoney_clist(
+            fs="m:90 t:3 f:!50" if board_type == "concept" else "m:90 t:2 f:!50",
+            fields="f2,f3,f4,f8,f12,f14,f20,f62,f104,f105,f128,f136",
+            fid="f3",
+            page_size=100,
+        )
+        mapping = {
+            str(row.get("f14")): str(row.get("f12"))
+            for row in rows
+            if row.get("f14") and row.get("f12")
+        }
+        self._board_code_cache[cache_key] = mapping
+        return mapping
+
+    @staticmethod
+    def _fetch_eastmoney_clist(
+        *,
+        fs: str,
+        fields: str,
+        fid: str,
+        page_size: int = 100,
+        max_pages: int = 20,
+    ) -> list[dict[str, Any]]:
+        session = requests.Session()
+        session.trust_env = False
+        session.proxies = {"http": None, "https": None}
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://quote.eastmoney.com/",
+        }
+        rows: list[dict[str, Any]] = []
+        for page in range(1, max_pages + 1):
+            params = {
+                "pn": page,
+                "pz": page_size,
+                "po": "1",
+                "np": "1",
+                "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+                "fltt": "2",
+                "invt": "2",
+                "fid": fid,
+                "fs": fs,
+                "fields": fields,
+            }
+            page_rows: list[dict[str, Any]] = []
+            last_error: Exception | None = None
+            for host in ("17", "79", "29", "41", "42"):
+                try:
+                    response = session.get(
+                        f"http://{host}.push2.eastmoney.com/api/qt/clist/get",
+                        params=params,
+                        headers=headers,
+                        timeout=cfg().crawler.timeout,
+                    )
+                    response.raise_for_status()
+                    payload = response.json().get("data") or {}
+                    page_rows = payload.get("diff") or []
+                    break
+                except Exception as exc:
+                    last_error = exc
+            if not page_rows:
+                if page == 1 and last_error is not None:
+                    _logger.debug("EastMoney board clist failed [%s]: %s", fs, last_error)
+                break
+            rows.extend(page_rows)
+            if len(page_rows) < page_size:
+                break
+        return rows
+
+    def _ths_detail_members(self, target: str, target_type: str) -> pd.DataFrame:
+        board_type = "concept" if target_type in ("concept", "theme") else "industry"
+        code_map = self._ths_board_code_map(board_type)
+        board_code = self._match_board_code(str(target or ""), code_map)
+        if not board_code:
+            return pd.DataFrame()
+
+        prefix = "gn" if board_type == "concept" else "thshy"
+        url = f"https://q.10jqka.com.cn/{prefix}/detail/field/199112/order/desc/page/{{}}/ajax/1/code/{board_code}/"
+        try:
+            df = self._fetch_ths_detail_pages(url)
+        except Exception as exc:
+            _logger.debug("THS detail members fetch failed [%s/%s]: %s", target_type, target, exc)
+            return pd.DataFrame()
+        normalized = self.normalize_members(df)
+        if normalized.empty:
+            return normalized
+        normalized["source"] = "ths_detail"
+        normalized["tag"] = str(target or "")
+        return normalized
+
+    def _ths_board_code_map(self, board_type: str) -> dict[str, str]:
+        if board_type in self._board_code_cache:
+            return self._board_code_cache[board_type]
+
+        ak = self._akshare()
+        func_name = "stock_board_concept_name_ths" if board_type == "concept" else "stock_board_industry_name_ths"
+        try:
+            df = getattr(ak, func_name)()
+        except Exception as exc:
+            _logger.debug("THS board code map failed [%s]: %s", board_type, exc)
+            self._board_code_cache[board_type] = {}
+            return {}
+
+        if df is None or df.empty or "name" not in df.columns or "code" not in df.columns:
+            self._board_code_cache[board_type] = {}
+            return {}
+        mapping = {str(row["name"]): str(row["code"]) for _, row in df.dropna(subset=["name", "code"]).iterrows()}
+        self._board_code_cache[board_type] = mapping
+        return mapping
+
+    @classmethod
+    def _match_board_code(cls, target: str, code_map: dict[str, str]) -> str:
+        if target in code_map:
+            return code_map[target]
+        target_norm = cls.canonical_tag(target)
+        for name, code in code_map.items():
+            if cls.canonical_tag(name) == target_norm:
+                return code
+        for name, code in code_map.items():
+            if cls.tag_matches(name, target):
+                return code
+        return ""
+
+    @staticmethod
+    def _fetch_ths_detail_pages(url_template: str) -> pd.DataFrame:
+        ensure_py_mini_racer_compat()
+        session = requests.Session()
+        session.trust_env = False
+        session.proxies = {"http": None, "https": None}
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Cookie": f"v={get_hexin_v_header()}",
+            "Referer": "https://q.10jqka.com.cn/",
+        }
+
+        first = session.get(url_template.format(1), headers=headers, timeout=cfg().crawler.timeout)
+        first.raise_for_status()
+        soup = BeautifulSoup(first.text, features="lxml")
+        page_info = soup.find(name="span", attrs={"class": "page_info"})
+        page_num = int(page_info.text.split("/")[1]) if page_info and "/" in page_info.text else 1
+
+        frames = []
+        for page in range(1, page_num + 1):
+            response = first if page == 1 else session.get(
+                url_template.format(page),
+                headers=headers,
+                timeout=cfg().crawler.timeout,
+            )
+            response.raise_for_status()
+            try:
+                frames.append(pd.read_html(StringIO(response.text))[0])
+            except ValueError:
+                _logger.debug("THS detail page has no table, stop at page %s/%s", page, page_num)
+                break
+        if not frames:
+            return pd.DataFrame()
+        return pd.concat(frames, ignore_index=True)
 
     def _board_names(self, board_type: str) -> list[str]:
         ak = self._akshare()

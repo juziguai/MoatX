@@ -74,6 +74,40 @@ def test_failures_degrade_to_empty_members_and_market_fallback():
     assert provider.get_tags("000001") == {"深圳主板"}
 
 
+def test_default_bulk_maps_stay_graph_first(monkeypatch):
+    provider = SectorTagProvider()
+
+    monkeypatch.setattr(
+        provider,
+        "_board_names",
+        lambda board_type: (_ for _ in ()).throw(RuntimeError("live bulk should not run by default")),
+    )
+
+    assert provider.build_code_to_tags()
+    assert provider.build_code_to_industry()
+
+
+def test_live_members_use_eastmoney_direct_board_constituents(monkeypatch):
+    provider = SectorTagProvider()
+
+    def fake_clist(*, fs, fields, fid, page_size=100, max_pages=20):
+        if fs == "m:90 t:3 f:!50":
+            return [{"f14": "PCB", "f12": "BK0877"}]
+        if fs == "b:BK0877 f:!50":
+            return [
+                {"f12": "301362", "f14": "民爆光电", "f2": 238.73, "f3": 20.0, "f8": 18.45, "f6": 1.2e9}
+            ]
+        return []
+
+    monkeypatch.setattr(provider, "_fetch_eastmoney_clist", fake_clist)
+
+    members = provider.get_members("PCB概念", "concept")
+
+    assert members[["code", "name", "source", "tag"]].to_dict(orient="records") == [
+        {"code": "301362", "name": "民爆光电", "source": "eastmoney_board", "tag": "PCB概念"}
+    ]
+
+
 def test_default_provider_uses_sector_graph_members():
     provider = SectorTagProvider()
 

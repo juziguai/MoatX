@@ -14,9 +14,14 @@ from modules.scoring_engine import ScoringEngine, _event_multiplier_from_boost
 class FakeStockData:
     def __init__(self, spot):
         self._spot = spot
+        self.limit_up_calls = 0
 
     def get_spot(self):
         return self._spot
+
+    def get_limit_up(self):
+        self.limit_up_calls += 1
+        raise AssertionError("get_limit_up should not be called")
 
 
 def _engine_with_no_external_calls(spot):
@@ -44,6 +49,36 @@ def test_event_multiplier_from_boost_is_capped():
     assert _event_multiplier_from_boost(30) == 1.3
     assert _event_multiplier_from_boost(-80) == 0.6
     assert _event_multiplier_from_boost(12.5) == 1.125
+
+
+def test_northbound_bonus_skips_background_fetch(monkeypatch):
+    import concurrent.futures
+
+    def fail_executor(*args, **kwargs):
+        raise AssertionError("background fetch should not start")
+
+    monkeypatch.setattr(concurrent.futures, "ThreadPoolExecutor", fail_executor)
+
+    engine = ScoringEngine()
+
+    assert engine._ensure_northbound_set() == set()
+    assert engine._ensure_northbound_set() == set()
+
+
+def test_limitup_bonus_uses_existing_spot_snapshot():
+    spot = pd.DataFrame(
+        {
+            "code": ["002342", "600001", "300001", "688001", "000001", "002999"],
+            "pct_change": [9.8, 9.0, 20.0, 19.0, 8.99, "bad"],
+        }
+    )
+    stock_data = FakeStockData(pd.DataFrame())
+    engine = ScoringEngine()
+    engine._sd = stock_data
+    engine._spot_data = spot
+
+    assert engine._ensure_limitup_set() == {"002342", "600001"}
+    assert stock_data.limit_up_calls == 0
 
 
 def test_score_batch_all_veto_keeps_output_protocol():

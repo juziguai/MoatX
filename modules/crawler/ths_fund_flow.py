@@ -9,6 +9,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from modules.akshare_compat import ensure_py_mini_racer_compat
+
+ensure_py_mini_racer_compat()
+
 try:
     from py_mini_racer import MiniRacer
 except Exception as exc:  # pragma: no cover - depends on local optional runtime

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from . import local_sector
 from . import sina
 from . import ths
 from .models import CrawlResult, SOURCE_UNAVAILABLE
@@ -41,13 +42,23 @@ def get_industry_boards(use_cache: bool = True) -> CrawlResult:
         fallback.user_message = "THS 行业板块不可用，已切换 Sina fallback"
         return _with_normalized_data(fallback)
 
+    local = local_sector.fetch_industry_boards(use_cache=use_cache)
+    if local.ok:
+        local.warnings.append("Realtime industry boards unavailable; using local sector graph quote snapshot")
+        local.user_message = "Realtime industry boards unavailable; using local sector graph quote snapshot"
+        return _with_normalized_data(local)
+
     return CrawlResult(
         ok=False,
         source="sector",
         error=SOURCE_UNAVAILABLE,
-        error_detail=f"ths={result.error}: {result.error_detail}; sina={fallback.error}: {fallback.error_detail}",
+        error_detail=(
+            f"ths={result.error}: {result.error_detail}; "
+            f"sina={fallback.error}: {fallback.error_detail}; "
+            f"local={local.error}: {local.error_detail}"
+        ),
         user_message="行业板块数据不可用：THS 和 Sina 均失败",
-        warnings=result.warnings + fallback.warnings,
+        warnings=result.warnings + fallback.warnings + local.warnings,
     )
 
 
@@ -56,13 +67,19 @@ def get_concept_boards(use_cache: bool = True) -> CrawlResult:
     if result.ok:
         return _with_normalized_data(result)
 
+    local = local_sector.fetch_concept_boards(use_cache=use_cache)
+    if local.ok:
+        local.warnings.append("Realtime concept boards unavailable; using local sector graph quote snapshot")
+        local.user_message = "Realtime concept boards unavailable; using local sector graph quote snapshot"
+        return _with_normalized_data(local)
+
     return CrawlResult(
         ok=False,
         source="sector",
         error=SOURCE_UNAVAILABLE,
-        error_detail=f"ths={result.error}: {result.error_detail}",
+        error_detail=f"ths={result.error}: {result.error_detail}; local={local.error}: {local.error_detail}",
         user_message="概念板块数据不可用：THS 失败",
-        warnings=result.warnings,
+        warnings=result.warnings + local.warnings,
     )
 
 

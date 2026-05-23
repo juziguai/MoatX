@@ -50,12 +50,13 @@ def fetch_industry_boards(use_cache: bool = True) -> CrawlResult:
         cache.write_df_cache(cache_key, normalized, SOURCE, trade_date=trade_date)
         return CrawlResult(ok=True, data=normalized, source=SOURCE, trade_date=trade_date)
     except Exception as exc:
-        stale = _read_cache_as_df(cache_key, allow_stale=True, max_age_seconds=cfg().cache.board_seconds)
-        if stale.data is not None:
-            stale.ok = True
-            stale.warnings.append("THS 不可用，返回缓存快照")
-            stale.user_message = "THS 不可用，已返回缓存快照"
-            return stale
+        if use_cache:
+            stale = _read_cache_as_df(cache_key, allow_stale=True, max_age_seconds=cfg().cache.board_seconds)
+            if stale.data is not None:
+                stale.ok = True
+                stale.warnings.append("THS 不可用，返回缓存快照")
+                stale.user_message = "THS 不可用，已返回缓存快照"
+                return stale
         return CrawlResult(
             ok=False,
             source=SOURCE,
@@ -79,12 +80,13 @@ def fetch_concept_boards(use_cache: bool = True) -> CrawlResult:
         cache.write_df_cache(cache_key, normalized, SOURCE, trade_date=trade_date)
         return CrawlResult(ok=True, data=normalized, source=SOURCE, trade_date=trade_date)
     except Exception as exc:
-        stale = _read_cache_as_df(cache_key, allow_stale=True, max_age_seconds=cfg().cache.board_seconds)
-        if stale.data is not None:
-            stale.ok = True
-            stale.warnings.append("THS 概念资金流不可用，返回缓存快照")
-            stale.user_message = "THS 概念资金流不可用，已返回缓存快照"
-            return stale
+        if use_cache:
+            stale = _read_cache_as_df(cache_key, allow_stale=True, max_age_seconds=cfg().cache.board_seconds)
+            if stale.data is not None:
+                stale.ok = True
+                stale.warnings.append("THS 概念资金流不可用，返回缓存快照")
+                stale.user_message = "THS 概念资金流不可用，已返回缓存快照"
+                return stale
         return CrawlResult(
             ok=False,
             source=SOURCE,

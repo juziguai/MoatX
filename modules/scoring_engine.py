@@ -1401,8 +1401,9 @@ class ScoringEngine:
     def _ensure_northbound_set(self) -> set[str]:
         """Build and cache the set of HSGT northbound-held stock codes (O(1) lookup).
 
-        Optional bonus (2 pts). Hard timeout 5s — if the akshare call is too slow,
-        we skip it rather than blocking the entire scoring pipeline.
+        Optional bonus (2 pts). The upstream akshare endpoint is slow and cannot be
+        safely cancelled once dispatched in a worker thread, so we skip it in the
+        interactive scoring path instead of letting background work outlive the CLI.
         """
         if self._northbound_set is not None:
             return self._northbound_set
@@ -1411,39 +1412,15 @@ class ScoringEngine:
             self._northbound_set = set()
             return self._northbound_set
 
-        import concurrent.futures
-
-        def _fetch():
-            from modules.akshare_compat import import_akshare
-
-            ak = import_akshare()
-            df = ak.stock_hsgt_stock_statistics_em(symbol="北向持股")
-            if df is not None and not df.empty:
-                return set(df["股票代码"].astype(str).tolist())
-            return set()
-
-        # Use bare executor (no `with` block) so timeout actually releases the caller.
-        # The background thread is daemon-scoped and will die on process exit.
-        ex = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        try:
-            future = ex.submit(_fetch)
-            self._northbound_set = future.result(timeout=5)
-            _logger.info("北向持股列表已缓存: %d 只", len(self._northbound_set))
-        except concurrent.futures.TimeoutError:
-            _logger.warning("北向持股列表获取超时 (5s)，跳过加分")
-            self._northbound_set = set()
-        except Exception as e:
-            _logger.warning("北向持股列表获取失败: %s", e)
-            self._northbound_set = set()
-        finally:
-            ex.shutdown(wait=False)
-
+        self._northbound_set = set()
         return self._northbound_set
 
     def _ensure_limitup_set(self) -> set[str]:
         """Build and cache today's limit-up stock codes (O(1) lookup).
 
-        Optional bonus (3 pts). Hard timeout 5s — skip if too slow.
+        Optional bonus (3 pts). Uses the already fetched full-market spot snapshot
+        so the single-stock report does not spawn background fetches that can leak
+        into interpreter shutdown.
         """
         if self._limitup_set is not None:
             return self._limitup_set
@@ -1452,27 +1429,18 @@ class ScoringEngine:
             self._limitup_set = set()
             return self._limitup_set
 
-        import concurrent.futures
-
-        def _fetch():
-            df = self._sd.get_limit_up()
-            if df is not None and not df.empty:
-                return set(df["code"].astype(str).tolist())
-            return set()
-
-        ex = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         try:
-            future = ex.submit(_fetch)
-            self._limitup_set = future.result(timeout=5)
-            _logger.info("今日涨停股列表已缓存: %d 只", len(self._limitup_set))
-        except concurrent.futures.TimeoutError:
-            _logger.warning("涨停股列表获取超时 (5s)，跳过加分")
+            spot = self._spot_data if self._spot_data is not None else pd.DataFrame()
+            if spot.empty or "code" not in spot.columns or "pct_change" not in spot.columns:
+                self._limitup_set = set()
+                return self._limitup_set
+            candidates = spot[pd.to_numeric(spot["pct_change"], errors="coerce") >= 9.0].copy()
+            candidates = filter_selection_universe(candidates, code_col="code")
+            self._limitup_set = set(candidates["code"].astype(str).str.split(".").str[0])
+            _logger.info("今日涨停候选列表已缓存: %d 只", len(self._limitup_set))
+        except Exception as exc:
+            _logger.warning("涨停候选列表获取失败: %s", exc)
             self._limitup_set = set()
-        except Exception as e:
-            _logger.warning("涨停股列表获取失败: %s", e)
-            self._limitup_set = set()
-        finally:
-            ex.shutdown(wait=False)
 
         return self._limitup_set
 

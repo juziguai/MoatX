@@ -14,8 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modules.crawler import sector
-from modules.crawler.models import CrawlResult, SOURCE_UNAVAILABLE
+from modules.crawler import sector  # noqa: E402
+from modules.crawler.models import CrawlResult, SOURCE_UNAVAILABLE  # noqa: E402
+from modules.akshare_compat import import_akshare  # noqa: E402
+from modules.crawler.fundflow import get_individual_fund_flow  # noqa: E402
+from modules.crawler.ths_fund_flow import get_hexin_v_header  # noqa: E402
+from modules.sector_tags import SectorTagProvider  # noqa: E402
 
 
 def run_diagnose(source: str = "all", as_json: bool = False, fresh: bool = False) -> str:
@@ -24,8 +28,15 @@ def run_diagnose(source: str = "all", as_json: bool = False, fresh: bool = False
     use_cache = not fresh
 
     if selected in ("all", "sector", "eastmoney"):
+        checks.append(("akshare", _run_check(_check_akshare, use_cache=use_cache, fresh=fresh)))
+        checks.append(("THS header", _run_check(_check_ths_header, use_cache=use_cache, fresh=fresh)))
         checks.append(("行业板块", _run_check(sector.get_industry_boards, use_cache=use_cache, fresh=fresh)))
         checks.append(("概念板块", _run_check(sector.get_concept_boards, use_cache=use_cache, fresh=fresh)))
+        checks.append(("动态行业成分", _run_check(_check_industry_members, use_cache=use_cache, fresh=fresh)))
+        checks.append(("动态概念成分", _run_check(_check_concept_members, use_cache=use_cache, fresh=fresh)))
+
+    if selected in ("all", "fundflow", "eastmoney"):
+        checks.append(("个股资金流", _run_check(_check_fundflow, use_cache=use_cache, fresh=fresh)))
 
     if not checks:
         checks.append(("行业板块", _run_check(sector.get_industry_boards, use_cache=use_cache, fresh=fresh)))
@@ -41,6 +52,51 @@ def _run_check(fetcher, use_cache: bool, fresh: bool) -> CrawlResult:
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         result = fetcher(use_cache=use_cache)
     return _fresh_check(result, fresh)
+
+
+def _check_akshare(use_cache: bool = True) -> CrawlResult:
+    ak = import_akshare()
+    if not ak:
+        return CrawlResult(
+            ok=False,
+            source="akshare",
+            error=SOURCE_UNAVAILABLE,
+            error_detail=str(getattr(ak, "error", "")),
+            user_message="akshare unavailable",
+        )
+    return CrawlResult(ok=True, data={"version": getattr(ak, "__version__", "")}, source="akshare")
+
+
+def _check_ths_header(use_cache: bool = True) -> CrawlResult:
+    value = get_hexin_v_header()
+    if not value:
+        return CrawlResult(ok=False, source="ths_header", error=SOURCE_UNAVAILABLE)
+    return CrawlResult(ok=True, data={"length": len(value)}, source="ths_header")
+
+
+def _check_fundflow(use_cache: bool = True) -> CrawlResult:
+    return get_individual_fund_flow("002342", use_cache=use_cache, days=1)
+
+
+def _check_industry_members(use_cache: bool = True) -> CrawlResult:
+    return _check_members("元件", "industry")
+
+
+def _check_concept_members(use_cache: bool = True) -> CrawlResult:
+    return _check_members("PCB概念", "concept")
+
+
+def _check_members(target: str, target_type: str) -> CrawlResult:
+    members = SectorTagProvider().get_members(target, target_type)
+    if members.empty:
+        return CrawlResult(
+            ok=False,
+            source="sector_members",
+            error=SOURCE_UNAVAILABLE,
+            user_message=f"{target} dynamic members unavailable",
+        )
+    source = str(members["source"].iloc[0]) if "source" in members.columns else "sector_members"
+    return CrawlResult(ok=True, data=members, source=source)
 
 
 def _fresh_check(result: CrawlResult, fresh: bool) -> CrawlResult:
