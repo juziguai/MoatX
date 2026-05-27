@@ -143,6 +143,9 @@ def main():
     p_stock_report.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
     p_stock_report.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
 
+    p_swing = p_tool_sub.add_parser("swing", help="低吸隔日冲高短线模型")
+    _build_swing_parser(p_swing)
+
     args = parser.parse_args()
     cmd = args.cmd
 
@@ -233,6 +236,10 @@ def main():
             from .tool import cmd_stock_report
 
             cmd_stock_report(args)
+        elif args.tool_action == "swing":
+            from .tool import cmd_swing
+
+            cmd_swing(args)
 
     else:
         parser.print_help()
@@ -346,6 +353,37 @@ def _build_event_parser(p_event):
         default=20,
         help="maximum stocks per transmission effect",
     )
+
+
+def _build_swing_parser(p_swing):
+    p_swing_sub = p_swing.add_subparsers(dest="swing_action")
+
+    p_analyze = p_swing_sub.add_parser("analyze", help="分析单只股票的低吸隔日冲高形态")
+    p_analyze.add_argument("symbol", help="股票代码，如 600519 或 002466")
+    p_analyze.add_argument("--name", default="", help="股票名称")
+    p_analyze.add_argument("--no-risk", action="store_true", help="跳过财务/公告风险检查")
+    p_analyze.add_argument("--no-context", action="store_true", help="跳过大盘宽度和主题强弱上下文")
+    p_analyze.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
+    p_analyze.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
+
+    p_candidates = p_swing_sub.add_parser("candidates", help="扫描低吸隔日冲高候选")
+    p_candidates.add_argument("--limit", type=int, default=20, help="输出候选数量")
+    p_candidates.add_argument("--pool-limit", type=int, default=80, help="从实时行情中取前 N 只做日线复核")
+    p_candidates.add_argument("--workers", type=int, default=4, help="候选日线复核并发数")
+    p_candidates.add_argument("--check-risk", action="store_true", help="扫描候选时也执行财务/公告风险检查")
+    p_candidates.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
+    p_candidates.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
+
+    p_paper = p_swing_sub.add_parser("paper", help="按等金额生成低吸隔日冲高虚拟账号")
+    p_paper.add_argument("--limit", type=int, default=5, help="建仓候选数量")
+    p_paper.add_argument("--pool-limit", type=int, default=80, help="从实时行情中取前 N 只做日线复核")
+    p_paper.add_argument("--workers", type=int, default=4, help="候选日线复核并发数")
+    p_paper.add_argument("--cash-per-stock", type=float, default=10_000.0, help="每只股票计划投入金额")
+    p_paper.add_argument("--lot-size", type=int, default=100, help="A股一手股数")
+    p_paper.add_argument("--check-risk", action="store_true", help="生成账号时也执行财务/公告风险检查")
+    p_paper.add_argument("--output", help="写入 JSON 文件路径")
+    p_paper.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
+    p_paper.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
 
 
 def cmd_config(args):

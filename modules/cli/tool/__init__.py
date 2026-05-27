@@ -7,3 +7,4 @@ from .probe import cmd_probe_api as cmd_probe_api
 from .signal import cmd_signal as cmd_signal
 from .paper import cmd_paper as cmd_paper
 from .stock_report import cmd_stock_report as cmd_stock_report
+from .swing import cmd_swing as cmd_swing
