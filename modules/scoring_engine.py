@@ -18,7 +18,6 @@ from __future__ import annotations
 import json
 import logging
 import pathlib
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -226,6 +225,9 @@ class ScoringEngine:
     _BASE_WEIGHTS = {"quality": 0.50, "timing": 0.35, "sentiment": 0.15}
     _EVENT_TIMEOUT_SECONDS = 5.0
     _PROFITABILITY_TIMEOUT_SECONDS = 10.0
+    _TIMING_TIMEOUT_SECONDS = 20.0
+    _FUND_FLOW_TIMEOUT_SECONDS = 12.0
+    _RISK_TIMEOUT_SECONDS = 20.0
 
     def __init__(self, sim_cfg=None):
         from modules.stock_data import StockData
@@ -266,6 +268,60 @@ class ScoringEngine:
             return result
         except Exception:
             return {"risk_score": 0, "warnings": []}
+
+    @staticmethod
+    def _run_deadline_jobs(items, worker_fn, *, timeout_seconds: float, max_workers: int) -> dict:
+        """Run best-effort daemon workers and return completed item results before deadline."""
+        import queue
+        import threading
+        import time
+
+        item_list = list(items)
+        if not item_list:
+            return {}
+
+        task_queue: queue.Queue = queue.Queue()
+        result_queue: queue.Queue = queue.Queue()
+        stop = threading.Event()
+        for item in item_list:
+            task_queue.put(item)
+
+        def _worker() -> None:
+            while not stop.is_set():
+                try:
+                    item = task_queue.get_nowait()
+                except queue.Empty:
+                    return
+                try:
+                    result_queue.put((item, worker_fn(item)), block=False)
+                except Exception:
+                    result_queue.put((item, None), block=False)
+
+        threads = [
+            threading.Thread(target=_worker, daemon=True)
+            for _ in range(max(1, min(len(item_list), max_workers)))
+        ]
+        for thread in threads:
+            thread.start()
+
+        deadline = time.time() + max(0.0, float(timeout_seconds))
+        for thread in threads:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+            thread.join(timeout=remaining)
+
+        if any(thread.is_alive() for thread in threads):
+            stop.set()
+
+        results = {}
+        while True:
+            try:
+                item, value = result_queue.get_nowait()
+            except queue.Empty:
+                break
+            results[item] = value
+        return results
 
     # ──────────────────────────────────────────
     # P2: Feedback Learning — public entry points for simulation.py
@@ -620,10 +676,23 @@ class ScoringEngine:
         """Veto check + quality scoring (valuation + fundamentals, max 50 pts)."""
         vetoed_list = []
         veto_reasons = []
+        symbols = [str(row["code"]) for _, row in df.iterrows()]
+        veto_results = self._run_deadline_jobs(
+            symbols,
+            self._check_veto,
+            timeout_seconds=self._RISK_TIMEOUT_SECONDS,
+            max_workers=min(len(symbols), 8),
+        )
 
-        for _, row in df.iterrows():
-            sym = row["code"]
-            vetoed, reason = self._check_veto(sym)
+        for sym in symbols:
+            result = veto_results.get(sym)
+            if result is None:
+                vetoed, reason = False, ""
+            else:
+                try:
+                    vetoed, reason = result
+                except Exception:
+                    vetoed, reason = False, ""
             vetoed_list.append(vetoed)
             veto_reasons.append(reason if vetoed else "")
 
@@ -936,16 +1005,22 @@ class ScoringEngine:
         """Score technical indicators in parallel."""
         symbols = df["code"].tolist()
         timing = {}
-
-        with ThreadPoolExecutor(max_workers=min(len(symbols), 10)) as ex:
-            futures = {ex.submit(self._timing_single, s): s for s in symbols}
-            for fut in as_completed(futures):
-                sym = futures[fut]
-                try:
-                    score, _ = fut.result()
-                    timing[sym] = score
-                except Exception:
-                    timing[sym] = 0.0
+        results = self._run_deadline_jobs(
+            symbols,
+            self._timing_single,
+            timeout_seconds=self._TIMING_TIMEOUT_SECONDS,
+            max_workers=min(len(symbols), 10),
+        )
+        for sym in symbols:
+            payload = results.get(sym)
+            if payload is None:
+                timing[sym] = 0.0
+                continue
+            try:
+                score, _ = payload
+                timing[sym] = score
+            except Exception:
+                timing[sym] = 0.0
 
         df["timing"] = df["code"].map(timing).fillna(0).clip(0, 35).round(1)
         return df
@@ -1069,15 +1144,18 @@ class ScoringEngine:
         symbols = df["code"].tolist()
 
         # Fund flow in parallel (8 pts)
+        fund_results = self._run_deadline_jobs(
+            symbols,
+            self._fund_flow_score,
+            timeout_seconds=self._FUND_FLOW_TIMEOUT_SECONDS,
+            max_workers=min(len(symbols), 8),
+        )
         fund_scores: dict[str, float] = {}
-        with ThreadPoolExecutor(max_workers=min(len(symbols), 8)) as ex:
-            futures = {ex.submit(self._fund_flow_score, s): s for s in symbols}
-            for fut in as_completed(futures):
-                sym = futures[fut]
-                try:
-                    fund_scores[sym] = fut.result()
-                except Exception:
-                    fund_scores[sym] = 0.0
+        for sym in symbols:
+            try:
+                fund_scores[sym] = float(fund_results.get(sym) or 0.0)
+            except Exception:
+                fund_scores[sym] = 0.0
 
         # A-share signals (northbound +2, limitup +3) are optional bonuses.
         # Skipped in batch mode — akshare calls take 30-60s, not worth the 5 pts.

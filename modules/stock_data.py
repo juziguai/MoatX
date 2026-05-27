@@ -4,6 +4,7 @@ stock_data.py - A股数据获取模块
 """
 
 import json
+import sys
 import time as _time
 import requests
 import logging
@@ -13,18 +14,27 @@ from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Dict, List, Literal, Optional
 
-from modules.akshare_compat import import_akshare
+from modules.akshare_compat import AkshareUnavailable, import_akshare
 from modules.crawler.eastmoney import fetch_stock_info as _em_stock_info
-from modules.crawler.fundflow import get_money_flow_summary
 from modules.config import cfg
 from modules.market_filters import filter_selection_universe
 from modules.datasource import QuoteManager
-from modules.risk_checker import FinancialRiskChecker
-from modules.utils import _clear_all_proxy, to_full_code
+from modules.utils import _clear_all_proxy, normalize_symbol, to_full_code
 
 _logger = logging.getLogger("moatx.stock_data")
 _logger.setLevel(logging.WARNING)
-ak = import_akshare()
+_ak: Any | None = None
+
+
+def _get_akshare() -> Any:
+    """Load akshare only when an akshare-backed API is actually used."""
+    global _ak
+    if _ak is None:
+        if sys.version_info >= (3, 14):
+            _ak = AkshareUnavailable(RuntimeError("akshare disabled on Python 3.14 to avoid py_mini_racer crash"))
+        else:
+            _ak = import_akshare()
+    return _ak
 
 
 def retry_on_network_error(max_retries: int = 2, base_delay: float = 1.0):
@@ -103,6 +113,8 @@ _REQUESTS_PATCHED = False
 
 class StockData:
     """A股数据获取器"""
+
+    _DAILY_CACHE_MAX_STALE_DAYS = 10
 
     def __init__(self, no_cache: bool = False) -> None:
         _clear_all_proxy()
@@ -205,36 +217,50 @@ class StockData:
         Returns:
             DataFrame: date, open, high, low, close, volume, amount, turn
         """
+        bare_symbol = normalize_symbol(symbol)
         if symbol.endswith(".SH") or symbol.endswith(".SZ"):
             code = symbol
         else:
             # 自动补充交易所后缀
-            code = f"{symbol}.SH" if symbol.startswith(("6", "9")) else f"{symbol}.SZ"
+            code = f"{bare_symbol}.SH" if bare_symbol.startswith(("6", "9")) else f"{bare_symbol}.SZ"
 
+        start_date_was_default = start_date is None
         if start_date is None:
             start_date = (datetime.now() - timedelta(days=365)).strftime("%Y%m%d")
         if end_date is None:
             end_date = datetime.now().strftime("%Y%m%d")
 
-        # Check warehouse cache first
-        if not self._no_cache:
-            try:
-                from modules.db import DatabaseManager
-                from modules.config import cfg as _cfg
-                if _cfg().data.enable_warehouse:
-                    db = DatabaseManager(_cfg().data.warehouse_path)
-                    cached = db.price().load_daily(symbol, start_date, end_date, adjust)
-                    if not cached.empty and cached["date"].max() >= pd.Timestamp(end_date):
-                        cached.set_index("date", inplace=True)
-                        return cached
-            except Exception:
-                pass  # fall through to network fetch
+        cached = self._load_daily_from_cache(
+            symbol=bare_symbol,
+            full_code=code,
+            start_date=start_date,
+            end_date=end_date,
+            adjust=adjust,
+        )
+        if cached is not None and self._cache_covers_daily_range(cached, start_date, end_date):
+            return self._daily_with_datetime_index(cached)
+        if (
+            start_date_was_default
+            and cached is not None
+            and len(cached) >= 35
+            and self._cache_covers_daily_end(cached, end_date)
+        ):
+            return self._daily_with_datetime_index(cached)
 
-        # 主数据源：新浪（akshare 可选增强），备用：腾讯财经（支持 ETF）
-        df = self._get_daily_sina(code, start_date, end_date, adjust)
+        # 主数据源：腾讯财经（不依赖 akshare/mini-racer），备用：新浪 akshare。
+        df = self._get_daily_tencent(code, start_date, end_date, adjust)
+        if (df is None or df.empty) and start_date_was_default:
+            df = self._get_daily_tencent_recent_windows(code, end_date, adjust)
         if df is None or df.empty:
-            df = self._get_daily_tencent(code, start_date, end_date, adjust)
+            df = self._get_daily_sina(code, start_date, end_date, adjust)
         if df is None or df.empty:
+            if cached is not None and self._cache_is_recent_enough(cached, end_date):
+                _logger.warning(
+                    "daily sources unavailable for %s; using warehouse cache through %s",
+                    bare_symbol,
+                    cached["date"].max().date(),
+                )
+                return self._daily_with_datetime_index(cached)
             raise RuntimeError(f"获取日线数据失败 {code}: 所有数据源均不可用")
 
         # Save to warehouse cache
@@ -247,13 +273,97 @@ class StockData:
                     if "date" not in save_df.columns:
                         save_df = save_df.reset_index()
                     db = DatabaseManager(_cfg().data.warehouse_path)
-                    db.price().save_daily_batch(save_df, symbol, adjust)
+                    db.price().save_daily_batch(save_df, bare_symbol, adjust)
             except Exception:
                 pass
 
         df["date"] = pd.to_datetime(df["date"])
         df.set_index("date", inplace=True)
         return df
+
+    def _load_daily_from_cache(
+        self,
+        *,
+        symbol: str,
+        full_code: str,
+        start_date: str,
+        end_date: str,
+        adjust: str,
+    ) -> Optional[pd.DataFrame]:
+        if self._no_cache:
+            return None
+        try:
+            from modules.db import DatabaseManager
+            from modules.config import cfg as _cfg
+
+            if not _cfg().data.enable_warehouse:
+                return None
+            db = DatabaseManager(_cfg().data.warehouse_path)
+            cache_start = self._daily_store_date(start_date)
+            cache_end = self._daily_store_date(end_date)
+            symbols: list[str] = []
+            for candidate in (symbol, normalize_symbol(full_code), full_code):
+                if candidate and candidate not in symbols:
+                    symbols.append(candidate)
+
+            best: Optional[pd.DataFrame] = None
+            for cache_symbol in symbols:
+                cached = db.price().load_daily(cache_symbol, cache_start, cache_end, adjust)
+                if cached.empty:
+                    continue
+                if best is None or cached["date"].max() > best["date"].max():
+                    best = cached
+            return best
+        except Exception:
+            return None
+
+    @staticmethod
+    def _daily_store_date(value: str | None) -> str | None:
+        if not value:
+            return None
+        ts = pd.to_datetime(str(value).replace("-", ""), format="%Y%m%d", errors="coerce")
+        if pd.isna(ts):
+            return str(value)
+        return str(ts.date())
+
+    @classmethod
+    def _daily_timestamp(cls, value: str | pd.Timestamp) -> pd.Timestamp:
+        if isinstance(value, pd.Timestamp):
+            return value
+        ts = pd.to_datetime(str(value).replace("-", ""), format="%Y%m%d", errors="coerce")
+        return ts if not pd.isna(ts) else pd.Timestamp(value)
+
+    @classmethod
+    def _cache_covers_daily_end(cls, cached: pd.DataFrame, end_date: str) -> bool:
+        if cached.empty or "date" not in cached.columns:
+            return False
+        requested_end = cls._daily_timestamp(end_date)
+        return bool(cached["date"].max() >= requested_end)
+
+    @classmethod
+    def _cache_covers_daily_range(cls, cached: pd.DataFrame, start_date: str, end_date: str) -> bool:
+        if cached.empty or "date" not in cached.columns:
+            return False
+        requested_start = cls._daily_timestamp(start_date)
+        requested_end = cls._daily_timestamp(end_date)
+        return bool(cached["date"].min() <= requested_start and cached["date"].max() >= requested_end)
+
+    @classmethod
+    def _cache_is_recent_enough(cls, cached: pd.DataFrame, end_date: str) -> bool:
+        if cached.empty or "date" not in cached.columns:
+            return False
+        requested_end = cls._daily_timestamp(end_date)
+        latest = cached["date"].max()
+        if latest > requested_end:
+            return True
+        return (requested_end - latest).days <= cls._DAILY_CACHE_MAX_STALE_DAYS
+
+    @staticmethod
+    def _daily_with_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
+        out = df.copy()
+        out["date"] = pd.to_datetime(out["date"])
+        out.set_index("date", inplace=True)
+        return out
 
     def _get_daily_tencent(self, code: str, start_date: str, end_date: str, adjust: str) -> Optional[pd.DataFrame]:
         """腾讯财经日线数据（备用源，支持 ETF）"""
@@ -265,9 +375,15 @@ class StockData:
             else:
                 tc_code = f"sh{code}"
 
+            try:
+                start = pd.to_datetime(start_date.replace("-", ""))
+                end = pd.to_datetime(end_date.replace("-", ""))
+                count = max(80, min(1200, int((end - start).days * 1.7) + 30))
+            except Exception:
+                count = 400
             url = (
                 f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
-                f"?_var=kline_dayqfq&param={tc_code},day,,,{20 if adjust else 20},{'qfq' if adjust == 'qfq' else ''}"
+                f"?_var=kline_dayqfq&param={tc_code},day,,,{count},{'qfq' if adjust == 'qfq' else ''}"
             )
             resp = requests.get(url, timeout=self.timeout)
             text = resp.text
@@ -295,9 +411,26 @@ class StockData:
             # 计算涨跌幅
             df["pct_change"] = df["close"].pct_change() * 100
             df = df[["date", "open", "high", "low", "close", "volume", "amount", "turn", "pct_change", "turnover"]]
+            start = pd.to_datetime(start_date.replace("-", ""))
+            end = pd.to_datetime(end_date.replace("-", ""))
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            df = df[(df["date"] >= start) & (df["date"] <= end)]
             return df
         except Exception:
             return None
+
+    def _get_daily_tencent_recent_windows(self, code: str, end_date: str, adjust: str) -> Optional[pd.DataFrame]:
+        """Retry Tencent daily with shorter windows when the one-year query returns empty."""
+        try:
+            end = pd.to_datetime(end_date.replace("-", ""))
+        except Exception:
+            return None
+        for days in (180, 120, 100, 90, 60):
+            start = (end - timedelta(days=days)).strftime("%Y%m%d")
+            df = self._get_daily_tencent(code, start, end_date, adjust)
+            if df is not None and len(df) >= 35:
+                return df
+        return None
 
     def _get_daily_sina(self, code: str, start_date: str, end_date: str, adjust: str) -> Optional[pd.DataFrame]:
         """新浪财经日线数据（备用源）"""
@@ -310,6 +443,7 @@ class StockData:
             else:
                 sina_code = f"sh{code}"
 
+            ak = _get_akshare()
             df = ak.stock_zh_a_daily(
                 symbol=sina_code,
                 start_date=start_date.replace("-", ""),
@@ -458,6 +592,8 @@ class StockData:
         获取个股资金流向（EastMoney 直连，akshare 仅作为可选 fallback）
         """
         try:
+            from modules.crawler.fundflow import get_money_flow_summary
+
             return get_money_flow_summary(symbol, use_cache=True)
         except Exception as exc:
             _logger.warning("get_money_flow(%s) failed: %s", symbol, exc)
@@ -585,7 +721,7 @@ class StockData:
             else:
                 code = symbol
 
-            df = ak.stock_financial_abstract_ths(symbol=code.split(".")[0])
+            df = _get_akshare().stock_financial_abstract_ths(symbol=code.split(".")[0])
             if df is None or df.empty:
                 return None
             # 取最新一期财报
@@ -642,7 +778,7 @@ class StockData:
             else:
                 code = symbol
 
-            df = ak.stock_dividend_cninfo(symbol=code.split(".")[0])
+            df = _get_akshare().stock_dividend_cninfo(symbol=code.split(".")[0])
             # 取最新5条
             recent = df.head(5)
             results = []
@@ -679,7 +815,7 @@ class StockData:
             else:
                 code = symbol
 
-            df = ak.stock_profit_forecast_ths(symbol=code.split(".")[0])
+            df = _get_akshare().stock_profit_forecast_ths(symbol=code.split(".")[0])
             forecasts = []
             for _, row in df.iterrows():
                 year = str(row.get("年度", ""))
@@ -708,7 +844,7 @@ class StockData:
             else:
                 code = symbol
 
-            df = ak.stock_main_stock_holder(stock=code.split(".")[0])
+            df = _get_akshare().stock_main_stock_holder(stock=code.split(".")[0])
             holders = []
             for _, row in df.head(10).iterrows():
                 pct = row.get("持股比例")
@@ -737,7 +873,7 @@ class StockData:
             else:
                 code = symbol
 
-            df = ak.stock_shareholder_change_ths(symbol=code.split(".")[0])
+            df = _get_akshare().stock_shareholder_change_ths(symbol=code.split(".")[0])
             changes = []
             for _, row in df.head(limit).iterrows():
                 changes.append({
@@ -763,7 +899,7 @@ class StockData:
             else:
                 code = symbol
 
-            df = ak.stock_profit_sheet_by_report_em(symbol=code)
+            df = _get_akshare().stock_profit_sheet_by_report_em(symbol=code)
             if df is None or df.empty:
                 return {"error": "no data"}
             latest = df.iloc[0]  # 最新一期在前面
@@ -797,7 +933,7 @@ class StockData:
             else:
                 code = symbol
 
-            df = ak.stock_financial_cash_ths(symbol=code.split(".")[0], indicator="按报告期")
+            df = _get_akshare().stock_financial_cash_ths(symbol=code.split(".")[0], indicator="按报告期")
             if df is None or df.empty:
                 return {"error": "no data"}
             latest = df.iloc[0]
@@ -823,5 +959,7 @@ class StockData:
     @retry_on_network_error(max_retries=2)
     def check_financial_risk(self, symbol: str) -> Dict[str, Any]:
         """综合财务风险检测（委托给 FinancialRiskChecker）。"""
+        from modules.risk_checker import FinancialRiskChecker
+
         checker = FinancialRiskChecker(self)
         return checker.check_financial_risk(symbol)

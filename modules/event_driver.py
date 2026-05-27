@@ -15,9 +15,8 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from time import monotonic
 from typing import Any
@@ -614,60 +613,10 @@ class EventDriver:
 
         score = 0.0
         try:
-            code = symbol.split(".")[0] if "." in symbol else symbol
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=14)
+            from modules.announcement_risk import AnnouncementRiskScanner
 
-            session = requests.Session()
-            session.trust_env = False
-            url = "http://www.cninfo.com.cn/new/hisAnnouncement/query"
-            payload = {
-                "pageNum": "1",
-                "pageSize": "10",
-                "column": "szse",
-                "tabName": "fulltext",
-                "plate": "",
-                "stock": "",
-                "searchkey": code,
-                "secid": "",
-                "category": "",
-                "trade": "",
-                "seDate": f"{start_date.strftime('%Y-%m-%d')}~{end_date.strftime('%Y-%m-%d')}",
-                "sortName": "",
-                "sortType": "",
-                "isHLtitle": "true",
-            }
-            r = session.post(url, data=payload, timeout=cfg().crawler.timeout)
-            data = r.json()
-            notices = data.get("announcements") or []
-
-            seen = set()
-            for item in notices:
-                title = str(item.get("announcementTitle", ""))
-                title_clean = re.sub(r"<[^>]+>", "", title)
-                if not title_clean or title_clean in seen:
-                    continue
-                seen.add(title_clean)
-
-                # Positive keywords
-                for kw, pts in POSITIVE_KW:
-                    if kw in title_clean:
-                        score += pts
-                        break  # One match per announcement
-
-                # Negative keywords
-                for kw, pts in NEGATIVE_KW:
-                    if kw in title_clean:
-                        score += pts
-                        break
-
-                ts = item.get("announcementTime", 0)
-                if ts:
-                    t = datetime.fromtimestamp(ts / 1000)
-                    days_ago = (datetime.now() - t).days
-                    # Apply minor decay for older announcements
-                    if days_ago > 7:
-                        score *= 0.5
+            result = AnnouncementRiskScanner().scan(symbol, lookback_days=14, limit=10)
+            score = float(result.get("sentiment_score") or 0.0)
 
         except Exception as e:
             _logger.debug("公告情绪扫描 [%s] 失败: %s", symbol, e)

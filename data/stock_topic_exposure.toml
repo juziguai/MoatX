@@ -34,7 +34,7 @@ updated_at = "2026-05-23"
 symbol = "002230"
 stock_name = "科大讯飞"
 topic = "AI大模型"
-sector_tag = "AI应用"
+sector_tag = "AI大模型"
 exposure = 0.9
 confidence = 0.85
 source = "manual_seed"
@@ -49,3 +49,713 @@ exposure = 1.0
 confidence = 0.85
 source = "manual_seed"
 updated_at = "2026-05-23"
+
+[[exposures]]
+symbol = "601869"
+stock_name = "长飞光纤"
+topic = "AI算力光通信"
+sector_tag = "光通信"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600498"
+stock_name = "烽火通信"
+topic = "AI算力光通信"
+sector_tag = "光通信"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002241"
+stock_name = "歌尔股份"
+topic = "消费电子复苏"
+sector_tag = "消费电子"
+exposure = 0.85
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "001337"
+stock_name = "四川黄金"
+topic = "黄金避险"
+sector_tag = "黄金"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "001337"
+stock_name = "四川黄金"
+topic = "贵金属"
+sector_tag = "贵金属"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "001337"
+stock_name = "四川黄金"
+topic = "有色金属"
+sector_tag = "有色金属"
+exposure = 0.8
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603986"
+stock_name = "兆易创新"
+topic = "存储芯片"
+sector_tag = "存储芯片"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002156"
+stock_name = "通富微电"
+topic = "先进封装"
+sector_tag = "先进封装"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002185"
+stock_name = "华天科技"
+topic = "先进封装"
+sector_tag = "先进封装"
+exposure = 0.95
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "000988"
+stock_name = "华工科技"
+topic = "AI算力光通信"
+sector_tag = "光通信"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002463"
+stock_name = "沪电股份"
+topic = "AI服务器PCB"
+sector_tag = "PCB"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002384"
+stock_name = "东山精密"
+topic = "消费电子PCB"
+sector_tag = "PCB"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600522"
+stock_name = "中天科技"
+topic = "光通信"
+sector_tag = "光通信"
+exposure = 0.85
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002938"
+stock_name = "鹏鼎控股"
+topic = "消费电子PCB"
+sector_tag = "PCB"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "000636"
+stock_name = "风华高科"
+topic = "被动元件"
+sector_tag = "被动元件"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "000021"
+stock_name = "深科技"
+topic = "存储芯片"
+sector_tag = "存储芯片"
+exposure = 0.8
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002008"
+stock_name = "大族激光"
+topic = "激光设备"
+sector_tag = "激光设备"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600183"
+stock_name = "生益科技"
+topic = "AI服务器PCB"
+sector_tag = "PCB"
+exposure = 0.95
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002916"
+stock_name = "深南电路"
+topic = "AI服务器PCB"
+sector_tag = "PCB"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "001309"
+stock_name = "德明利"
+topic = "存储芯片"
+sector_tag = "存储芯片"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603993"
+stock_name = "洛阳钼业"
+topic = "小金属"
+sector_tag = "小金属"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002407"
+stock_name = "多氟多"
+topic = "锂电池"
+sector_tag = "锂电池"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603083"
+stock_name = "剑桥科技"
+topic = "AI算力光通信"
+sector_tag = "光通信"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600519"
+stock_name = "贵州茅台"
+topic = "白酒消费"
+sector_tag = "白酒"
+exposure = 1.0
+confidence = 0.95
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "601318"
+stock_name = "中国平安"
+topic = "保险金融"
+sector_tag = "保险"
+exposure = 1.0
+confidence = 0.95
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603228"
+stock_name = "景旺电子"
+topic = "PCB"
+sector_tag = "PCB"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "601615"
+stock_name = "明阳智能"
+topic = "风电"
+sector_tag = "风电"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002709"
+stock_name = "天赐材料"
+topic = "锂电池"
+sector_tag = "锂电池"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "000063"
+stock_name = "中兴通讯"
+topic = "通信设备"
+sector_tag = "光通信"
+exposure = 0.8
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "000807"
+stock_name = "云铝股份"
+topic = "铝"
+sector_tag = "铝"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "601127"
+stock_name = "赛力斯"
+topic = "新能源汽车"
+sector_tag = "汽车整车"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600118"
+stock_name = "中国卫星"
+topic = "卫星互联网"
+sector_tag = "卫星互联网"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603629"
+stock_name = "利通电子"
+topic = "AI算力"
+sector_tag = "算力"
+exposure = 0.75
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600186"
+stock_name = "莲花控股"
+topic = "AI算力"
+sector_tag = "算力"
+exposure = 0.7
+confidence = 0.7
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603601"
+stock_name = "再升科技"
+topic = "电子材料"
+sector_tag = "电子材料"
+exposure = 0.75
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600330"
+stock_name = "天通股份"
+topic = "磁性材料"
+sector_tag = "磁性材料"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002222"
+stock_name = "福晶科技"
+topic = "光学元件"
+sector_tag = "光学元件"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002421"
+stock_name = "达实智能"
+topic = "智慧城市"
+sector_tag = "智慧城市"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600172"
+stock_name = "黄河旋风"
+topic = "超硬材料"
+sector_tag = "超硬材料"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002617"
+stock_name = "露笑科技"
+topic = "第三代半导体"
+sector_tag = "第三代半导体"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002897"
+stock_name = "意华股份"
+topic = "AI算力光通信"
+sector_tag = "光通信"
+exposure = 0.85
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600143"
+stock_name = "金发科技"
+topic = "改性塑料"
+sector_tag = "改性塑料"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600246"
+stock_name = "万通发展"
+topic = "房地产"
+sector_tag = "房地产"
+exposure = 0.8
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002929"
+stock_name = "润建股份"
+topic = "AI算力"
+sector_tag = "算力"
+exposure = 0.8
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "605376"
+stock_name = "博迁新材"
+topic = "电子材料"
+sector_tag = "电子材料"
+exposure = 0.85
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600707"
+stock_name = "彩虹股份"
+topic = "显示面板"
+sector_tag = "消费电子"
+exposure = 0.8
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002056"
+stock_name = "横店东磁"
+topic = "磁性材料"
+sector_tag = "磁性材料"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "600089"
+stock_name = "特变电工"
+topic = "特高压"
+sector_tag = "特高压"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002273"
+stock_name = "水晶光电"
+topic = "光学元件"
+sector_tag = "光学元件"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603893"
+stock_name = "瑞芯微"
+topic = "国产芯片"
+sector_tag = "芯片"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603936"
+stock_name = "博敏电子"
+topic = "PCB"
+sector_tag = "PCB"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "002602"
+stock_name = "世纪华通"
+topic = "游戏"
+sector_tag = "游戏"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603459"
+stock_name = "红板科技"
+topic = "PCB"
+sector_tag = "PCB"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-26"
+
+[[exposures]]
+symbol = "603186"
+stock_name = "华正新材"
+topic = "PCB"
+sector_tag = "PCB"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "600879"
+stock_name = "航天电子"
+topic = "国防军工"
+sector_tag = "国防军工"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "002812"
+stock_name = "恩捷股份"
+topic = "锂电池"
+sector_tag = "锂电池"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "002240"
+stock_name = "盛新锂能"
+topic = "锂电池"
+sector_tag = "锂电池"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "603618"
+stock_name = "杭电股份"
+topic = "电力设备"
+sector_tag = "电力"
+exposure = 0.75
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "002465"
+stock_name = "海格通信"
+topic = "国防军工通信"
+sector_tag = "国防军工"
+exposure = 0.85
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "000547"
+stock_name = "航天发展"
+topic = "国防军工"
+sector_tag = "国防军工"
+exposure = 0.85
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "605117"
+stock_name = "德业股份"
+topic = "光伏储能"
+sector_tag = "储能"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "002636"
+stock_name = "金安国纪"
+topic = "PCB"
+sector_tag = "PCB"
+exposure = 0.85
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "002028"
+stock_name = "思源电气"
+topic = "特高压"
+sector_tag = "特高压"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "002031"
+stock_name = "巨轮智能"
+topic = "机器人"
+sector_tag = "机器人"
+exposure = 0.85
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "000062"
+stock_name = "深圳华强"
+topic = "消费电子"
+sector_tag = "消费电子"
+exposure = 0.75
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "600590"
+stock_name = "泰豪科技"
+topic = "国防军工"
+sector_tag = "国防军工"
+exposure = 0.75
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "600869"
+stock_name = "远东股份"
+topic = "电力设备"
+sector_tag = "电力"
+exposure = 0.75
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "002415"
+stock_name = "海康威视"
+topic = "安防AI视觉"
+sector_tag = "安防"
+exposure = 1.0
+confidence = 0.9
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "603127"
+stock_name = "昭衍新药"
+topic = "CXO"
+sector_tag = "CXO"
+exposure = 0.9
+confidence = 0.85
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "603063"
+stock_name = "禾望电气"
+topic = "风电储能"
+sector_tag = "风电"
+exposure = 0.85
+confidence = 0.8
+source = "manual_seed"
+updated_at = "2026-05-27"
+
+[[exposures]]
+symbol = "002947"
+stock_name = "恒铭达"
+topic = "消费电子"
+sector_tag = "消费电子"
+exposure = 0.8
+confidence = 0.75
+source = "manual_seed"
+updated_at = "2026-05-27"

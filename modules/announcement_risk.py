@@ -107,14 +107,15 @@ class AnnouncementRiskScanner:
         session.trust_env = False
         end_date = datetime.now()
         start_date = end_date - timedelta(days=lookback_days)
+        org_id = self._resolve_org_id(session, symbol, start_date=start_date, end_date=end_date)
         payload = {
             "pageNum": "1",
             "pageSize": str(limit),
             "column": "szse" if symbol.startswith(("0", "3")) else "sse",
             "tabName": "fulltext",
             "plate": "",
-            "stock": "",
-            "searchkey": symbol,
+            "stock": f"{symbol},{org_id}" if org_id else "",
+            "searchkey": "" if org_id else symbol,
             "secid": "",
             "category": "",
             "trade": "",
@@ -134,6 +135,8 @@ class AnnouncementRiskScanner:
         notices = []
         seen_titles: set[str] = set()
         for item in data.get("announcements") or []:
+            if not self._notice_matches_symbol(item, symbol):
+                continue
             title = re.sub(r"<[^>]+>", "", str(item.get("announcementTitle") or "")).strip()
             if not title or title in seen_titles:
                 continue
@@ -150,9 +153,57 @@ class AnnouncementRiskScanner:
                     "title": title,
                     "date": notice_date,
                     "url": str(item.get("adjunctUrl") or ""),
+                    "sec_code": str(item.get("secCode") or ""),
+                    "sec_name": re.sub(r"<[^>]+>", "", str(item.get("secName") or "")).strip(),
                 }
             )
         return notices
+
+    def _resolve_org_id(
+        self,
+        session: requests.Session,
+        symbol: str,
+        *,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> str:
+        payload = {
+            "pageNum": "1",
+            "pageSize": "20",
+            "column": "szse" if symbol.startswith(("0", "3")) else "sse",
+            "tabName": "fulltext",
+            "plate": "",
+            "stock": "",
+            "searchkey": symbol,
+            "secid": "",
+            "category": "",
+            "trade": "",
+            "seDate": f"{start_date:%Y-%m-%d}~{end_date:%Y-%m-%d}",
+            "sortName": "",
+            "sortType": "",
+            "isHLtitle": "true",
+        }
+        try:
+            response = session.post(
+                "http://www.cninfo.com.cn/new/hisAnnouncement/query",
+                data=payload,
+                timeout=cfg().crawler.timeout,
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+            response.raise_for_status()
+            for item in response.json().get("announcements") or []:
+                if self._notice_matches_symbol(item, symbol):
+                    org_id = str(item.get("orgId") or "").strip()
+                    if org_id:
+                        return org_id
+        except Exception:
+            return ""
+        return ""
+
+    @staticmethod
+    def _notice_matches_symbol(item: dict[str, Any], symbol: str) -> bool:
+        sec_code = normalize_symbol(str(item.get("secCode") or item.get("stockCode") or ""))
+        return not sec_code or sec_code == symbol
 
     @staticmethod
     def _matched_keywords(title: str, keywords: list[tuple[str, int]]) -> list[tuple[str, int]]:

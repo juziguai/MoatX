@@ -284,6 +284,12 @@ class StockDecisionReporter:
         event_boost = float(event.get("boost") or 0.0)
         vetoed = bool(score.get("vetoed")) or risk_score >= 30 or not bool(risk.get("is_buyable", True))
         confidence = str((data_quality or {}).get("confidence") or "medium")
+        pct_change = float(quote.get("change_pct") or quote.get("pct_change") or 0.0)
+        strong_watch = action == "watch" and (
+            pct_change >= 5.0
+            or float(score.get("sentiment") or 0.0) >= 8.0
+            or any("主力" in str(reason) for reason in score.get("reasons") or [])
+        )
 
         key_points = cls._key_points(score, risk, event, quote)
         if vetoed:
@@ -292,12 +298,18 @@ class StockDecisionReporter:
             holding = "控制仓位，等待风险释放；走弱时优先执行止损纪律"
             risk_level = "high"
         elif action in {"no_buy", "watch"} or total < 41:
-            if event_boost < 0:
+            if strong_watch:
+                summary = "如果是新开仓，先不追高，等回踩或承接确认；如果已经持有，可以继续观察趋势确认，但要设好止盈/止损。"
+                new_position = "不追高，等回踩/确认"
+                holding = "持有观察，设好止盈/止损；放量承接不足先减风险"
+            elif event_boost < 0:
                 summary = "如果是新开仓，我不建议现在买；如果已经持有，也更偏向观察事件风险释放和设止损，而不是加仓追。"
+                new_position = "不建议新开仓"
+                holding = "观察为主，不加仓；跌破纪律位先控制回撤"
             else:
                 summary = "如果是新开仓，我不建议现在买；如果已经持有，也更偏向观察走势确认和设止损，而不是加仓追。"
-            new_position = "不建议新开仓"
-            holding = "观察为主，不加仓；跌破纪律位先控制回撤"
+                new_position = "不建议新开仓"
+                holding = "观察为主，不加仓；跌破纪律位先控制回撤"
             risk_level = "medium"
         elif action == "probe":
             summary = "如果是新开仓，只适合小仓试探；如果已经持有，可以继续观察确认，但不适合追高加仓。"

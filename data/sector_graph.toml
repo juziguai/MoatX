@@ -95,6 +95,9 @@ name = "湖南黄金"
 [[nodes.members]]
 code = "600988"
 name = "赤峰黄金"
+[[nodes.members]]
+code = "001337"
+name = "四川黄金"
 
 [[nodes]]
 tag = "贵金属"
@@ -116,6 +119,9 @@ name = "中金黄金"
 [[nodes.members]]
 code = "600988"
 name = "赤峰黄金"
+[[nodes.members]]
+code = "001337"
+name = "四川黄金"
 
 [[nodes]]
 tag = "国防军工"
@@ -140,6 +146,18 @@ name = "中国船舶"
 [[nodes.members]]
 code = "600372"
 name = "中航机载"
+[[nodes.members]]
+code = "600879"
+name = "航天电子"
+[[nodes.members]]
+code = "002465"
+name = "海格通信"
+[[nodes.members]]
+code = "000547"
+name = "航天发展"
+[[nodes.members]]
+code = "600590"
+name = "泰豪科技"
 
 [[nodes]]
 tag = "航运港口"
@@ -209,6 +227,57 @@ name = "中微公司"
 [[nodes.members]]
 code = "688256"
 name = "寒武纪"
+[[nodes.members]]
+code = "603986"
+name = "兆易创新"
+[[nodes.members]]
+code = "002156"
+name = "通富微电"
+[[nodes.members]]
+code = "002185"
+name = "华天科技"
+[[nodes.members]]
+code = "603005"
+name = "晶方科技"
+[[nodes.members]]
+code = "001309"
+name = "德明利"
+[[nodes.members]]
+code = "605111"
+name = "新洁能"
+[[nodes.members]]
+code = "600460"
+name = "士兰微"
+[[nodes.members]]
+code = "600703"
+name = "三安光电"
+[[nodes.members]]
+code = "600667"
+name = "太极实业"
+[[nodes.members]]
+code = "002049"
+name = "紫光国微"
+[[nodes.members]]
+code = "002409"
+name = "雅克科技"
+[[nodes.members]]
+code = "002617"
+name = "露笑科技"
+[[nodes.members]]
+code = "603893"
+name = "瑞芯微"
+[[nodes.members]]
+code = "605358"
+name = "立昂微"
+[[nodes.members]]
+code = "603290"
+name = "斯达半导"
+[[nodes.members]]
+code = "003031"
+name = "中瓷电子"
+[[nodes.members]]
+code = "603738"
+name = "泰晶科技"
 
 [[nodes]]
 tag = "芯片"
@@ -230,6 +299,39 @@ name = "北方华创"
 [[nodes.members]]
 code = "688012"
 name = "中微公司"
+[[nodes.members]]
+code = "603986"
+name = "兆易创新"
+[[nodes.members]]
+code = "002156"
+name = "通富微电"
+[[nodes.members]]
+code = "002185"
+name = "华天科技"
+[[nodes.members]]
+code = "603005"
+name = "晶方科技"
+[[nodes.members]]
+code = "001309"
+name = "德明利"
+[[nodes.members]]
+code = "605111"
+name = "新洁能"
+[[nodes.members]]
+code = "600460"
+name = "士兰微"
+[[nodes.members]]
+code = "600703"
+name = "三安光电"
+[[nodes.members]]
+code = "002049"
+name = "紫光国微"
+[[nodes.members]]
+code = "002617"
+name = "露笑科技"
+[[nodes.members]]
+code = "603893"
+name = "瑞芯微"
 
 [[nodes]]
 tag = "信创"
@@ -272,6 +374,9 @@ name = "通威股份"
 [[nodes.members]]
 code = "002459"
 name = "晶澳科技"
+[[nodes.members]]
+code = "605117"
+name = "德业股份"
 
 [[nodes]]
 tag = "储能"
@@ -290,6 +395,15 @@ name = "阳光电源"
 [[nodes.members]]
 code = "002594"
 name = "比亚迪"
+[[nodes.members]]
+code = "002056"
+name = "横店东磁"
+[[nodes.members]]
+code = "605117"
+name = "德业股份"
+[[nodes.members]]
+code = "600089"
+name = "特变电工"
 
 [[nodes]]
 tag = "电力"
@@ -308,6 +422,42 @@ name = "华能国际"
 [[nodes.members]]
 code = "600905"
 name = "三峡能源"
+[[nodes.members]]
+code = "601991"
+name = "大唐发电"
+[[nodes.members]]
+code = "600396"
+name = "华电辽能"
+[[nodes.members]]
+code = "600578"
+name = "京能电力"
+[[nodes.members]]
+code = "600021"
+name = "上海电力"
+[[nodes.members]]
+code = "601126"
+name = "四方股份"
+[[nodes.members]]
+code = "001896"
+name = "豫能控股"
+[[nodes.members]]
+code = "600863"
+name = "华能蒙电"
+[[nodes.members]]
+code = "002015"
+name = "协鑫能科"
+[[nodes.members]]
+code = "002028"
+name = "思源电气"
+[[nodes.members]]
+code = "600869"
+name = "远东股份"
+[[nodes.members]]
+code = "603063"
+name = "禾望电气"
+[[nodes.members]]
+code = "603618"
+name = "杭电股份"
 
 [[nodes]]
 tag = "煤炭"
@@ -347,6 +497,72 @@ name = "天齐锂业"
 [[nodes.members]]
 code = "601600"
 name = "中国铝业"
+[[nodes.members]]
+code = "001337"
+name = "四川黄金"
+[[nodes.members]]
+code = "603993"
+name = "洛阳钼业"
+[[nodes.members]]
+code = "000657"
+name = "中钨高新"
+[[nodes.members]]
+code = "002428"
+name = "云南锗业"
+[[nodes.members]]
+code = "000960"
+name = "锡业股份"
+[[nodes.members]]
+code = "000807"
+name = "云铝股份"
+[[nodes.members]]
+code = "000426"
+name = "兴业银锡"
+[[nodes.members]]
+code = "600549"
+name = "厦门钨业"
+[[nodes.members]]
+code = "000630"
+name = "铜陵有色"
+[[nodes.members]]
+code = "600219"
+name = "南山铝业"
+[[nodes.members]]
+code = "002149"
+name = "西部材料"
+[[nodes.members]]
+code = "002460"
+name = "赣锋锂业"
+[[nodes.members]]
+code = "000792"
+name = "盐湖股份"
+[[nodes.members]]
+code = "002812"
+name = "恩捷股份"
+[[nodes.members]]
+code = "002240"
+name = "盛新锂能"
+[[nodes.members]]
+code = "600362"
+name = "江西铜业"
+[[nodes.members]]
+code = "000060"
+name = "中金岭南"
+[[nodes.members]]
+code = "600110"
+name = "诺德股份"
+[[nodes.members]]
+code = "000933"
+name = "神火股份"
+[[nodes.members]]
+code = "000962"
+name = "东方钽业"
+[[nodes.members]]
+code = "002532"
+name = "天山铝业"
+[[nodes.members]]
+code = "601168"
+name = "西部矿业"
 
 [[nodes]]
 tag = "化工行业"
@@ -368,6 +584,27 @@ name = "卫星化学"
 [[nodes.members]]
 code = "000301"
 name = "东方盛虹"
+[[nodes.members]]
+code = "600143"
+name = "金发科技"
+[[nodes.members]]
+code = "002741"
+name = "光华科技"
+[[nodes.members]]
+code = "600673"
+name = "东阳光"
+[[nodes.members]]
+code = "600160"
+name = "巨化股份"
+[[nodes.members]]
+code = "605589"
+name = "圣泉集团"
+[[nodes.members]]
+code = "600989"
+name = "宝丰能源"
+[[nodes.members]]
+code = "603663"
+name = "三祥新材"
 
 [[nodes]]
 tag = "钢铁"
@@ -407,6 +644,9 @@ name = "华泰证券"
 [[nodes.members]]
 code = "600837"
 name = "海通证券"
+[[nodes.members]]
+code = "600909"
+name = "华安证券"
 
 [[nodes]]
 tag = "银行"
@@ -446,6 +686,18 @@ name = "保利发展"
 [[nodes.members]]
 code = "001979"
 name = "招商蛇口"
+[[nodes.members]]
+code = "600246"
+name = "万通发展"
+[[nodes.members]]
+code = "600895"
+name = "张江高科"
+[[nodes.members]]
+code = "600376"
+name = "首开股份"
+[[nodes.members]]
+code = "002208"
+name = "合肥城建"
 
 [[nodes]]
 tag = "稀土永磁"
@@ -524,6 +776,15 @@ name = "中科曙光"
 [[nodes.members]]
 code = "000938"
 name = "紫光股份"
+[[nodes.members]]
+code = "603629"
+name = "利通电子"
+[[nodes.members]]
+code = "600186"
+name = "莲花控股"
+[[nodes.members]]
+code = "002929"
+name = "润建股份"
 
 [[nodes]]
 tag = "光模块"
@@ -545,6 +806,51 @@ name = "天孚通信"
 [[nodes.members]]
 code = "002281"
 name = "光迅科技"
+[[nodes.members]]
+code = "002897"
+name = "意华股份"
+
+[[nodes]]
+tag = "光通信"
+type = "concept"
+aliases = ["光通信", "光纤光缆", "光网络", "通信设备"]
+upstream = ["电子元件"]
+downstream = ["光模块", "CPO", "数据中心"]
+related_events = ["ai_compute_demand", "ai_model_release"]
+
+[[nodes.members]]
+code = "601869"
+name = "长飞光纤"
+[[nodes.members]]
+code = "600498"
+name = "烽火通信"
+[[nodes.members]]
+code = "600487"
+name = "亨通光电"
+[[nodes.members]]
+code = "002281"
+name = "光迅科技"
+[[nodes.members]]
+code = "000988"
+name = "华工科技"
+[[nodes.members]]
+code = "600522"
+name = "中天科技"
+[[nodes.members]]
+code = "600105"
+name = "永鼎股份"
+[[nodes.members]]
+code = "603083"
+name = "剑桥科技"
+[[nodes.members]]
+code = "002491"
+name = "通鼎互联"
+[[nodes.members]]
+code = "000063"
+name = "中兴通讯"
+[[nodes.members]]
+code = "002897"
+name = "意华股份"
 
 [[nodes]]
 tag = "CPO"
@@ -677,6 +983,21 @@ name = "双环传动"
 [[nodes.members]]
 code = "002747"
 name = "埃斯顿"
+[[nodes.members]]
+code = "600580"
+name = "卧龙电驱"
+[[nodes.members]]
+code = "603667"
+name = "五洲新春"
+[[nodes.members]]
+code = "002957"
+name = "科瑞技术"
+[[nodes.members]]
+code = "002975"
+name = "博杰股份"
+[[nodes.members]]
+code = "002031"
+name = "巨轮智能"
 
 [[nodes]]
 tag = "减速器"
@@ -731,6 +1052,57 @@ name = "绿的谐波"
 [[nodes.members]]
 code = "002236"
 name = "大华股份"
+
+[[nodes]]
+tag = "消费电子"
+type = "concept"
+aliases = ["消费电子", "智能终端", "声学组件", "VRAR", "苹果链"]
+upstream = ["电子元件", "半导体"]
+downstream = ["汽车", "机器人"]
+related_events = ["consumer_electronics_recovery", "ai_device_cycle"]
+
+[[nodes.members]]
+code = "002241"
+name = "歌尔股份"
+[[nodes.members]]
+code = "002475"
+name = "立讯精密"
+[[nodes.members]]
+code = "000725"
+name = "京东方A"
+[[nodes.members]]
+code = "000100"
+name = "TCL科技"
+[[nodes.members]]
+code = "002384"
+name = "东山精密"
+[[nodes.members]]
+code = "002938"
+name = "鹏鼎控股"
+[[nodes.members]]
+code = "002600"
+name = "领益智造"
+[[nodes.members]]
+code = "000021"
+name = "深科技"
+[[nodes.members]]
+code = "000636"
+name = "风华高科"
+[[nodes.members]]
+code = "002008"
+name = "大族激光"
+[[nodes.members]]
+code = "600707"
+name = "彩虹股份"
+[[nodes.members]]
+code = "002273"
+name = "水晶光电"
+[[nodes.members]]
+code = "000062"
+name = "深圳华强"
+[[nodes.members]]
+code = "002947"
+name = "恒铭达"
 
 [[nodes]]
 tag = "低空经济"
@@ -839,6 +1211,9 @@ name = "康龙化成"
 [[nodes.members]]
 code = "300347"
 name = "泰格医药"
+[[nodes.members]]
+code = "603127"
+name = "昭衍新药"
 
 [[nodes]]
 tag = "ADC"
@@ -875,3 +1250,681 @@ name = "国际医学"
 [[nodes.members]]
 code = "300015"
 name = "爱尔眼科"
+
+[[nodes]]
+tag = "PCB"
+type = "sector"
+aliases = ["PCB", "印制电路板", "覆铜板", "电子电路", "HDI"]
+upstream = ["电子元件", "铜", "玻纤"]
+downstream = ["消费电子", "算力", "通信设备", "汽车电子"]
+related_events = ["ai_compute_demand", "consumer_electronics_recovery"]
+
+[[nodes.members]]
+code = "002463"
+name = "沪电股份"
+[[nodes.members]]
+code = "002384"
+name = "东山精密"
+[[nodes.members]]
+code = "002938"
+name = "鹏鼎控股"
+[[nodes.members]]
+code = "600183"
+name = "生益科技"
+[[nodes.members]]
+code = "002916"
+name = "深南电路"
+[[nodes.members]]
+code = "002436"
+name = "兴森科技"
+[[nodes.members]]
+code = "603228"
+name = "景旺电子"
+[[nodes.members]]
+code = "600601"
+name = "方正科技"
+[[nodes.members]]
+code = "603920"
+name = "世运电路"
+[[nodes.members]]
+code = "603936"
+name = "博敏电子"
+[[nodes.members]]
+code = "603459"
+name = "红板科技"
+[[nodes.members]]
+code = "603186"
+name = "华正新材"
+[[nodes.members]]
+code = "002636"
+name = "金安国纪"
+
+[[nodes]]
+tag = "存储芯片"
+type = "concept"
+aliases = ["存储芯片", "存储器", "DRAM", "NAND", "Nor Flash"]
+upstream = ["半导体", "芯片"]
+downstream = ["消费电子", "算力"]
+related_events = ["chip_sanction_escalation", "ai_compute_demand"]
+
+[[nodes.members]]
+code = "603986"
+name = "兆易创新"
+[[nodes.members]]
+code = "001309"
+name = "德明利"
+[[nodes.members]]
+code = "000021"
+name = "深科技"
+
+[[nodes]]
+tag = "先进封装"
+type = "concept"
+aliases = ["先进封装", "Chiplet", "封装测试", "半导体封测"]
+upstream = ["半导体", "芯片"]
+downstream = ["算力", "消费电子"]
+related_events = ["chip_sanction_escalation", "ai_compute_demand"]
+
+[[nodes.members]]
+code = "600584"
+name = "长电科技"
+[[nodes.members]]
+code = "002156"
+name = "通富微电"
+[[nodes.members]]
+code = "002185"
+name = "华天科技"
+[[nodes.members]]
+code = "603005"
+name = "晶方科技"
+
+[[nodes]]
+tag = "被动元件"
+type = "sector"
+aliases = ["被动元件", "MLCC", "电容", "电子元件"]
+upstream = ["电子材料"]
+downstream = ["消费电子", "汽车电子"]
+related_events = ["consumer_electronics_recovery"]
+
+[[nodes.members]]
+code = "000636"
+name = "风华高科"
+
+[[nodes]]
+tag = "激光设备"
+type = "sector"
+aliases = ["激光", "激光设备", "激光加工", "光电子"]
+upstream = ["光学元件"]
+downstream = ["消费电子", "汽车", "工业制造"]
+related_events = ["consumer_electronics_recovery"]
+
+[[nodes.members]]
+code = "002008"
+name = "大族激光"
+[[nodes.members]]
+code = "000988"
+name = "华工科技"
+
+[[nodes]]
+tag = "小金属"
+type = "sector"
+aliases = ["小金属", "稀有金属", "钨", "钼", "锗", "锡", "银"]
+upstream = []
+downstream = ["半导体", "光伏", "军工", "新能源"]
+related_events = ["gold_safe_haven", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "603993"
+name = "洛阳钼业"
+[[nodes.members]]
+code = "000657"
+name = "中钨高新"
+[[nodes.members]]
+code = "002428"
+name = "云南锗业"
+[[nodes.members]]
+code = "000960"
+name = "锡业股份"
+[[nodes.members]]
+code = "000426"
+name = "兴业银锡"
+[[nodes.members]]
+code = "600549"
+name = "厦门钨业"
+[[nodes.members]]
+code = "002149"
+name = "西部材料"
+
+[[nodes]]
+tag = "铝"
+type = "sector"
+aliases = ["铝", "电解铝", "铝业", "有色铝"]
+upstream = ["有色金属"]
+downstream = ["汽车", "光伏", "电力"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "601600"
+name = "中国铝业"
+[[nodes.members]]
+code = "000807"
+name = "云铝股份"
+[[nodes.members]]
+code = "600219"
+name = "南山铝业"
+
+[[nodes]]
+tag = "锂电池"
+type = "sector"
+aliases = ["锂电池", "锂电材料", "电解液", "氟化工", "盐湖提锂"]
+upstream = ["有色金属", "化工行业"]
+downstream = ["储能", "新能源汽车"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "002466"
+name = "天齐锂业"
+[[nodes.members]]
+code = "002407"
+name = "多氟多"
+[[nodes.members]]
+code = "002709"
+name = "天赐材料"
+[[nodes.members]]
+code = "002460"
+name = "赣锋锂业"
+[[nodes.members]]
+code = "000792"
+name = "盐湖股份"
+[[nodes.members]]
+code = "002245"
+name = "蔚蓝锂芯"
+[[nodes.members]]
+code = "002812"
+name = "恩捷股份"
+[[nodes.members]]
+code = "002240"
+name = "盛新锂能"
+
+[[nodes]]
+tag = "风电"
+type = "sector"
+aliases = ["风电", "风力发电", "风机", "海上风电"]
+upstream = ["电力设备"]
+downstream = ["电力", "绿电"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "601615"
+name = "明阳智能"
+[[nodes.members]]
+code = "002202"
+name = "金风科技"
+
+[[nodes]]
+tag = "白酒"
+type = "sector"
+aliases = ["白酒", "高端白酒", "食品饮料", "消费"]
+upstream = ["农业"]
+downstream = ["消费"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600519"
+name = "贵州茅台"
+[[nodes.members]]
+code = "000858"
+name = "五粮液"
+
+[[nodes]]
+tag = "保险"
+type = "sector"
+aliases = ["保险", "非银金融", "金融"]
+upstream = []
+downstream = ["银行", "证券"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "601318"
+name = "中国平安"
+
+[[nodes]]
+tag = "汽车整车"
+type = "sector"
+aliases = ["汽车", "汽车整车", "新能源汽车", "智能汽车"]
+upstream = ["汽车零部件", "锂电池"]
+downstream = ["消费"]
+related_events = ["domestic_monetary_easing", "robotics_breakthrough"]
+
+[[nodes.members]]
+code = "601127"
+name = "赛力斯"
+[[nodes.members]]
+code = "600418"
+name = "江淮汽车"
+
+[[nodes]]
+tag = "玻纤"
+type = "sector"
+aliases = ["玻纤", "玻璃纤维", "复合材料", "电子布"]
+upstream = ["化工行业"]
+downstream = ["PCB", "风电", "汽车"]
+related_events = ["consumer_electronics_recovery", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600176"
+name = "中国巨石"
+[[nodes.members]]
+code = "002080"
+name = "中材科技"
+[[nodes.members]]
+code = "603256"
+name = "宏和科技"
+[[nodes.members]]
+code = "601208"
+name = "东材科技"
+[[nodes.members]]
+code = "603601"
+name = "再升科技"
+
+[[nodes]]
+tag = "医疗器械"
+type = "sector"
+aliases = ["医疗器械", "家用医疗", "体外诊断", "IVD"]
+upstream = ["医药"]
+downstream = ["医疗服务"]
+related_events = ["healthcare_policy"]
+
+[[nodes.members]]
+code = "002432"
+name = "九安医疗"
+
+[[nodes]]
+tag = "卫星互联网"
+type = "concept"
+aliases = ["卫星互联网", "商业航天", "卫星通信", "航天"]
+upstream = ["国防军工", "通信设备"]
+downstream = ["低空经济", "数据通信"]
+related_events = ["robotics_breakthrough"]
+
+[[nodes.members]]
+code = "600118"
+name = "中国卫星"
+
+[[nodes]]
+tag = "光学元件"
+type = "sector"
+aliases = ["光学元件", "光学光电子", "光学镜头", "光电子", "激光晶体"]
+upstream = ["电子元件"]
+downstream = ["消费电子", "激光设备", "光通信"]
+related_events = ["consumer_electronics_recovery", "ai_device_cycle"]
+
+[[nodes.members]]
+code = "002222"
+name = "福晶科技"
+[[nodes.members]]
+code = "002273"
+name = "水晶光电"
+
+[[nodes]]
+tag = "第三代半导体"
+type = "concept"
+aliases = ["第三代半导体", "碳化硅", "氮化镓", "SiC", "半导体"]
+upstream = ["半导体"]
+downstream = ["新能源汽车", "光伏", "电力设备"]
+related_events = ["chip_sanction_escalation", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "002617"
+name = "露笑科技"
+[[nodes.members]]
+code = "600703"
+name = "三安光电"
+
+[[nodes]]
+tag = "磁性材料"
+type = "sector"
+aliases = ["磁性材料", "永磁材料", "软磁", "铁氧体", "稀土永磁"]
+upstream = ["有色金属", "小金属"]
+downstream = ["消费电子", "新能源汽车", "光伏"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600330"
+name = "天通股份"
+[[nodes.members]]
+code = "002056"
+name = "横店东磁"
+
+[[nodes]]
+tag = "智慧城市"
+type = "concept"
+aliases = ["智慧城市", "建筑智能化", "智能建筑", "物联网"]
+upstream = ["AI大模型", "通信设备"]
+downstream = ["城市运营", "数据中心"]
+related_events = ["ai_model_release", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "002421"
+name = "达实智能"
+
+[[nodes]]
+tag = "超硬材料"
+type = "sector"
+aliases = ["超硬材料", "培育钻石", "金刚石", "工业金刚石"]
+upstream = ["新材料"]
+downstream = ["工业制造", "消费"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600172"
+name = "黄河旋风"
+
+[[nodes]]
+tag = "改性塑料"
+type = "sector"
+aliases = ["改性塑料", "工程塑料", "高分子材料", "化工"]
+upstream = ["化工行业"]
+downstream = ["汽车", "消费电子", "家电"]
+related_events = ["oil_supply_shock", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600143"
+name = "金发科技"
+
+[[nodes]]
+tag = "电子材料"
+type = "sector"
+aliases = ["电子材料", "半导体材料", "电子化学品", "MLCC材料"]
+upstream = ["化工行业", "有色金属"]
+downstream = ["半导体", "被动元件", "PCB"]
+related_events = ["chip_sanction_escalation", "consumer_electronics_recovery"]
+
+[[nodes.members]]
+code = "002409"
+name = "雅克科技"
+[[nodes.members]]
+code = "605376"
+name = "博迁新材"
+[[nodes.members]]
+code = "603601"
+name = "再升科技"
+[[nodes.members]]
+code = "603688"
+name = "石英股份"
+[[nodes.members]]
+code = "002585"
+name = "双星新材"
+[[nodes.members]]
+code = "605358"
+name = "立昂微"
+[[nodes.members]]
+code = "603738"
+name = "泰晶科技"
+[[nodes.members]]
+code = "003031"
+name = "中瓷电子"
+[[nodes.members]]
+code = "603663"
+name = "三祥新材"
+
+[[nodes]]
+tag = "游戏"
+type = "concept"
+aliases = ["游戏", "网络游戏", "传媒", "AI游戏"]
+upstream = ["AI应用"]
+downstream = ["消费"]
+related_events = ["ai_model_release"]
+
+[[nodes.members]]
+code = "002602"
+name = "世纪华通"
+
+[[nodes]]
+tag = "特高压"
+type = "concept"
+aliases = ["特高压", "输变电", "电网设备", "电力设备"]
+upstream = ["有色金属"]
+downstream = ["电力", "新能源"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600089"
+name = "特变电工"
+[[nodes.members]]
+code = "600406"
+name = "国电南瑞"
+
+[[nodes]]
+tag = "汽车零部件"
+type = "sector"
+aliases = ["汽车零部件", "汽车电子", "智能座舱", "智能驾驶", "汽车"]
+upstream = ["有色金属", "半导体"]
+downstream = ["汽车整车", "新能源汽车"]
+related_events = ["domestic_monetary_easing", "robotics_breakthrough"]
+
+[[nodes.members]]
+code = "600699"
+name = "均胜电子"
+[[nodes.members]]
+code = "002920"
+name = "德赛西威"
+[[nodes.members]]
+code = "603179"
+name = "新泉股份"
+[[nodes.members]]
+code = "603306"
+name = "华懋科技"
+[[nodes.members]]
+code = "000700"
+name = "模塑科技"
+[[nodes.members]]
+code = "000338"
+name = "潍柴动力"
+[[nodes.members]]
+code = "002931"
+name = "锋龙股份"
+[[nodes.members]]
+code = "603119"
+name = "浙江荣泰"
+
+[[nodes]]
+tag = "铜"
+type = "sector"
+aliases = ["铜", "铜箔", "铜业", "铅锌", "有色金属"]
+upstream = ["有色金属"]
+downstream = ["PCB", "锂电池", "电力设备"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "600362"
+name = "江西铜业"
+[[nodes.members]]
+code = "000060"
+name = "中金岭南"
+[[nodes.members]]
+code = "600110"
+name = "诺德股份"
+[[nodes.members]]
+code = "000933"
+name = "神火股份"
+[[nodes.members]]
+code = "601168"
+name = "西部矿业"
+
+[[nodes]]
+tag = "氟化工"
+type = "sector"
+aliases = ["氟化工", "制冷剂", "电子化学品", "化工"]
+upstream = ["化工行业"]
+downstream = ["锂电池", "半导体", "空调"]
+related_events = ["oil_supply_shock", "chip_sanction_escalation"]
+
+[[nodes.members]]
+code = "600160"
+name = "巨化股份"
+[[nodes.members]]
+code = "002407"
+name = "多氟多"
+
+[[nodes]]
+tag = "环保"
+type = "sector"
+aliases = ["环保", "生态修复", "固废处理", "环境治理"]
+upstream = []
+downstream = ["公用事业"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "001267"
+name = "汇绿生态"
+[[nodes.members]]
+code = "000967"
+name = "盈峰环境"
+
+[[nodes]]
+tag = "包装"
+type = "sector"
+aliases = ["包装", "食品包装", "金属包装", "消费包装"]
+upstream = ["化工行业", "有色金属"]
+downstream = ["消费", "食品饮料"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "002969"
+name = "嘉美包装"
+
+[[nodes]]
+tag = "通信运营商"
+type = "sector"
+aliases = ["通信运营商", "运营商", "云网融合", "数据中心", "算力"]
+upstream = ["通信设备"]
+downstream = ["算力", "数据中心"]
+related_events = ["ai_compute_demand", "ai_model_release"]
+
+[[nodes.members]]
+code = "601728"
+name = "中国电信"
+
+[[nodes]]
+tag = "建筑工程"
+type = "sector"
+aliases = ["建筑", "建筑工程", "基建", "工程建设"]
+upstream = ["钢铁", "水泥"]
+downstream = ["房地产", "公用事业"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "601668"
+name = "中国建筑"
+
+[[nodes]]
+tag = "工业设备"
+type = "sector"
+aliases = ["工业设备", "专用设备", "机械设备", "工程机械", "压缩机"]
+upstream = ["钢铁", "有色金属"]
+downstream = ["工业制造"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "002158"
+name = "汉钟精机"
+[[nodes.members]]
+code = "600545"
+name = "卓郎智能"
+[[nodes.members]]
+code = "600031"
+name = "三一重工"
+
+[[nodes]]
+tag = "面板"
+type = "sector"
+aliases = ["面板", "显示面板", "OLED", "LCD", "光学显示"]
+upstream = ["电子材料"]
+downstream = ["消费电子"]
+related_events = ["consumer_electronics_recovery", "ai_device_cycle"]
+
+[[nodes.members]]
+code = "000725"
+name = "京东方A"
+[[nodes.members]]
+code = "000100"
+name = "TCL科技"
+[[nodes.members]]
+code = "600707"
+name = "彩虹股份"
+[[nodes.members]]
+code = "600552"
+name = "凯盛科技"
+[[nodes.members]]
+code = "002429"
+name = "兆驰股份"
+
+[[nodes]]
+tag = "数字传媒"
+type = "concept"
+aliases = ["数字传媒", "广告营销", "影视传媒", "AI应用", "游戏"]
+upstream = ["AI大模型"]
+downstream = ["消费"]
+related_events = ["ai_model_release"]
+
+[[nodes.members]]
+code = "002131"
+name = "利欧股份"
+[[nodes.members]]
+code = "600637"
+name = "东方明珠"
+[[nodes.members]]
+code = "002354"
+name = "天娱数科"
+
+[[nodes]]
+tag = "仪器仪表"
+type = "sector"
+aliases = ["仪器仪表", "检测仪器", "测量仪器"]
+upstream = ["电子元件"]
+downstream = ["工业制造", "医疗器械"]
+related_events = ["domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "002980"
+name = "华盛昌"
+
+[[nodes]]
+tag = "电容"
+type = "sector"
+aliases = ["电容", "薄膜电容", "超级电容", "被动元件"]
+upstream = ["电子材料"]
+downstream = ["新能源汽车", "电力设备", "消费电子"]
+related_events = ["consumer_electronics_recovery", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "002484"
+name = "江海股份"
+[[nodes.members]]
+code = "600563"
+name = "法拉电子"
+
+[[nodes]]
+tag = "航运"
+type = "sector"
+aliases = ["航运", "油运", "航运港口", "物流"]
+upstream = ["石油行业"]
+downstream = ["物流"]
+related_events = ["red_sea_shipping_disruption", "oil_supply_shock"]
+
+[[nodes.members]]
+code = "601975"
+name = "招商南油"
+
+[[nodes]]
+tag = "安防"
+type = "sector"
+aliases = ["安防", "视频监控", "机器视觉", "AI视觉", "物联网"]
+upstream = ["半导体", "AI大模型"]
+downstream = ["智慧城市", "工业制造"]
+related_events = ["ai_model_release", "domestic_monetary_easing"]
+
+[[nodes.members]]
+code = "002415"
+name = "海康威视"
