@@ -29,11 +29,12 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 TAG_SUFFIXES = ("概念", "行业", "板块", "设备", "及元件")
 
 TAG_ALIASES = {
-    "黄金": {"黄金", "黄金概念", "贵金属", "贵金属概念"},
-    "贵金属": {"黄金", "黄金概念", "贵金属", "贵金属概念"},
-    "半导体": {"半导体", "半导体及元件", "芯片", "集成电路"},
-    "芯片": {"半导体", "半导体及元件", "芯片", "集成电路"},
+    "黄金": {"黄金", "黄金概念", "黄金避险", "贵金属", "贵金属概念"},
+    "贵金属": {"黄金", "黄金概念", "黄金避险", "贵金属", "贵金属概念", "白银"},
+    "半导体": {"半导体", "半导体及元件", "芯片", "集成电路", "存储芯片", "先进封装", "第三代半导体"},
+    "芯片": {"半导体", "半导体及元件", "芯片", "集成电路", "存储芯片", "先进封装", "第三代半导体"},
     "光伏": {"光伏", "光伏概念", "光伏设备"},
+    "电力": {"电力", "绿电", "绿色电力", "火电", "公用事业"},
     "石油": {"石油", "石油行业", "油气", "油服工程", "天然气"},
     "石油行业": {"石油", "石油行业", "油气", "油服工程", "天然气"},
     "国防军工": {"国防军工", "军工", "军工电子", "航空装备", "航天", "船舶制造"},
@@ -113,19 +114,25 @@ FALLBACK_MEMBERS = {
 class SectorTagProvider:
     """Provider for industry/concept tags and board constituents."""
 
-    _graph_cache: dict[str, Any] | None = None
+    _graph_cache: dict[str, dict[str, Any]] = {}
 
     def __init__(
         self,
         ak: Any | None = None,
         max_workers: int = 8,
         graph_path: str | Path | None = None,
+        exposure_path: str | Path | None = None,
+        enable_exposure_overlay: bool = True,
         enable_live_bulk: bool | None = None,
     ):
         self._ak = ak
         self._ak_injected = ak is not None
         self._max_workers = max_workers
         self._graph_path = Path(graph_path) if graph_path else _PROJECT_ROOT / "data" / "sector_graph.toml"
+        self._exposure_path = (
+            Path(exposure_path) if exposure_path else _PROJECT_ROOT / "data" / "stock_topic_exposure.toml"
+        )
+        self._enable_exposure_overlay = enable_exposure_overlay
         self._code_to_tags: dict[str, set[str]] | None = None
         self._code_to_industry: dict[str, str] | None = None
         self._member_cache: dict[tuple[str, str], pd.DataFrame] = {}
@@ -135,15 +142,6 @@ class SectorTagProvider:
     def get_tags(self, symbol: str) -> set[str]:
         """Return all known industry/concept tags for one stock code."""
         code = self.normalize_code(symbol)
-        if self._ak_injected:
-            code_to_tags = self.build_code_to_tags()
-            if code in code_to_tags:
-                return set(code_to_tags[code])
-            return {self.market_fallback_tag(code)}
-
-        graph_tags = self._graph_tags_for_code(code)
-        if graph_tags:
-            return graph_tags
         code_to_tags = self.build_code_to_tags()
         if code in code_to_tags:
             return set(code_to_tags[code])
@@ -155,28 +153,28 @@ class SectorTagProvider:
         if cache_key in self._member_cache:
             return self._member_cache[cache_key].copy()
 
+        exposure = self._exposure_members(target)
         if self._ak_injected:
             live = self._live_members(target, target_type)
-            if not live.empty:
-                result = self._attach_member_meta(live, source="live", tag=target)
+            result = self._merge_member_frames(self._attach_member_meta(live, source="live", tag=target), exposure)
+            if not result.empty:
                 self._member_cache[cache_key] = result
                 return result.copy()
-            result = pd.DataFrame()
             self._member_cache[cache_key] = result
             return result.copy()
 
-        graph = self._graph_members(target)
+        graph = self._merge_member_frames(self._graph_members(target), exposure)
         if not graph.empty:
             self._member_cache[cache_key] = graph
             return graph.copy()
 
         live = self._live_members(target, target_type)
         if not live.empty:
-            result = self._attach_member_meta(live, source="live", tag=target)
+            result = self._merge_member_frames(self._attach_member_meta(live, source="live", tag=target), exposure)
             self._member_cache[cache_key] = result
             return result.copy()
 
-        result = self._fallback_members(target)
+        result = self._merge_member_frames(self._fallback_members(target), exposure)
         self._member_cache[cache_key] = result
         return result.copy()
 
@@ -192,6 +190,7 @@ class SectorTagProvider:
         code_to_tags: dict[str, set[str]] = {}
         if not self._enable_live_bulk:
             code_to_tags.update(self._graph_code_to_tags())
+            self._apply_exposure_overlay(code_to_tags)
             self._code_to_tags = code_to_tags
             return self._code_to_tags
 
@@ -204,6 +203,7 @@ class SectorTagProvider:
         if not tasks:
             if not self._ak_injected:
                 code_to_tags.update(self._graph_code_to_tags())
+            self._apply_exposure_overlay(code_to_tags)
             self._code_to_tags = code_to_tags
             return self._code_to_tags
 
@@ -225,6 +225,7 @@ class SectorTagProvider:
             for code, tags in self._graph_code_to_tags().items():
                 code_to_tags.setdefault(code, set()).update(tags)
 
+        self._apply_exposure_overlay(code_to_tags)
         self._code_to_tags = code_to_tags
         _logger.info("sector tag map built: %d stocks", len(code_to_tags))
         return code_to_tags
@@ -636,24 +637,26 @@ class SectorTagProvider:
         return pd.DataFrame(rows).drop_duplicates(subset=["code"]).reset_index(drop=True)
 
     def _graph(self) -> dict[str, Any]:
-        if self._graph_cache is not None:
-            return self._graph_cache
+        cache_key = str(self._graph_path.resolve())
+        if cache_key in self._graph_cache:
+            return self._graph_cache[cache_key]
         if not self._graph_path.exists():
-            self._graph_cache = {"version": "", "nodes": []}
-            return self._graph_cache
-        self._graph_cache = tomllib.loads(self._graph_path.read_text(encoding="utf-8"))
-        return self._graph_cache
+            self._graph_cache[cache_key] = {"version": "", "nodes": []}
+            return self._graph_cache[cache_key]
+        self._graph_cache[cache_key] = tomllib.loads(self._graph_path.read_text(encoding="utf-8"))
+        return self._graph_cache[cache_key]
 
     @classmethod
     def _default_graph(cls) -> dict[str, Any]:
-        if cls._graph_cache is not None:
-            return cls._graph_cache
         path = _PROJECT_ROOT / "data" / "sector_graph.toml"
+        cache_key = str(path.resolve())
+        if cache_key in cls._graph_cache:
+            return cls._graph_cache[cache_key]
         if not path.exists():
-            cls._graph_cache = {"version": "", "nodes": []}
-            return cls._graph_cache
-        cls._graph_cache = tomllib.loads(path.read_text(encoding="utf-8"))
-        return cls._graph_cache
+            cls._graph_cache[cache_key] = {"version": "", "nodes": []}
+            return cls._graph_cache[cache_key]
+        cls._graph_cache[cache_key] = tomllib.loads(path.read_text(encoding="utf-8"))
+        return cls._graph_cache[cache_key]
 
     def graph_version(self) -> str:
         """Return sector graph config version."""
@@ -705,6 +708,81 @@ class SectorTagProvider:
                 if code and tag:
                     mapping.setdefault(code, set()).add(tag)
         return mapping
+
+    def _apply_exposure_overlay(self, mapping: dict[str, set[str]]) -> None:
+        """Merge curated stock-topic exposure tags into the runtime tag map."""
+        for code, tags in self._exposure_code_to_tags().items():
+            mapping.setdefault(code, set()).update(tags)
+
+    def _exposure_code_to_tags(self) -> dict[str, set[str]]:
+        mapping: dict[str, set[str]] = {}
+        if not self._enable_exposure_overlay or not self._exposure_path.exists():
+            return mapping
+        try:
+            raw = tomllib.loads(self._exposure_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            _logger.debug("stock-topic exposure overlay unavailable: %s", exc)
+            return mapping
+        for item in raw.get("exposures", []):
+            code = self.normalize_code(str(item.get("symbol") or ""))
+            if not code:
+                continue
+            weight = self._exposure_weight(item)
+            if weight <= 0:
+                continue
+            for key in ("sector_tag", "topic"):
+                tag = str(item.get(key) or "").strip()
+                if tag:
+                    mapping.setdefault(code, set()).add(tag)
+        return mapping
+
+    def _exposure_members(self, target: str) -> pd.DataFrame:
+        if not self._enable_exposure_overlay or not self._exposure_path.exists():
+            return pd.DataFrame()
+        try:
+            raw = tomllib.loads(self._exposure_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            _logger.debug("stock-topic exposure members unavailable: %s", exc)
+            return pd.DataFrame()
+        rows: list[dict[str, Any]] = []
+        for item in raw.get("exposures", []):
+            code = self.normalize_code(str(item.get("symbol") or ""))
+            if not code or self._exposure_weight(item) <= 0:
+                continue
+            topic = str(item.get("topic") or "").strip()
+            sector_tag = str(item.get("sector_tag") or "").strip()
+            if not any(self.tag_matches(tag, target) for tag in (topic, sector_tag) if tag):
+                continue
+            rows.append(
+                {
+                    "code": code,
+                    "name": str(item.get("stock_name") or item.get("name") or ""),
+                    "source": "stock_topic_exposure",
+                    "tag": sector_tag or topic,
+                    "topic": topic,
+                    "exposure": item.get("exposure", 1.0),
+                    "confidence": item.get("confidence", 1.0),
+                }
+            )
+        if not rows:
+            return pd.DataFrame()
+        return pd.DataFrame(rows).drop_duplicates(subset=["code"]).reset_index(drop=True)
+
+    @staticmethod
+    def _merge_member_frames(*frames: pd.DataFrame) -> pd.DataFrame:
+        valid = [frame for frame in frames if frame is not None and not frame.empty]
+        if not valid:
+            return pd.DataFrame()
+        return pd.concat(valid, ignore_index=True).drop_duplicates(subset=["code"]).reset_index(drop=True)
+
+    @staticmethod
+    def _exposure_weight(item: dict[str, Any]) -> float:
+        try:
+            exposure = float(item.get("exposure", 1.0) or 0.0)
+            confidence = float(item.get("confidence", 1.0) or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+        return exposure * confidence
 
     def _graph_code_to_industry(self) -> dict[str, str]:
         mapping: dict[str, str] = {}

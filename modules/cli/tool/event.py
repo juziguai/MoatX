@@ -72,6 +72,16 @@ def cmd_event(args) -> None:
             min_score=args.min_score,
             top_n=args.top_events or 20,
         )
+    elif action == "news-factor-backfill":
+        from modules.event_intelligence.service import EventIntelligenceService
+
+        payload = EventIntelligenceService().news_factor_backfill(
+            start_date=args.start_date or "",
+            end_date=args.end_date or "",
+            lookback_days=args.lookback_days,
+            min_score=args.min_score,
+            top_n=args.top_events or 100,
+        )
     elif action == "topics":
         from modules.event_intelligence.service import EventIntelligenceService
 

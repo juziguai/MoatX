@@ -74,6 +74,47 @@ class PriceStore:
             df["date"] = pd.to_datetime(df["date"])
         return df
 
+    def load_daily_batch(
+        self,
+        symbols: list[str],
+        start_date: str | None = None,
+        end_date: str | None = None,
+        adjust: str = "qfq",
+    ) -> dict[str, pd.DataFrame]:
+        """Load daily OHLCV data for many symbols in one query."""
+        unique_symbols: list[str] = []
+        for symbol in symbols:
+            value = str(symbol or "").strip()
+            if value and value not in unique_symbols:
+                unique_symbols.append(value)
+        if not unique_symbols:
+            return {}
+
+        placeholders = ",".join("?" for _ in unique_symbols)
+        conditions = [f"symbol IN ({placeholders})", "adjust = ?"]
+        params: list = [*unique_symbols, adjust]
+        if start_date:
+            conditions.append("trade_date >= ?")
+            params.append(start_date)
+        if end_date:
+            conditions.append("trade_date <= ?")
+            params.append(end_date)
+
+        where = " AND ".join(conditions)
+        query = (
+            "SELECT symbol, trade_date as date, open, high, low, close, "
+            f"volume, amount, turn, pct_change FROM price_daily WHERE {where} "
+            "ORDER BY symbol, trade_date"
+        )
+        df = pd.read_sql_query(query, self._conn, params=params)
+        if df.empty:
+            return {}
+        df["date"] = pd.to_datetime(df["date"])
+        return {
+            str(symbol): group.drop(columns=["symbol"]).reset_index(drop=True)
+            for symbol, group in df.groupby("symbol", sort=False)
+        }
+
     def has_data(self, symbol: str, trade_date: str, adjust: str = "qfq") -> bool:
         """Check if data exists for a specific date."""
         cursor = self._conn.cursor()

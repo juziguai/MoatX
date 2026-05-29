@@ -318,6 +318,42 @@ def event_notify(*args, **kwargs) -> _SubprocessResult:
 # 任务定义
 # ─────────────────────────────────────────────
 
+def swing_daily_watchlist(*args, **kwargs) -> _SubprocessResult:
+    """Generate and push tomorrow's swing watchlist after close."""
+    return _run_module(
+        "modules.cli",
+        [
+            "tool",
+            "swing",
+            "watchlist",
+            "--limit",
+            "10",
+            "--pool-limit",
+            "120",
+            "--deadline-seconds",
+            "180",
+            "--min-score",
+            "55",
+            "--send",
+            "--json",
+        ],
+    )
+
+
+def swing_monitor_watchlist(*args, **kwargs) -> _SubprocessResult:
+    """Monitor active swing watchlist for target/stop alerts."""
+    return _run_module(
+        "modules.cli",
+        [
+            "tool",
+            "swing",
+            "monitor",
+            "--send",
+            "--json",
+        ],
+    )
+
+
 TASKS: list[TaskDict] = [
     # ── 旧任务（已禁用，保留函数不删除）────────────────────
     {
@@ -368,6 +404,20 @@ TASKS: list[TaskDict] = [
         "fn": _log_task("generate_signals", "生成交易信号（实盘）", generate_signals),
         "trigger": CronTrigger(hour=15, minute=5, day_of_week="mon-fri"),
         "enabled": False,
+    },
+    {
+        "id": "swing_daily_watchlist",
+        "name": "短线盘后观察名单",
+        "fn": _log_task("swing_daily_watchlist", "短线盘后观察名单", swing_daily_watchlist),
+        "trigger": CronTrigger(hour=15, minute=25, day_of_week="mon-fri"),
+        "enabled": True,
+    },
+    {
+        "id": "swing_monitor_watchlist",
+        "name": "短线盘中目标止损监控",
+        "fn": _log_task("swing_monitor_watchlist", "短线盘中目标止损监控", swing_monitor_watchlist),
+        "trigger": IntervalTrigger(minutes=5),
+        "enabled": True,
     },
     # ── 仿真交易任务（已启用）──────────────────────────────
     {

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from typing import Any
 
@@ -100,6 +100,54 @@ class NewsFactorEngine:
         finally:
             self.close()
 
+    def backfill_snapshots(
+        self,
+        *,
+        start_date: str = "",
+        end_date: str = "",
+        lookback_days: int = 14,
+        min_score: float = 55.0,
+        top_n: int = 100,
+    ) -> dict[str, Any]:
+        """Backfill point-in-time daily factor snapshots from persisted news insights."""
+        try:
+            insights = self._historical_insights(min_score=min_score)
+            dates = self._snapshot_dates(insights, start_date=start_date, end_date=end_date)
+            reviews = self._latest_llm_reviews()
+            rows: list[dict[str, Any]] = []
+            for date_text in dates:
+                as_of = datetime.strptime(date_text, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+                cutoff = as_of - timedelta(days=max(1, int(lookback_days or 1)))
+                window = [
+                    item
+                    for item in insights
+                    if self._in_snapshot_window(item, cutoff=cutoff, as_of=as_of)
+                ]
+                factors = self._aggregate(window, reviews, as_of=as_of)[: max(1, int(top_n or 1))]
+                self._persist_factor_snapshot(date_text, factors, updated_at=as_of.strftime("%Y-%m-%d %H:%M:%S"))
+                rows.append(
+                    {
+                        "snapshot_date": date_text,
+                        "insight_count": len(window),
+                        "factor_count": len(factors),
+                        "top_factor": asdict(factors[0]) if factors else {},
+                    }
+                )
+            return {
+                "engine": "news_factor_snapshot_backfill_v1",
+                "generated_at": now_ts(),
+                "start_date": dates[0] if dates else "",
+                "end_date": dates[-1] if dates else "",
+                "lookback_days": int(lookback_days),
+                "min_score": float(min_score),
+                "insight_count": len(insights),
+                "snapshot_count": len(rows),
+                "snapshots": rows,
+                "message": f"已回填 {len(rows)} 个新闻因子日快照。",
+            }
+        finally:
+            self.close()
+
     def sector_boosts(
         self,
         *,
@@ -118,6 +166,8 @@ class NewsFactorEngine:
     def _aggregate(
         insights: list[dict[str, Any]],
         llm_reviews: dict[tuple[int, str], dict[str, Any]] | None = None,
+        *,
+        as_of: datetime | None = None,
     ) -> list[NewsSectorFactor]:
         buckets: dict[str, dict[str, Any]] = {}
         reviews = llm_reviews or {}
@@ -129,7 +179,10 @@ class NewsFactorEngine:
             llm_multiplier = NewsFactorEngine._llm_multiplier(item, reviews)
             if llm_multiplier <= 0:
                 continue
-            time_decay = NewsFactorEngine._time_decay(item.get("published_at") or item.get("created_at") or "")
+            time_decay = NewsFactorEngine._time_decay(
+                item.get("published_at") or item.get("created_at") or "",
+                now=as_of,
+            )
             bearish_multiplier = 1.2 if bearish_hits & set(_SEVERE_BEARISH_KEYWORDS) else (1.1 if bearish_hits else 1.0)
             contribution = NewsFactorEngine._contribution(item) * sign * llm_multiplier * time_decay * bearish_multiplier
             for sector in sectors:
@@ -206,11 +259,12 @@ class NewsFactorEngine:
         return 1.0, set()
 
     @staticmethod
-    def _time_decay(value: Any) -> float:
+    def _time_decay(value: Any, *, now: datetime | None = None) -> float:
         parsed = NewsFactorEngine._parse_time(value)
         if parsed is None:
             return 0.85
-        age_hours = max(0.0, (datetime.now() - parsed).total_seconds() / 3600)
+        reference = now or datetime.now()
+        age_hours = max(0.0, (reference - parsed).total_seconds() / 3600)
         if age_hours <= 12:
             return 1.0
         if age_hours <= 24:
@@ -281,14 +335,92 @@ class NewsFactorEngine:
             }
         return reviews
 
+    def _historical_insights(self, *, min_score: float) -> list[dict[str, Any]]:
+        import pandas as pd
+
+        df = pd.read_sql_query(
+            """SELECT i.news_id,
+                      i.source,
+                      i.title,
+                      i.topic,
+                      i.category,
+                      i.value_score,
+                      i.sentiment,
+                      i.time_horizon,
+                      i.affected_sectors_json,
+                      i.affected_stocks_json,
+                      i.reason,
+                      i.llm_score,
+                      i.llm_decision,
+                      i.created_at,
+                      i.updated_at,
+                      COALESCE(NULLIF(n.published_at, ''), NULLIF(n.fetched_at, ''), i.created_at) AS published_at
+               FROM event_news_insights i
+               LEFT JOIN event_news n ON n.id = i.news_id
+               WHERE i.value_score >= ?
+               ORDER BY published_at, i.updated_at""",
+            self._db.conn,
+            params=[float(min_score)],
+        )
+        if df.empty:
+            return []
+        rows = df.where(pd.notna(df), None).to_dict(orient="records")
+        for row in rows:
+            try:
+                row["affected_sectors"] = json.loads(str(row.get("affected_sectors_json") or "[]"))
+            except json.JSONDecodeError:
+                row["affected_sectors"] = []
+            try:
+                row["affected_stocks"] = json.loads(str(row.get("affected_stocks_json") or "[]"))
+            except json.JSONDecodeError:
+                row["affected_stocks"] = []
+            row["confidence"] = min(1.0, max(0.35, float(row.get("value_score") or 0.0) / 100.0))
+            row["impact_strength"] = min(1.0, max(0.45, len(row["affected_sectors"]) * 0.12))
+        return rows
+
+    @staticmethod
+    def _snapshot_dates(insights: list[dict[str, Any]], *, start_date: str = "", end_date: str = "") -> list[str]:
+        parsed_times = [
+            NewsFactorEngine._parse_time(item.get("published_at") or item.get("created_at") or "")
+            for item in insights
+        ]
+        parsed_times = [value for value in parsed_times if value is not None]
+        if not parsed_times and not (start_date and end_date):
+            return []
+        start = (
+            datetime.strptime(start_date, "%Y-%m-%d")
+            if start_date
+            else min(parsed_times).replace(hour=0, minute=0, second=0, microsecond=0)
+        )
+        end = (
+            datetime.strptime(end_date, "%Y-%m-%d")
+            if end_date
+            else max(parsed_times).replace(hour=0, minute=0, second=0, microsecond=0)
+        )
+        if end < start:
+            return []
+        dates: list[str] = []
+        current = start
+        while current <= end:
+            dates.append(current.strftime("%Y-%m-%d"))
+            current += timedelta(days=1)
+        return dates
+
+    @staticmethod
+    def _in_snapshot_window(item: dict[str, Any], *, cutoff: datetime, as_of: datetime) -> bool:
+        parsed = NewsFactorEngine._parse_time(item.get("published_at") or item.get("created_at") or "")
+        if parsed is None:
+            return False
+        return cutoff <= parsed <= as_of
+
     def _persist_factors(self, factors: list[NewsSectorFactor]) -> None:
         now = now_ts()
         for item in factors:
             self._db.conn.execute(
                 """INSERT INTO event_news_factors
                    (sector, factor_score, direction, insight_count, avg_value_score,
-                    top_topic, top_titles_json, llm_adjustment, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    top_topic, top_titles_json, llm_adjustment, avg_time_decay, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(sector) DO UPDATE SET
                    factor_score=excluded.factor_score,
                    direction=excluded.direction,
@@ -297,6 +429,7 @@ class NewsFactorEngine:
                    top_topic=excluded.top_topic,
                    top_titles_json=excluded.top_titles_json,
                    llm_adjustment=excluded.llm_adjustment,
+                   avg_time_decay=excluded.avg_time_decay,
                    updated_at=excluded.updated_at""",
                 (
                     item.sector,
@@ -307,10 +440,54 @@ class NewsFactorEngine:
                     item.top_topic,
                     json.dumps(item.top_titles, ensure_ascii=False),
                     item.llm_adjustment,
+                    item.avg_time_decay,
                     now,
                 ),
             )
+        self._persist_factor_snapshot(now[:10], factors, updated_at=now, commit=False)
         self._db.conn.commit()
+
+    def _persist_factor_snapshot(
+        self,
+        snapshot_date: str,
+        factors: list[NewsSectorFactor],
+        *,
+        updated_at: str,
+        commit: bool = True,
+    ) -> None:
+        for item in factors:
+            self._db.conn.execute(
+                """INSERT INTO event_news_factor_snapshots
+                   (snapshot_date, sector, factor_score, direction, insight_count,
+                    avg_value_score, top_topic, top_titles_json, llm_adjustment,
+                    avg_time_decay, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(snapshot_date, sector) DO UPDATE SET
+                   factor_score=excluded.factor_score,
+                   direction=excluded.direction,
+                   insight_count=excluded.insight_count,
+                   avg_value_score=excluded.avg_value_score,
+                   top_topic=excluded.top_topic,
+                   top_titles_json=excluded.top_titles_json,
+                   llm_adjustment=excluded.llm_adjustment,
+                   avg_time_decay=excluded.avg_time_decay,
+                   updated_at=excluded.updated_at""",
+                (
+                    snapshot_date,
+                    item.sector,
+                    item.factor_score,
+                    item.direction,
+                    item.insight_count,
+                    item.avg_value_score,
+                    item.top_topic,
+                    json.dumps(item.top_titles, ensure_ascii=False),
+                    item.llm_adjustment,
+                    item.avg_time_decay,
+                    updated_at,
+                ),
+            )
+        if commit:
+            self._db.conn.commit()
 
     @staticmethod
     def _message(insights: list[dict[str, Any]], factors: list[NewsSectorFactor]) -> str:

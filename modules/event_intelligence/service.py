@@ -79,6 +79,22 @@ class EventIntelligenceService:
     ) -> dict[str, Any]:
         return NewsFactorEngine().build(limit=limit, min_score=min_score, top_n=top_n)
 
+    def news_factor_backfill(
+        self,
+        start_date: str = "",
+        end_date: str = "",
+        lookback_days: int = 14,
+        min_score: float = 55.0,
+        top_n: int = 100,
+    ) -> dict[str, Any]:
+        return NewsFactorEngine().backfill_snapshots(
+            start_date=start_date,
+            end_date=end_date,
+            lookback_days=lookback_days,
+            min_score=min_score,
+            top_n=top_n,
+        )
+
     def topic_memory(
         self,
         limit: int = 200,
