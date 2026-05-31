@@ -83,7 +83,7 @@ class EventIntelligenceService:
         topic: str | None = None,
     ) -> dict[str, Any]:
         """Analyze news via NewsManager (LLM-driven with keyword fallback)."""
-        return NewsManager(db=self._db).analyze(limit=limit, use_llm=True)
+        return NewsManager(db=self._db).analyze(limit=limit)
 
     def news_factors(
         self,
