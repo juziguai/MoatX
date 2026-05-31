@@ -634,6 +634,15 @@ TOPIC_PRIORITY = {
 }
 
 
+# ============================================================================
+# DEPRECATED (v1.4.0): Hard-coded topic rules are superseded by NewsManager's
+# LLM-driven inference engine.  TOPIC_RULES remain as keyword-only fallback
+# when the LLM endpoint is unreachable.
+# New rules or topics should NOT be added here — update the LLM system prompt
+# and sector graph (data/sector_graph.toml) instead.
+# Will be removed in v2.0.0 after LLM stability is proven in production.
+# ============================================================================
+
 TOPIC_RULES = [
     TopicRule(
         topic="AI大模型",

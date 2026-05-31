@@ -1,29 +1,41 @@
-"""Service orchestration for macro event intelligence."""
+﻿"""Service orchestration for macro event intelligence.
+
+Uses NewsManager for collection/analysis/reporting;
+retains legacy engines for extraction/probability/opportunity.
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
-from .collector import EventNewsCollector
 from .context import EventContextBuilder
 from .elasticity import EventElasticityBacktester
 from .extractor import EventExtractor
 from .manual_ingest import ingest_manual_news, ingest_news_file
 from .llm_semantics import LLMSemanticReviewer
 from .news_factors import NewsFactorEngine
-from .news_intelligence import NewsIntelligenceEngine
 from .notifier import EventNotifier
 from .opportunity import EventOpportunityScanner
 from .probability import EventProbabilityEngine
-from .reporter import EventReporter
 from .topic_memory import TopicMemoryEngine
+from modules.news_manager import NewsManager
 
 
 class EventIntelligenceService:
-    """P0 orchestration service for event intelligence."""
+    """P0 orchestration service for event intelligence.
+
+    Uses NewsManager for collection/analysis/reporting;
+    retains legacy engines for extraction/probability/opportunity.
+    """
+
+    def __init__(self):
+        from modules.db import DatabaseManager
+        from modules.config import cfg
+        self._db = DatabaseManager(cfg().data.warehouse_path)
 
     def collect_news(self) -> dict[str, Any]:
-        return EventNewsCollector().collect()
+        """Collect news via NewsManager (plugin-based providers)."""
+        return NewsManager(db=self._db).collect()
 
     def ingest_news(
         self,
@@ -60,8 +72,9 @@ class EventIntelligenceService:
             per_effect_limit=per_effect_limit,
         )
 
-    def report(self, limit: int = 10) -> str:
-        return EventReporter().report(limit=limit)
+    def report(self, limit: int = 20) -> str:
+        """Generate markdown report via NewsManager."""
+        return NewsManager(db=self._db).report(limit=limit)
 
     def news_intelligence(
         self,
@@ -69,7 +82,8 @@ class EventIntelligenceService:
         min_score: float = 45.0,
         topic: str | None = None,
     ) -> dict[str, Any]:
-        return NewsIntelligenceEngine().analyze(limit=limit, min_score=min_score, topic=topic)
+        """Analyze news via NewsManager (LLM-driven with keyword fallback)."""
+        return NewsManager(db=self._db).analyze(limit=limit, use_llm=True)
 
     def news_factors(
         self,

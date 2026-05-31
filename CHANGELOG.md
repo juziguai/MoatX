@@ -3,6 +3,29 @@
 MoatX 各版本重要变更记录。
 
 
+## 1.4.0 - 2026-06-01
+
+### 新增
+- 新闻模块统一架构：NewsSource ABC + NewsCapability 枚举 + NewsHealth 数据类，对标行情采集模块 DataSource 设计。
+- 插件式 news_sources/ 包：3 个独立 provider 文件（rss / http_json / html），自动发现注册。
+- NewsManager 统一入口：collect() 采集 → analyze() LLM 推理分析 → report() Markdown 情报报告。
+- LLM 驱动的新闻分析引擎：通过 OpenAI 兼容 API 动态推理新闻主题、板块、个股、方向及影响强度。
+- 关键词降级链路：LLM 不可用时自动回退至 TOPIC_RULES 关键词匹配，保证分析不断线。
+- 板块→个股反查：通过 SectorTagProvider.get_members() 将 LLM 输出的板块名解析为 A 股个股。
+
+### 变更
+- EventIntelligenceService 三个核心入口（collect_news / news_intelligence / report）接入 NewsManager。
+- TOPIC_RULES 标记弃用（v2.0.0 移除），新主题应通过 LLM system prompt 和板块图谱更新。
+- service.py 引入 NewsManager 依赖，统一事件情报模块的采集/分析/报告链路。
+- NewsManager._call_llm() 直接调用 OpenAI 兼容 chat/completions API，不再依赖 LLMSemanticReviewer。
+
+### 验证
+- NewsManager.collect() 成功：15 源 → 1208 条抓取 → 218 条入库。
+- NewsManager.report() 产出中文 Markdown 情报报告（关键词降级路径通过）。
+- NewsManager.analyze() LLM 降级链路：LLM 未配置时自动回退关键词匹配。
+- ruff check 全部通过（改动文件零错误）。
+- pytest 246 passed, 8 skipped, 0 failures。
+
 ## 1.3.0 - 2026-06-01
 
 ### 新增
