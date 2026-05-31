@@ -695,6 +695,7 @@ TOPIC_RULES = [
             "OPEC", "Brent", "WTI", "crude", "oil", "barrel", "EIA", "inventory", "inventories",
         ],
         sectors=["石油行业", "天然气", "煤炭", "电力", "储能", "光伏"],
+        stocks=["中国石油", "中国石化", "中国海油", "广汇能源", "中曼石油", "海油工程"],
         base_importance=0.68,
     ),
     TopicRule(
@@ -702,6 +703,7 @@ TOPIC_RULES = [
         category="geopolitics",
         keywords=["战争", "冲突", "制裁", "军演", "导弹", "航母", "空袭", "红海", "霍尔木兹", "伊朗"],
         sectors=["国防军工", "黄金", "石油行业", "航运港口"],
+        stocks=["中航沈飞", "航发动力", "中国船舶", "中兵红箭", "中国卫通", "中船防务"],
         base_importance=0.72,
     ),
     TopicRule(
@@ -709,6 +711,7 @@ TOPIC_RULES = [
         category="commodity",
         keywords=["黄金", "白银", "贵金属", "避险", "央行购金", "美元", "美债"],
         sectors=["黄金", "贵金属"],
+        stocks=["山东黄金", "紫金矿业", "中金黄金", "赤峰黄金", "银泰黄金", "湖南黄金"],
         base_importance=0.66,
     ),
     TopicRule(
@@ -716,6 +719,7 @@ TOPIC_RULES = [
         category="healthcare",
         keywords=["创新药", "临床", "FDA", "医保", "CXO", "ADC", "医药", "药品审批"],
         sectors=["创新药", "CXO", "医药", "医疗服务"],
+        stocks=["恒瑞医药", "药明康德", "百济神州", "长春高新", "康龙化成", "泰格医药"],
         base_importance=0.64,
     ),
     TopicRule(
@@ -723,6 +727,7 @@ TOPIC_RULES = [
         category="policy",
         keywords=["降准", "降息", "LPR", "MLF", "地产", "化债", "地方债", "房地产", "银行", "证券"],
         sectors=["证券", "银行", "房地产"],
+        stocks=["招商银行", "中国平安", "万科A", "保利发展", "中信证券", "华泰证券"],
         base_importance=0.66,
     ),
     TopicRule(
@@ -730,6 +735,7 @@ TOPIC_RULES = [
         category="consumer",
         keywords=["消费", "出口", "关税", "汇率", "跨境电商", "补贴", "以旧换新"],
         sectors=["消费电子", "家电", "跨境电商", "汽车"],
+        stocks=["比亚迪", "海尔智家", "美的集团", "安克创新", "石头科技", "传音控股"],
         base_importance=0.58,
     ),
     TopicRule(
@@ -737,6 +743,7 @@ TOPIC_RULES = [
         category="capital_market",
         keywords=["并购", "重组", "资产注入", "国企改革", "市值管理", "回购", "增持"],
         sectors=["央企改革", "国企改革", "券商"],
+        stocks=["中国船舶", "中国交建", "中国中车", "中国联通", "中国铝业", "中国铁建"],
         base_importance=0.62,
     ),
 ]
