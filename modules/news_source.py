@@ -141,6 +141,7 @@ class NewsHealthTracker:
             for src, n in self._failures.items()
         }
 
+@dataclass
 class NewsMetricsCollector:
     """Per-source latency / item count / success rate metrics."""
 
