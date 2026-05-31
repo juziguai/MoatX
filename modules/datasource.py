@@ -8,6 +8,8 @@ datasource.py - 数据源抽象层
 
 from abc import ABC, abstractmethod
 import logging
+import time
+from dataclasses import dataclass
 from typing import Literal
 
 import requests
@@ -19,6 +21,15 @@ logger = logging.getLogger("moatx.datasource")
 logger.setLevel(logging.WARNING)
 
 DEFAULT_QUOTE_TOLERANCE_PCT = 0.15
+
+@dataclass
+class SourceHealth:
+    source: str
+    healthy: bool
+    latency_ms: float = 0.0
+    error: str = ""
+    sample_count: int = 0
+
 
 
 class QuoteSource(ABC):
@@ -41,6 +52,30 @@ class QuoteSource(ABC):
             {full_code: {code, name, price, change_pct, volume, prev_close, high, low, open, amount, turnover, pe}}
             失败或空返回 {}
         """
+
+    def health_check(self):
+        t0 = time.time()
+        try:
+            result = self.fetch_quotes(["600519"])
+            latency = (time.time() - t0) * 1000
+            if result:
+                return SourceHealth(
+                    source=self.name, healthy=True,
+                    latency_ms=round(latency, 1),
+                    sample_count=len(result),
+                )
+            return SourceHealth(
+                source=self.name, healthy=False,
+                latency_ms=round(latency, 1),
+                error="empty response",
+            )
+        except Exception as e:
+            latency = (time.time() - t0) * 1000
+            return SourceHealth(
+                source=self.name, healthy=False,
+                latency_ms=round(latency, 1),
+                error=f"{type(e).__name__}: {e}",
+            )
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__}[{self.name}]>"
@@ -265,6 +300,23 @@ class QuoteManager:
                     quotes.append(q)
             if quotes:
                 results[full_code] = self._aggregate_quote(full_code, quotes)
+        return results
+
+    def health_check_all(self):
+        results = []
+        for source in self._sources:
+            try:
+                h = source.health_check()
+            except Exception as e:
+                h = SourceHealth(
+                    source=source.name, healthy=False,
+                    error=f"{type(e).__name__}: {e}",
+                )
+            results.append(h)
+            logger.info(
+                "health_check %%s: healthy=%%s latency=%%.1fms error=%%s",
+                h.source, h.healthy, h.latency_ms, h.error,
+            )
         return results
 
     def _aggregate_quote(self, full_code: str, quotes: list[dict]) -> dict:

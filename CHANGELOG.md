@@ -2,6 +2,29 @@
 
 MoatX 各版本重要变更记录。
 
+
+## 1.2.0 - 2026-05-31
+
+### 新增
+- 数据源健康监控系统：SourceHealth 数据类、health_check() 接口、SourceHealthStore 持久化存储。
+- 飞书告警集成：连续 3 次故障自动推送通知。
+- 定时任务 source_health_check，工作日 8:30 执行。
+- CLI 命令 python -m modules.cli tool health（支持 --json 输出）。
+- 数据库迁移 v15：source_health_log 表及索引。
+- Sina 爬虫 HTTP 状态码防护：识别 429/456/503 ban 码，指数退避重试（3s→6s），自动刷新 Session。
+
+### 变更
+- Sina 板块采集从串行改为 3 并发线程池（ThreadPoolExecutor），行业板块覆盖率从 18/48 提升至 48/48 全量。
+- sector_tags 测试适配 exposure overlay 架构。
+
+### 修复
+- 修复 4 个 sector_tags 测试因 stock_topic_exposure.toml 注入数据导致的断言失败。
+- 修复 test_live_members_use_eastmoney_direct_board_constituents 因 sector_graph 优先命中而跳过 EastMoney 路径。
+
+### 验证
+- 三源健康检查全部通过（新浪 113ms / 腾讯 144ms / 东财 123ms）。
+- sector_tags + datasource_consensus 共 15 个测试全部通过。
+- Sina 456 ban 检测和退避实战触发验证通过。
 ## 1.1.0 - 2026-05-31
 
 ### 新增

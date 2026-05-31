@@ -24,6 +24,61 @@ _DEFAULT_PATH = os.path.join(
 )
 
 
+
+class SourceHealthStore:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def log(self, source: str, healthy: bool, latency_ms: float = 0.0,
+            error: str = "", sample_count: int = 0) -> None:
+        self._conn.execute(
+            """INSERT INTO source_health_log
+               (source, healthy, latency_ms, error, sample_count)
+               VALUES (?, ?, ?, ?, ?)""",
+            (source, int(healthy), latency_ms, error, sample_count),
+        )
+        self._conn.commit()
+
+    def latest(self, source: str | None = None) -> list[dict]:
+        if source:
+            cur = self._conn.execute(
+                """SELECT * FROM source_health_log
+                   WHERE source = ? ORDER BY checked_at DESC LIMIT 1""",
+                (source,),
+            )
+        else:
+            cur = self._conn.execute(
+                """SELECT * FROM source_health_log
+                   WHERE checked_at = (SELECT MAX(checked_at) FROM source_health_log)""",
+            )
+        columns = [desc[0] for desc in cur.description] if cur.description else []
+        return [dict(zip(columns, row)) for row in cur.fetchall()]
+
+    def recent_failures(self, source: str, limit: int = 10) -> list[dict]:
+        cur = self._conn.execute(
+            """SELECT * FROM source_health_log
+               WHERE source = ? AND healthy = 0
+               ORDER BY checked_at DESC LIMIT ?""",
+            (source, limit),
+        )
+        columns = [desc[0] for desc in cur.description] if cur.description else []
+        return [dict(zip(columns, row)) for row in cur.fetchall()]
+
+    def consecutive_failures(self, source: str) -> int:
+        rows = self._conn.execute(
+            """SELECT healthy FROM source_health_log
+               WHERE source = ? ORDER BY checked_at DESC LIMIT 20""",
+            (source,),
+        ).fetchall()
+        count = 0
+        for (healthy,) in rows:
+            if healthy:
+                break
+            count += 1
+        return count
+
+
+
 class DatabaseManager:
     """外观类，管理 warehouse 连接和子存储。"""
 
@@ -55,6 +110,7 @@ class DatabaseManager:
         self._signal: SignalStore | None = None
         self._event: EventStore | None = None
         self._failure: TaskFailureTracker | None = None
+        self._source_health: SourceHealthStore | None = None
         self._initialized = True
 
     def price(self) -> PriceStore:
@@ -86,6 +142,11 @@ class DatabaseManager:
         if self._failure is None:
             self._failure = TaskFailureTracker(self._conn)
         return self._failure
+
+    def source_health(self) -> SourceHealthStore:
+        if self._source_health is None:
+            self._source_health = SourceHealthStore(self._conn)
+        return self._source_health
 
     @property
     def conn(self) -> sqlite3.Connection:

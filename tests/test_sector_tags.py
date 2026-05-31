@@ -42,8 +42,9 @@ def test_build_code_to_tags_from_industry_and_concept():
     assert provider.get_tags("600988.SH") == {"黄金概念"}
 
 
-def test_get_members_normalizes_common_columns():
+def test_get_members_normalizes_common_columns(monkeypatch):
     provider = SectorTagProvider(ak=FakeAkShare())
+    monkeypatch.setattr(provider, "_exposure_members", lambda target: pd.DataFrame())
 
     industry_members = provider.get_members("石油行业", "industry")
     concept_members = provider.get_members("黄金概念", "concept")
@@ -65,8 +66,10 @@ def test_tag_matches_alias_suffix_and_contains_forms():
     assert SectorTagProvider.tag_matches("国防军工", "军工")
 
 
-def test_failures_degrade_to_empty_members_and_market_fallback():
+def test_failures_degrade_to_empty_members_and_market_fallback(monkeypatch):
     provider = SectorTagProvider(ak=FakeAkShare(fail=True))
+    monkeypatch.setattr(provider, "_apply_exposure_overlay", lambda mapping: None)
+    monkeypatch.setattr(provider, "_exposure_members", lambda target: pd.DataFrame())
 
     assert provider.build_code_to_tags() == {}
     assert provider.get_members("石油行业", "industry").empty
@@ -88,7 +91,9 @@ def test_default_bulk_maps_stay_graph_first(monkeypatch):
 
 
 def test_live_members_use_eastmoney_direct_board_constituents(monkeypatch):
-    provider = SectorTagProvider()
+    provider = SectorTagProvider(ak=FakeAkShare())
+    monkeypatch.setattr(provider, "_graph_members", lambda target: pd.DataFrame())
+    monkeypatch.setattr(provider, "_exposure_members", lambda target: pd.DataFrame())
 
     def fake_clist(*, fs, fields, fid, page_size=100, max_pages=20):
         if fs == "m:90 t:3 f:!50":

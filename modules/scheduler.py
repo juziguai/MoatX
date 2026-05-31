@@ -354,6 +354,19 @@ def swing_monitor_watchlist(*args, **kwargs) -> _SubprocessResult:
     )
 
 
+
+
+def source_health_check(*args, **kwargs) -> _SubprocessResult:
+    try:
+        from modules.source_health import run_health_check
+        results = run_health_check()
+        ok = all(r.healthy for r in results)
+        msg = "; ".join(f"{r.source}: {'OK' if r.healthy else 'FAIL'}({r.latency_ms:.0f}ms)" for r in results)
+        return _SubprocessResult(0 if ok else 1, msg, "")
+    except Exception as e:
+        return _SubprocessResult(1, "", str(e))
+
+
 TASKS: list[TaskDict] = [
     # ── 旧任务（已禁用，保留函数不删除）────────────────────
     {
@@ -404,6 +417,13 @@ TASKS: list[TaskDict] = [
         "fn": _log_task("generate_signals", "生成交易信号（实盘）", generate_signals),
         "trigger": CronTrigger(hour=15, minute=5, day_of_week="mon-fri"),
         "enabled": False,
+    },
+    {
+        "id": "source_health_check",
+        "name": "数据源健康检查",
+        "fn": _log_task("source_health_check", "数据源健康检查", source_health_check),
+        "trigger": CronTrigger(hour=8, minute=30, day_of_week="mon-fri"),
+        "enabled": True,
     },
     {
         "id": "swing_daily_watchlist",

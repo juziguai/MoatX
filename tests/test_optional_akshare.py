@@ -138,7 +138,7 @@ def test_ths_fund_flow_import_does_not_require_mini_racer(monkeypatch):
         ths_fund_flow.get_hexin_v_header()
 
 
-def test_sector_tags_fall_back_when_akshare_getattr_fails():
+def test_sector_tags_fall_back_when_akshare_getattr_fails(monkeypatch):
     from modules.sector_tags import SectorTagProvider
 
     class BrokenAk:
@@ -146,6 +146,8 @@ def test_sector_tags_fall_back_when_akshare_getattr_fails():
             raise RuntimeError("akshare import failed")
 
     provider = SectorTagProvider(ak=BrokenAk())
+    monkeypatch.setattr(provider, "_apply_exposure_overlay", lambda mapping: None)
+    monkeypatch.setattr(provider, "_exposure_members", lambda target: pd.DataFrame())
 
     assert provider.build_code_to_tags() == {}
     assert provider.get_members("石油", "sector").empty

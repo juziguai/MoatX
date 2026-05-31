@@ -120,6 +120,8 @@ def main():
     p_diag.add_argument("--source", default="all", help="数据源: all/sector/eastmoney/sina")
     p_diag.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
     p_diag.add_argument("--fresh", action="store_true", help="跳过缓存，测试实时数据源")
+    p_health = p_tool_sub.add_parser("health", help="数据源健康检查")
+    p_health.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
 
     p_probe = p_tool_sub.add_parser("probe", help="通用网站/API 探测")
     _build_probe_parser(p_probe)
@@ -243,6 +245,17 @@ def main():
             from .tool import cmd_swing
 
             cmd_swing(args)
+        elif args.tool_action == "health":
+            import json
+            from modules.source_health import run_health_check, get_source_status
+            results = run_health_check()
+            if hasattr(args, "as_json") and args.as_json:
+                status = get_source_status()
+                print(json.dumps(status, ensure_ascii=False, indent=2))
+            else:
+                for r in results:
+                    status = "OK" if r.healthy else "FAIL"
+                    print(f"[{status}] {r.source}: {r.latency_ms:.0f}ms samples={r.sample_count} {r.error}")
         elif args.tool_action == "intraday":
             from .tool import cmd_intraday
 
