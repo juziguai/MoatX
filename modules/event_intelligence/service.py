@@ -150,6 +150,42 @@ class EventIntelligenceService:
     ) -> dict[str, Any]:
         return EventElasticityBacktester().run(event_id=event_id, windows=windows, limit=limit)
 
+    # ─── Agent Pipeline (for external AI Agent like Codex CLI) ──
+
+    def list_news_for_agent(self, limit: int = 50) -> list[dict[str, Any]]:
+        """Return raw news for an external AI Agent to reason over."""
+        return NewsManager(db=self._db).list_news(limit=limit)
+
+    def resolve_sectors_for_agent(self, sectors: list[str]) -> list[str]:
+        """Resolve sector/concept names to A-share stock codes."""
+        return NewsManager(db=self._db).resolve_stocks(sectors)
+
+    def agent_report(self, insights: list[dict]) -> str:
+        """Agent pipeline: accept AI analysis → enrich stocks → produce report.
+
+        The caller (Codex CLI / scheduler) does LLM reasoning externally,
+        then calls this method with structured insights to get a markdown report.
+        """
+        return NewsManager(db=self._db).agent_full_report(insights)
+
+    def run_agent_cycle(self, limit: int = 50, collect_first: bool = False) -> dict[str, Any]:
+        """One-stop cycle for AI Agent:
+        1. Optionally collect fresh news
+        2. Return raw news for agent reasoning
+        3. (Agent reasons externally)
+        4. Agent calls agent_report(insights) separately
+
+        Returns: {"collected": ..., "raw_news": [...]}
+        """
+        result: dict[str, Any] = {}
+        if collect_first:
+            result["collected"] = self.collect_news()
+        result["raw_news"] = NewsManager(db=self._db).list_news(limit=limit)
+        result["news_count"] = len(result["raw_news"])
+        result["hint"] = "Call agent_report(insights) with your LLM analysis to produce final report."
+        return result
+
+
     def run_event_cycle(
         self,
         limit: int = 200,

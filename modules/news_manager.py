@@ -219,6 +219,37 @@ class NewsManager:
 
         return list(dict.fromkeys(stocks))[:20]
 
+    # ─── Agent Pipeline ─────────────────────────
+
+    def enrich_insights(self, agent_insights: list[dict]) -> list[dict]:
+        """Accept AI Agent's analysis, resolve sectors to stocks, return enriched.
+
+        Each insight dict from the agent should have:
+            news_id, title, topic, sectors, concepts, direction, impact, confidence, reasoning
+
+        Returns the same list with "stocks" populated from sector graph.
+        """
+        enriched = []
+        for ins in agent_insights:
+            entry = dict(ins)
+            sectors = entry.get("sectors", [])
+            if sectors:
+                entry["stocks"] = self.resolve_stocks(sectors)
+            else:
+                entry.setdefault("stocks", [])
+            entry.setdefault("concepts", [])
+            entry.setdefault("direction", "neutral")
+            entry.setdefault("impact", 0.0)
+            entry.setdefault("confidence", 0.0)
+            entry.setdefault("reasoning", "")
+            enriched.append(entry)
+        return enriched
+
+    def agent_full_report(self, agent_insights: list[dict]) -> str:
+        """Full pipeline: agent analysis → enrich → markdown report."""
+        enriched = self.enrich_insights(agent_insights)
+        return self.report(insights=enriched)
+
     # ─── Reporting ──────────────────────────────
 
     def report(self, limit: int = 20,
