@@ -83,19 +83,28 @@ class NewsRateLimitRegistry:
 
 @dataclass
 class NewsHealthTracker:
-    """Track consecutive failures per news source, alert at threshold."""
+    """Track consecutive failures, auto-disable, and auto-recover news sources."""
 
     alert_threshold: int = 3
     _failures: dict[str, int] = field(default_factory=dict)
     _last_alerted: dict[str, float] = field(default_factory=dict)
+    _disabled: set[str] = field(default_factory=set)
+    _recovery_probe_at: dict[str, float] = field(default_factory=dict)
 
     def record_success(self, source: str):
+        was_disabled = source in self._disabled
         self._failures[source] = 0
+        if was_disabled:
+            self._disabled.discard(source)
+            self._recovery_probe_at.pop(source, None)
+            _logger.info("[NEWS_RECOVERY] %s recovered, re-enabled", source)
 
     def record_failure(self, source: str, error: str = ""):
         prev = self._failures.get(source, 0)
         self._failures[source] = prev + 1
         if self._failures[source] >= self.alert_threshold:
+            self._disabled.add(source)
+            self._recovery_probe_at[source] = time.time() + 300
             self._maybe_alert(source, error)
 
     def _maybe_alert(self, source: str, error: str):
@@ -104,21 +113,34 @@ class NewsHealthTracker:
         if now - last > 300:
             self._last_alerted[source] = now
             _logger.warning(
-                "[NEWS_ALERT] %s: %d consecutive failures. Last: %s",
+                "[NEWS_ALERT] %s: %d consecutive failures, auto-disabled. Last: %s",
                 source, self._failures[source], error,
             )
 
     def is_healthy(self, source: str) -> bool:
-        return self._failures.get(source, 0) < self.alert_threshold
+        return source not in self._disabled
+
+    def is_disabled(self, source: str) -> bool:
+        return source in self._disabled
+
+    def disabled_sources(self) -> set[str]:
+        return set(self._disabled)
+
+    def due_for_recovery_probe(self) -> list[str]:
+        """Return disabled sources due for a recovery probe."""
+        now = time.time()
+        return [s for s, t in self._recovery_probe_at.items() if now >= t and s in self._disabled]
 
     def status(self) -> dict[str, dict]:
         return {
-            src: {"failures": n, "healthy": n < self.alert_threshold}
+            src: {
+                "failures": n,
+                "healthy": src not in self._disabled,
+                "disabled": src in self._disabled,
+            }
             for src, n in self._failures.items()
         }
 
-
-@dataclass
 class NewsMetricsCollector:
     """Per-source latency / item count / success rate metrics."""
 

@@ -176,6 +176,14 @@ class EventIntelligenceService:
         """Get current health snapshot (no network call)."""
         return NewsManager(db=self._db).health_status()
 
+    def news_recovery_probe(self) -> dict[str, Any]:
+        """Probe disabled news sources for auto-recovery."""
+        return NewsManager(db=self._db).recovery_probe()
+
+    def news_disabled_sources(self) -> list[str]:
+        """List auto-disabled news source labels."""
+        return NewsManager(db=self._db).disabled_sources()
+
     def news_metrics(self) -> dict[str, Any]:
         """Get per-source and aggregate metrics."""
         return NewsManager(db=self._db).metrics_summary()

@@ -1,23 +1,18 @@
-﻿"""Unified NewsManager — pure data layer with full observability.
+﻿"""Unified NewsManager — pure data layer with full observability + auto-recovery.
 
 Architecture:
-  NewsManager 只负责采集 + 结构化 + 关键词快速过滤 + 可观测性。
-  语义推理交给上层 AI Agent（Codex CLI / 调度器）。
+  NewsManager only does: collect → structure → keyword filter → observe.
+  Semantic reasoning is delegated to the calling AI Agent (Codex CLI / scheduler).
 
 Observability:
-  RateLimitRegistry  → per-type rate limiting
-  HealthTracker      → consecutive failure alerting
-  MetricsCollector   → latency / success / item count
-  FallbackPolicy     → type-aware fallback chain
+  RateLimitRegistry  → per-type rate limiting (RSS 2/s, JSON 5/s, HTML 1/s)
+  HealthTracker      → auto-disable at 3 failures, auto-recover on success
+  MetricsCollector   → latency / success rate / item count per source
 
-Usage:
-    mgr = NewsManager()
-    mgr.collect()              # rate-limited → metrics → health-tracked
-    news = mgr.list_news(50)   # raw news for AI Agent
-    mgr.enrich_insights(...)   # sector → stocks resolution
-    mgr.agent_full_report(...) # full agent pipeline
-    mgr.metrics_summary()      # latency / success rates
-    mgr.health_status()        # per-source health snapshot
+Auto-Recovery:
+  Sources that fail 3+ times are auto-disabled and skipped in collect().
+  recovery_probe() re-tests disabled sources after 5 min cooldown.
+  If probe succeeds → auto re-enabled. If fails → cooldown resets.
 """
 
 from __future__ import annotations
@@ -57,7 +52,7 @@ class NewsAnalysis:
 
 
 class NewsManager:
-    """Pure data layer with observability.
+    """Pure data layer with observability + auto-recovery.
 
     Semantic reasoning is delegated to the calling AI Agent.
     """
@@ -73,24 +68,37 @@ class NewsManager:
     def collect(self) -> dict[str, Any]:
         """Collect news from all enabled sources.
 
-        Each source goes through: rate limit → fetch → metrics → health.
+        Each source: skip-disabled → rate-limit → fetch → metrics → health.
         """
         from modules.event_intelligence.source_registry import SourceRegistry
 
         registry = SourceRegistry()
         sources = list(registry.enabled())
         stats = {"sources": len(sources), "fetched": 0, "inserted": 0,
-                 "duplicates": 0, "errors": [], "source_stats": []}
+                 "duplicates": 0, "errors": [], "source_stats": [],
+                 "disabled_skipped": 0}
 
         if not sources:
             stats["message"] = "no enabled news sources"
             return stats
 
         for source in sources:
+            source_label = f"{source.type}:{source.id}"
+
+            # Skip auto-disabled sources
+            if self._health_tracker.is_disabled(source_label):
+                logger.debug("skipping disabled source: %s", source_label)
+                stats["disabled_skipped"] += 1
+                stats["source_stats"].append({
+                    "source_id": source.id, "name": source.name,
+                    "type": source.type, "fetched": 0, "inserted": 0,
+                    "error": "auto_disabled",
+                })
+                continue
+
             stat = {"source_id": source.id, "name": source.name,
                     "type": source.type, "fetched": 0, "inserted": 0,
                     "error": ""}
-            source_label = f"{source.type}:{source.id}"
             t0 = time.time()
 
             # Rate limiting
@@ -126,7 +134,7 @@ class NewsManager:
                 stat["error"] = str(exc)
                 stats["errors"].append(f"{source.id}: {exc}")
 
-                # Record failure
+                # Record failure (may trigger auto-disable)
                 self._metrics.record(source_label, latency_ms, 0, False)
                 self._health_tracker.record_failure(source_label, str(exc))
 
@@ -323,6 +331,42 @@ class NewsManager:
 
     # ─── Observability ───────────────────────────
 
+    def recovery_probe(self) -> dict[str, Any]:
+        """Probe disabled sources that are due for recovery check.
+
+        Returns dict of {source_label: {recovered: bool, error: str}}
+        """
+        due = self._health_tracker.due_for_recovery_probe()
+        if not due:
+            return {"probed": 0, "results": {}}
+
+        results = {}
+        probed = 0
+        for source_label in due:
+            parts = source_label.split(":", 1)
+            if len(parts) != 2:
+                continue
+            source_type, source_id = parts
+
+            try:
+                from modules.event_intelligence.source_registry import SourceRegistry
+                registry = SourceRegistry()
+                source = registry.get(source_id)
+                if source is None:
+                    continue
+
+                probed += 1
+                items = self._fetch_source(source)
+                self._health_tracker.record_success(source_label)
+                self._metrics.record(source_label, 0, len(items), True)
+                results[source_label] = {"recovered": True, "items": len(items)}
+            except Exception as exc:
+                self._health_tracker.record_failure(source_label, str(exc))
+                self._metrics.record(source_label, 0, 0, False)
+                results[source_label] = {"recovered": False, "error": str(exc)}
+
+        return {"probed": probed, "results": results}
+
     def health_check(self) -> dict[str, dict]:
         """Run health check on all registered providers and persist."""
         from modules.news_sources import provider_names, get_provider
@@ -358,8 +402,15 @@ class NewsManager:
         return results
 
     def health_status(self) -> dict[str, dict]:
-        """Get current health status snapshot (no network call)."""
+        """Get current health status snapshot (no network call).
+
+        Includes disabled sources and their failure counts.
+        """
         return self._health_tracker.status()
+
+    def disabled_sources(self) -> list[str]:
+        """List currently auto-disabled source labels."""
+        return sorted(self._health_tracker.disabled_sources())
 
     def metrics_summary(self) -> dict:
         """Get per-source and aggregate metrics."""
