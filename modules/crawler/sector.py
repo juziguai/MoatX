@@ -67,6 +67,12 @@ def get_concept_boards(use_cache: bool = True) -> CrawlResult:
     if result.ok:
         return _with_normalized_data(result)
 
+    sina_result = sina.fetch_concept_boards(use_cache=use_cache)
+    if sina_result.ok:
+        sina_result.warnings.append("THS 概念板块不可用，已切换 Sina fallback")
+        sina_result.user_message = "THS 概念板块不可用，已切换 Sina fallback"
+        return _with_normalized_data(sina_result)
+
     local = local_sector.fetch_concept_boards(use_cache=use_cache)
     if local.ok:
         local.warnings.append("Realtime concept boards unavailable; using local sector graph quote snapshot")
@@ -77,9 +83,9 @@ def get_concept_boards(use_cache: bool = True) -> CrawlResult:
         ok=False,
         source="sector",
         error=SOURCE_UNAVAILABLE,
-        error_detail=f"ths={result.error}: {result.error_detail}; local={local.error}: {local.error_detail}",
-        user_message="概念板块数据不可用：THS 失败",
-        warnings=result.warnings + local.warnings,
+        error_detail=f"ths={result.error}: {result.error_detail}; sina={sina_result.error}: {sina_result.error_detail}; local={local.error}: {local.error_detail}",
+        user_message="概念板块数据不可用：THS/Sina 均失败",
+        warnings=result.warnings + sina_result.warnings + local.warnings,
     )
 
 

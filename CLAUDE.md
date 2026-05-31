@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 项目架构知识图谱
+
+项目使用 Understand-Anything 生成了结构化知识图谱，位于 `.understand-anything/knowledge-graph.json`。
+在开始工作前，先读取该文件可以快速理解：
+- 82 个节点（模块/文件/配置）的职责和依赖关系
+- 86 条边（imports/exports/contains/depends_on）描述的数据流
+- 11 层架构分层（data → analysis → strategy → risk → portfolio → event → visualization → cli → backtest → infra → docs）
+- 14 步 tour 导览（按顺序阅读可建立完整项目心智模型）
+
+修改代码前，建议先查阅知识图谱了解相关模块的上下游依赖。
+
 ## Development Commands
 
 ```powershell

@@ -1,0 +1,6378 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "MoatX",
+    "description": "A-share quantitative trading system with multi-source data, strategy optimization, backtesting, and event intelligence",
+    "rootPath": "D:/Tools/AI/Claude-code/MoatX",
+    "languages": [
+      "Python"
+    ],
+    "frameworks": [
+      "APScheduler",
+      "SQLite",
+      "pandas",
+      "numpy"
+    ],
+    "analyzedAt": "2026-05-31T16:38:00+08:00",
+    "gitCommitHash": "9d7cce66f0905d8c3edfd20a327ed5c8fc37ab60"
+  },
+  "nodes": [
+    {
+      "id": "file:.understand-anything/config.json",
+      "type": "file",
+      "name": "config.json",
+      "filePath": ".understand-anything/config.json",
+      "summary": "config.json",
+      "tags": [
+        "json",
+        "config",
+        "config.json"
+      ],
+      "language": "json",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:.understand-anything/knowledge-graph.json",
+      "type": "file",
+      "name": "knowledge-graph.json",
+      "filePath": ".understand-anything/knowledge-graph.json",
+      "summary": "knowledge-graph.json",
+      "tags": [
+        "json",
+        "config",
+        "knowledge-graph.json"
+      ],
+      "language": "json",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:AGENTS.md",
+      "type": "file",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "Codex AI agent instructions: architecture docs, development commands, key patterns, critical conventions, behavioral guidelines",
+      "tags": [
+        "markdown",
+        "docs",
+        "ai",
+        "instructions"
+      ],
+      "language": "markdown",
+      "complexity": "simple",
+      "layer": "layer:docs"
+    },
+    {
+      "id": "file:CLAUDE.md",
+      "type": "file",
+      "name": "CLAUDE.md",
+      "filePath": "CLAUDE.md",
+      "summary": "Claude Code instructions: project context, architecture knowledge, development workflow for AI-assisted coding",
+      "tags": [
+        "markdown",
+        "docs",
+        "ai",
+        "claude"
+      ],
+      "language": "markdown",
+      "complexity": "simple",
+      "layer": "layer:docs"
+    },
+    {
+      "id": "file:data/event_history.toml",
+      "type": "file",
+      "name": "event_history.toml",
+      "filePath": "data/event_history.toml",
+      "summary": "event history.toml",
+      "tags": [
+        "toml",
+        "config",
+        "event_history.toml"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/event_sector_map.toml",
+      "type": "file",
+      "name": "event_sector_map.toml",
+      "filePath": "data/event_sector_map.toml",
+      "summary": "event sector map.toml",
+      "tags": [
+        "toml",
+        "config",
+        "event_sector_map.toml"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/event_sources.toml",
+      "type": "file",
+      "name": "event_sources.toml",
+      "filePath": "data/event_sources.toml",
+      "summary": "event sources.toml",
+      "tags": [
+        "toml",
+        "config",
+        "event_sources.toml"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/event_transmission_map.toml",
+      "type": "file",
+      "name": "event_transmission_map.toml",
+      "filePath": "data/event_transmission_map.toml",
+      "summary": "event transmission map.toml",
+      "tags": [
+        "toml",
+        "config",
+        "event_transmission_map.toml"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/feishu.toml.example",
+      "type": "file",
+      "name": "feishu.toml.example",
+      "filePath": "data/feishu.toml.example",
+      "summary": "feishu.toml.example",
+      "tags": [
+        "example",
+        "code",
+        "feishu.toml.example"
+      ],
+      "language": "example",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/llm_intelligence.toml.example",
+      "type": "file",
+      "name": "llm_intelligence.toml.example",
+      "filePath": "data/llm_intelligence.toml.example",
+      "summary": "llm intelligence.toml.example",
+      "tags": [
+        "example",
+        "code",
+        "llm_intelligence.toml.example"
+      ],
+      "language": "example",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/moatx.toml",
+      "type": "file",
+      "name": "moatx.toml",
+      "filePath": "data/moatx.toml",
+      "summary": "项目主配置文件：数据库路径、数据源、策略参数、风控阈值",
+      "tags": [
+        "toml",
+        "config",
+        "moatx.toml"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/schedule_config.toml",
+      "type": "file",
+      "name": "schedule_config.toml",
+      "filePath": "data/schedule_config.toml",
+      "summary": "schedule config.toml",
+      "tags": [
+        "toml",
+        "config",
+        "schedule_config.toml"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/sector_graph.toml",
+      "type": "file",
+      "name": "sector_graph.toml",
+      "filePath": "data/sector_graph.toml",
+      "summary": "sector graph.toml",
+      "tags": [
+        "toml",
+        "config",
+        "sector_graph.toml"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:data/stock_topic_exposure.toml",
+      "type": "file",
+      "name": "stock_topic_exposure.toml",
+      "filePath": "data/stock_topic_exposure.toml",
+      "summary": "stock topic exposure.toml",
+      "tags": [
+        "toml",
+        "config",
+        "stock_topic_exposure.toml"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:docs/eastmoney-api/openapi.yaml",
+      "type": "file",
+      "name": "openapi.yaml",
+      "filePath": "docs/eastmoney-api/openapi.yaml",
+      "summary": "openapi.yaml",
+      "tags": [
+        "yaml",
+        "config",
+        "eastmoney-api"
+      ],
+      "language": "yaml",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:examples/backtest_600734.py",
+      "type": "file",
+      "name": "backtest_600734.py",
+      "filePath": "examples/backtest_600734.py",
+      "summary": "Tests for backtest 600734",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:examples/debug_600734.py",
+      "type": "file",
+      "name": "debug_600734.py",
+      "filePath": "examples/debug_600734.py",
+      "summary": "debug 600734",
+      "tags": [
+        "python",
+        "code",
+        "debug_600734.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:examples/debug_order.py",
+      "type": "file",
+      "name": "debug_order.py",
+      "filePath": "examples/debug_order.py",
+      "summary": "debug order",
+      "tags": [
+        "python",
+        "code",
+        "debug_order.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:examples/debug_signal.py",
+      "type": "file",
+      "name": "debug_signal.py",
+      "filePath": "examples/debug_signal.py",
+      "summary": "debug signal",
+      "tags": [
+        "python",
+        "code",
+        "debug_signal.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:examples/debug_strategy.py",
+      "type": "file",
+      "name": "debug_strategy.py",
+      "filePath": "examples/debug_strategy.py",
+      "summary": "debug strategy",
+      "tags": [
+        "python",
+        "code",
+        "debug_strategy.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:examples/test_benchmark.py",
+      "type": "file",
+      "name": "test_benchmark.py",
+      "filePath": "examples/test_benchmark.py",
+      "summary": "Tests for test benchmark",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "entry-point",
+        "lazy-loading",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/__main__.py",
+      "type": "file",
+      "name": "__main__.py",
+      "filePath": "modules/__main__.py",
+      "summary": "  main  ",
+      "tags": [
+        "python",
+        "code",
+        "__main__.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/akshare_compat.py",
+      "type": "file",
+      "name": "akshare_compat.py",
+      "filePath": "modules/akshare_compat.py",
+      "summary": "AKShare data source compatibility layer for alternative data access paths",
+      "tags": [
+        "python",
+        "code",
+        "data",
+        "akshare",
+        "compatibility"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/alert_manager.py",
+      "type": "file",
+      "name": "alert_manager.py",
+      "filePath": "modules/alert_manager.py",
+      "summary": "alert manager",
+      "tags": [
+        "python",
+        "code",
+        "alert_manager.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/alerter.py",
+      "type": "file",
+      "name": "alerter.py",
+      "filePath": "modules/alerter.py",
+      "summary": "Alert system for price thresholds, signal triggers, risk events with Feishu notification integration",
+      "tags": [
+        "python",
+        "code",
+        "alerts",
+        "notifications",
+        "monitoring"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/analyzer.py",
+      "type": "file",
+      "name": "analyzer.py",
+      "filePath": "modules/analyzer.py",
+      "summary": "Technical analysis engine: trend detection, support/resistance levels, volume analysis, chart pattern recognition",
+      "tags": [
+        "python",
+        "code",
+        "analysis",
+        "technical",
+        "trend",
+        "patterns"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:analysis"
+    },
+    {
+      "id": "file:modules/announcement_risk.py",
+      "type": "file",
+      "name": "announcement_risk.py",
+      "filePath": "modules/announcement_risk.py",
+      "summary": "announcement risk",
+      "tags": [
+        "python",
+        "code",
+        "announcement_risk.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/backtest/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/backtest/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "backtest",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/backtest/calendar.py",
+      "type": "file",
+      "name": "calendar.py",
+      "filePath": "modules/backtest/calendar.py",
+      "summary": "Tests for calendar",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/backtest/datafeed.py",
+      "type": "file",
+      "name": "datafeed.py",
+      "filePath": "modules/backtest/datafeed.py",
+      "summary": "Backtest data loading: OHLCV daily data from StockData storage layer",
+      "tags": [
+        "python",
+        "code",
+        "backtest",
+        "data",
+        "ohlcv"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/backtest/engine.py",
+      "type": "file",
+      "name": "engine.py",
+      "filePath": "modules/backtest/engine.py",
+      "summary": "回测引擎核心：滑点模拟、基准对比、风险控制",
+      "tags": [
+        "python",
+        "code",
+        "backtest",
+        "engine",
+        "benchmark",
+        "slippage"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/backtest/fees.py",
+      "type": "file",
+      "name": "fees.py",
+      "filePath": "modules/backtest/fees.py",
+      "summary": "交易费用计算：佣金、印花税、过户费",
+      "tags": [
+        "python",
+        "code",
+        "fees",
+        "commission",
+        "slippage",
+        "costs"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/backtest/metrics.py",
+      "type": "file",
+      "name": "metrics.py",
+      "filePath": "modules/backtest/metrics.py",
+      "summary": "回测指标计算：年化收益、夏普比率、最大回撤、卡玛比率",
+      "tags": [
+        "python",
+        "code",
+        "metrics",
+        "performance",
+        "sharpe",
+        "drawdown"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/backtest/order.py",
+      "type": "file",
+      "name": "order.py",
+      "filePath": "modules/backtest/order.py",
+      "summary": "订单模拟：市价单、限价单、仓位比例追踪",
+      "tags": [
+        "python",
+        "code",
+        "backtest",
+        "orders",
+        "portfolio"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/backtest/strategy.py",
+      "type": "file",
+      "name": "strategy.py",
+      "filePath": "modules/backtest/strategy.py",
+      "summary": "Backtest strategy base: BaseStrategy with StrategyContext for stateful backtesting",
+      "tags": [
+        "python",
+        "code",
+        "backtest",
+        "strategy",
+        "context"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/calendar.py",
+      "type": "file",
+      "name": "calendar.py",
+      "filePath": "modules/calendar.py",
+      "summary": "China trading calendar: holiday detection, trading day validation, settlement schedules",
+      "tags": [
+        "python",
+        "code",
+        "calendar",
+        "trading-days",
+        "holidays"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/candidate.py",
+      "type": "file",
+      "name": "candidate.py",
+      "filePath": "modules/candidate.py",
+      "summary": "candidate",
+      "tags": [
+        "python",
+        "code",
+        "candidate.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/charts.py",
+      "type": "file",
+      "name": "charts.py",
+      "filePath": "modules/charts.py",
+      "summary": "Matplotlib charting: candlestick charts, equity curves, indicator overlays, backtest visualization (plot_backtest)",
+      "tags": [
+        "python",
+        "code",
+        "charts",
+        "visualization",
+        "matplotlib"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:visualization"
+    },
+    {
+      "id": "file:modules/cli_portfolio.py",
+      "type": "file",
+      "name": "cli_portfolio.py",
+      "filePath": "modules/cli_portfolio.py",
+      "summary": "cli portfolio",
+      "tags": [
+        "python",
+        "code",
+        "cli_portfolio.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/cli/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/cli/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "cli",
+        "entry-point",
+        "argparse"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/__main__.py",
+      "type": "file",
+      "name": "__main__.py",
+      "filePath": "modules/cli/__main__.py",
+      "summary": "  main  ",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/alerter.py",
+      "type": "file",
+      "name": "alerter.py",
+      "filePath": "modules/cli/alerter.py",
+      "summary": "alerter",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/market.py",
+      "type": "file",
+      "name": "market.py",
+      "filePath": "modules/cli/market.py",
+      "summary": "market",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/portfolio.py",
+      "type": "file",
+      "name": "portfolio.py",
+      "filePath": "modules/cli/portfolio.py",
+      "summary": "持仓管理核心：CRUD 操作、每日盈亏快照、Schema 迁移",
+      "tags": [
+        "python",
+        "code",
+        "cli",
+        "portfolio",
+        "commands"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:portfolio"
+    },
+    {
+      "id": "file:modules/cli/quote.py",
+      "type": "file",
+      "name": "quote.py",
+      "filePath": "modules/cli/quote.py",
+      "summary": "quote",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/risk.py",
+      "type": "file",
+      "name": "risk.py",
+      "filePath": "modules/cli/risk.py",
+      "summary": "risk",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/cli/tool/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/diagnose.py",
+      "type": "file",
+      "name": "diagnose.py",
+      "filePath": "modules/cli/tool/diagnose.py",
+      "summary": "diagnose",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/event.py",
+      "type": "file",
+      "name": "event.py",
+      "filePath": "modules/cli/tool/event.py",
+      "summary": "event",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/intraday.py",
+      "type": "file",
+      "name": "intraday.py",
+      "filePath": "modules/cli/tool/intraday.py",
+      "summary": "intraday",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/monitor.py",
+      "type": "file",
+      "name": "monitor.py",
+      "filePath": "modules/cli/tool/monitor.py",
+      "summary": "monitor",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/paper.py",
+      "type": "file",
+      "name": "paper.py",
+      "filePath": "modules/cli/tool/paper.py",
+      "summary": "paper",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/probe.py",
+      "type": "file",
+      "name": "probe.py",
+      "filePath": "modules/cli/tool/probe.py",
+      "summary": "probe",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/signal.py",
+      "type": "file",
+      "name": "signal.py",
+      "filePath": "modules/cli/tool/signal.py",
+      "summary": "signal",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/stock_report.py",
+      "type": "file",
+      "name": "stock_report.py",
+      "filePath": "modules/cli/tool/stock_report.py",
+      "summary": "stock report",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/cli/tool/swing.py",
+      "type": "file",
+      "name": "swing.py",
+      "filePath": "modules/cli/tool/swing.py",
+      "summary": "swing",
+      "tags": [
+        "python",
+        "code",
+        "cli"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:cli"
+    },
+    {
+      "id": "file:modules/config.py",
+      "type": "file",
+      "name": "config.py",
+      "filePath": "modules/config.py",
+      "summary": "全局配置系统：默认值 → TOML 文件 → 环境变量 → 运行时覆盖",
+      "tags": [
+        "python",
+        "code",
+        "config",
+        "env",
+        "toml"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/crawler/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/crawler/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "data",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/api_probe.py",
+      "type": "file",
+      "name": "api_probe.py",
+      "filePath": "modules/crawler/api_probe.py",
+      "summary": "api probe",
+      "tags": [
+        "python",
+        "code",
+        "crawler"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/base.py",
+      "type": "file",
+      "name": "base.py",
+      "filePath": "modules/crawler/base.py",
+      "summary": "ParametrizedStrategy 策略基类，定义策略生命周期和参数注入",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "base",
+        "retry",
+        "session"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/cache.py",
+      "type": "file",
+      "name": "cache.py",
+      "filePath": "modules/crawler/cache.py",
+      "summary": "Crawler response cache: reduces redundant API calls, TTL-based invalidation",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "cache",
+        "performance"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/eastmoney.py",
+      "type": "file",
+      "name": "eastmoney.py",
+      "filePath": "modules/crawler/eastmoney.py",
+      "summary": "东方财富数据源，第二级回退，支持板块和行业数据",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "eastmoney",
+        "fund-flow"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/fundflow.py",
+      "type": "file",
+      "name": "fundflow.py",
+      "filePath": "modules/crawler/fundflow.py",
+      "summary": "Capital flow crawler: north-bound capital, institutional flow, retail investor flow analysis",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "fund-flow",
+        "capital"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/js/ths.js",
+      "type": "file",
+      "name": "ths.js",
+      "filePath": "modules/crawler/js/ths.js",
+      "summary": "ths.js",
+      "tags": [
+        "javascript",
+        "code",
+        "crawler"
+      ],
+      "language": "javascript",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/local_sector.py",
+      "type": "file",
+      "name": "local_sector.py",
+      "filePath": "modules/crawler/local_sector.py",
+      "summary": "local sector",
+      "tags": [
+        "python",
+        "code",
+        "crawler"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "modules/crawler/models.py",
+      "summary": "Crawler data models: typed structures for quotes, fund flow, sector responses",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "models",
+        "types"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/sector.py",
+      "type": "file",
+      "name": "sector.py",
+      "filePath": "modules/crawler/sector.py",
+      "summary": "Sector/industry data crawler for sector rotation and group analysis",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "sectors",
+        "industry"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/sina.py",
+      "type": "file",
+      "name": "sina.py",
+      "filePath": "modules/crawler/sina.py",
+      "summary": "Sina Finance crawler: real-time quotes, financial statements, market data (3rd tier fallback)",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "sina",
+        "quotes"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/tencent.py",
+      "type": "file",
+      "name": "tencent.py",
+      "filePath": "modules/crawler/tencent.py",
+      "summary": "腾讯行情数据源，主力数据通道，支持实时和日线",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "tencent",
+        "quotes"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/ths_fund_flow.py",
+      "type": "file",
+      "name": "ths_fund_flow.py",
+      "filePath": "modules/crawler/ths_fund_flow.py",
+      "summary": "ths fund flow",
+      "tags": [
+        "python",
+        "code",
+        "crawler"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/crawler/ths.py",
+      "type": "file",
+      "name": "ths.py",
+      "filePath": "modules/crawler/ths.py",
+      "summary": "THS (TongHuaShun) crawler: concept boards, hot topic tracking, fund flow analysis",
+      "tags": [
+        "python",
+        "code",
+        "crawler",
+        "ths",
+        "concepts"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/datasource.py",
+      "type": "file",
+      "name": "datasource.py",
+      "filePath": "modules/datasource.py",
+      "summary": "数据源基类，定义统一的行情获取接口",
+      "tags": [
+        "python",
+        "code",
+        "data",
+        "quotes",
+        "provider",
+        "fallback"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/db/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/db/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "database",
+        "sqlite",
+        "stores"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/db/backtest_store.py",
+      "type": "file",
+      "name": "backtest_store.py",
+      "filePath": "modules/db/backtest_store.py",
+      "summary": "Backtest results persistence: stores run results and parameter optimization outcomes",
+      "tags": [
+        "python",
+        "code",
+        "database",
+        "backtest",
+        "results"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:backtest"
+    },
+    {
+      "id": "file:modules/db/event_store.py",
+      "type": "file",
+      "name": "event_store.py",
+      "filePath": "modules/db/event_store.py",
+      "summary": "Event storage (565 lines): market events, news, event-driven signals, comprehensive event tracking",
+      "tags": [
+        "python",
+        "code",
+        "database",
+        "events",
+        "storage"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/db/migrations.py",
+      "type": "file",
+      "name": "migrations.py",
+      "filePath": "modules/db/migrations.py",
+      "summary": "SQLite Schema 迁移 v1-v6，保证数据库向前兼容",
+      "tags": [
+        "python",
+        "code",
+        "database",
+        "migrations",
+        "schema"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/db/price_store.py",
+      "type": "file",
+      "name": "price_store.py",
+      "filePath": "modules/db/price_store.py",
+      "summary": "OHLCV daily price data storage: efficient batch insert and time-range queries",
+      "tags": [
+        "python",
+        "code",
+        "database",
+        "ohlcv",
+        "storage"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/db/signal_store.py",
+      "type": "file",
+      "name": "signal_store.py",
+      "filePath": "modules/db/signal_store.py",
+      "summary": "Signal journal persistence: stores trading signals for paper trading and performance tracking",
+      "tags": [
+        "python",
+        "code",
+        "database",
+        "signals",
+        "journal"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/db/task_log.py",
+      "type": "file",
+      "name": "task_log.py",
+      "filePath": "modules/db/task_log.py",
+      "summary": "task log",
+      "tags": [
+        "python",
+        "code",
+        "db"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/event_driver.py",
+      "type": "file",
+      "name": "event_driver.py",
+      "filePath": "modules/event_driver.py",
+      "summary": "Event-driven strategy framework: event detection, signal generation, trade execution triggers",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "signals",
+        "strategy"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/event_intelligence/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/event_intelligence/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/collector.py",
+      "type": "file",
+      "name": "collector.py",
+      "filePath": "modules/event_intelligence/collector.py",
+      "summary": "News collector: scheduled multi-source financial news fetching and aggregation",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "news",
+        "collector"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/context.py",
+      "type": "file",
+      "name": "context.py",
+      "filePath": "modules/event_intelligence/context.py",
+      "summary": "context",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/elasticity.py",
+      "type": "file",
+      "name": "elasticity.py",
+      "filePath": "modules/event_intelligence/elasticity.py",
+      "summary": "Price elasticity analysis: measures stock price sensitivity to news events and market shocks",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "elasticity",
+        "sensitivity"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/exposure.py",
+      "type": "file",
+      "name": "exposure.py",
+      "filePath": "modules/event_intelligence/exposure.py",
+      "summary": "exposure",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/extractor.py",
+      "type": "file",
+      "name": "extractor.py",
+      "filePath": "modules/event_intelligence/extractor.py",
+      "summary": "Event extraction from news: keyword detection, named entity recognition, event typing",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "extraction",
+        "nlp"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/history.py",
+      "type": "file",
+      "name": "history.py",
+      "filePath": "modules/event_intelligence/history.py",
+      "summary": "history",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/llm_semantics.py",
+      "type": "file",
+      "name": "llm_semantics.py",
+      "filePath": "modules/event_intelligence/llm_semantics.py",
+      "summary": "LLM-powered semantic analysis: deep context understanding of financial events and implications",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "llm",
+        "semantics"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/manual_ingest.py",
+      "type": "file",
+      "name": "manual_ingest.py",
+      "filePath": "modules/event_intelligence/manual_ingest.py",
+      "summary": "manual ingest",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "modules/event_intelligence/models.py",
+      "summary": "models",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/news_factors.py",
+      "type": "file",
+      "name": "news_factors.py",
+      "filePath": "modules/event_intelligence/news_factors.py",
+      "summary": "News factor extraction: quantifiable trading metrics derived from financial news text",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "news",
+        "factors"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "file",
+      "name": "news_intelligence.py",
+      "filePath": "modules/event_intelligence/news_intelligence.py",
+      "summary": "News intelligence engine (733 lines): NLP analysis, sentiment extraction, event classification",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "news",
+        "nlp",
+        "sentiment"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/notifier.py",
+      "type": "file",
+      "name": "notifier.py",
+      "filePath": "modules/event_intelligence/notifier.py",
+      "summary": "notifier",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/opportunity.py",
+      "type": "file",
+      "name": "opportunity.py",
+      "filePath": "modules/event_intelligence/opportunity.py",
+      "summary": "Event-driven opportunity detection: identifies actionable trading patterns from news events",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "opportunity",
+        "signals"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/probability.py",
+      "type": "file",
+      "name": "probability.py",
+      "filePath": "modules/event_intelligence/probability.py",
+      "summary": "probability",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/reporter.py",
+      "type": "file",
+      "name": "reporter.py",
+      "filePath": "modules/event_intelligence/reporter.py",
+      "summary": "Event intelligence reporter (872 lines): news analysis synthesis, sentiment scoring, impact assessment",
+      "tags": [
+        "python",
+        "code",
+        "events",
+        "news",
+        "reports"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "modules/event_intelligence/service.py",
+      "summary": "service",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/source_quality.py",
+      "type": "file",
+      "name": "source_quality.py",
+      "filePath": "modules/event_intelligence/source_quality.py",
+      "summary": "source quality",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/source_registry.py",
+      "type": "file",
+      "name": "source_registry.py",
+      "filePath": "modules/event_intelligence/source_registry.py",
+      "summary": "source registry",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/summary.py",
+      "type": "file",
+      "name": "summary.py",
+      "filePath": "modules/event_intelligence/summary.py",
+      "summary": "summary",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/topic_memory.py",
+      "type": "file",
+      "name": "topic_memory.py",
+      "filePath": "modules/event_intelligence/topic_memory.py",
+      "summary": "topic memory",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/event_intelligence/transmission.py",
+      "type": "file",
+      "name": "transmission.py",
+      "filePath": "modules/event_intelligence/transmission.py",
+      "summary": "transmission",
+      "tags": [
+        "python",
+        "code",
+        "event_intelligence"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:event"
+    },
+    {
+      "id": "file:modules/indicators.py",
+      "type": "file",
+      "name": "indicators.py",
+      "filePath": "modules/indicators.py",
+      "summary": "Technical indicator computation: MA, MACD, RSI, Bollinger Bands, KDJ, OBV, volume indicators",
+      "tags": [
+        "python",
+        "code",
+        "indicators",
+        "technical",
+        "computation"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:analysis"
+    },
+    {
+      "id": "file:modules/intraday_radar/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/intraday_radar/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/intraday_radar/data.py",
+      "type": "file",
+      "name": "data.py",
+      "filePath": "modules/intraday_radar/data.py",
+      "summary": "data",
+      "tags": [
+        "python",
+        "code",
+        "intraday_radar"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/intraday_radar/detector.py",
+      "type": "file",
+      "name": "detector.py",
+      "filePath": "modules/intraday_radar/detector.py",
+      "summary": "detector",
+      "tags": [
+        "python",
+        "code",
+        "intraday_radar"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/intraday_radar/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "modules/intraday_radar/models.py",
+      "summary": "models",
+      "tags": [
+        "python",
+        "code",
+        "intraday_radar"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/intraday_radar/sector.py",
+      "type": "file",
+      "name": "sector.py",
+      "filePath": "modules/intraday_radar/sector.py",
+      "summary": "sector",
+      "tags": [
+        "python",
+        "code",
+        "intraday_radar"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/intraday_radar/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "modules/intraday_radar/service.py",
+      "summary": "service",
+      "tags": [
+        "python",
+        "code",
+        "intraday_radar"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/intraday_radar/storage.py",
+      "type": "file",
+      "name": "storage.py",
+      "filePath": "modules/intraday_radar/storage.py",
+      "summary": "storage",
+      "tags": [
+        "python",
+        "code",
+        "intraday_radar"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/intraday_radar/universe.py",
+      "type": "file",
+      "name": "universe.py",
+      "filePath": "modules/intraday_radar/universe.py",
+      "summary": "universe",
+      "tags": [
+        "python",
+        "code",
+        "intraday_radar"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/logger.py",
+      "type": "file",
+      "name": "logger.py",
+      "filePath": "modules/logger.py",
+      "summary": "logger",
+      "tags": [
+        "python",
+        "code",
+        "logger.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/market_filters.py",
+      "type": "file",
+      "name": "market_filters.py",
+      "filePath": "modules/market_filters.py",
+      "summary": "Market-level filters: volume thresholds, turnover analysis, breadth indicators for regime detection",
+      "tags": [
+        "python",
+        "code",
+        "market",
+        "filters",
+        "regime"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/market_index.py",
+      "type": "file",
+      "name": "market_index.py",
+      "filePath": "modules/market_index.py",
+      "summary": "Market index data: CSI 300, SSE Composite, SZSE Component, benchmark tracking",
+      "tags": [
+        "python",
+        "code",
+        "index",
+        "benchmark",
+        "market"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/portfolio.py",
+      "type": "file",
+      "name": "portfolio.py",
+      "filePath": "modules/portfolio.py",
+      "summary": "持仓管理核心：CRUD 操作、每日盈亏快照、Schema 迁移",
+      "tags": [
+        "python",
+        "code",
+        "portfolio",
+        "database",
+        "holdings",
+        "trades"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:portfolio"
+    },
+    {
+      "id": "file:modules/rank_engine.py",
+      "type": "file",
+      "name": "rank_engine.py",
+      "filePath": "modules/rank_engine.py",
+      "summary": "rank engine",
+      "tags": [
+        "python",
+        "code",
+        "rank_engine.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/risk_checker.py",
+      "type": "file",
+      "name": "risk_checker.py",
+      "filePath": "modules/risk_checker.py",
+      "summary": "Pre-trade risk checks: position limits, exposure constraints, margin requirements, concentration rules",
+      "tags": [
+        "python",
+        "code",
+        "risk",
+        "checks",
+        "pre-trade"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:risk"
+    },
+    {
+      "id": "file:modules/risk_controller.py",
+      "type": "file",
+      "name": "risk_controller.py",
+      "filePath": "modules/risk_controller.py",
+      "summary": "Risk management: position sizing, stop-loss rules, portfolio-level risk limits, max drawdown control",
+      "tags": [
+        "python",
+        "code",
+        "risk",
+        "position",
+        "stop-loss",
+        "drawdown"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:risk"
+    },
+    {
+      "id": "file:modules/scheduler.py",
+      "type": "file",
+      "name": "scheduler.py",
+      "filePath": "modules/scheduler.py",
+      "summary": "APScheduler 定时任务：7 个工作日任务，失败追踪与飞书告警",
+      "tags": [
+        "python",
+        "code",
+        "scheduler",
+        "tasks",
+        "automation",
+        "monitoring"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/scoring_engine.py",
+      "type": "file",
+      "name": "scoring_engine.py",
+      "filePath": "modules/scoring_engine.py",
+      "summary": "综合评分引擎：多因子加权打分，技术面+基本面+情绪面",
+      "tags": [
+        "python",
+        "code",
+        "scoring",
+        "factors",
+        "ranking"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:analysis"
+    },
+    {
+      "id": "file:modules/screener.py",
+      "type": "file",
+      "name": "screener.py",
+      "filePath": "modules/screener.py",
+      "summary": "Stock screening engine: multi-factor filters, ranking, candidate generation for strategy signals",
+      "tags": [
+        "python",
+        "code",
+        "screening",
+        "filters",
+        "ranking"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:analysis"
+    },
+    {
+      "id": "file:modules/sector_tags.py",
+      "type": "file",
+      "name": "sector_tags.py",
+      "filePath": "modules/sector_tags.py",
+      "summary": "Sector/industry classification: group-level tagging for sector rotation and industry analysis",
+      "tags": [
+        "python",
+        "code",
+        "sectors",
+        "classification",
+        "rotation"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:analysis"
+    },
+    {
+      "id": "file:modules/sell_signal.py",
+      "type": "file",
+      "name": "sell_signal.py",
+      "filePath": "modules/sell_signal.py",
+      "summary": "sell signal",
+      "tags": [
+        "python",
+        "code",
+        "sell_signal.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/signal/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/signal/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "signals",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/signal/engine.py",
+      "type": "file",
+      "name": "engine.py",
+      "filePath": "modules/signal/engine.py",
+      "summary": "回测引擎核心：滑点模拟、基准对比、风险控制",
+      "tags": [
+        "python",
+        "code",
+        "signal"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/signal/journal.py",
+      "type": "file",
+      "name": "journal.py",
+      "filePath": "modules/signal/journal.py",
+      "summary": "journal",
+      "tags": [
+        "python",
+        "code",
+        "signal"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/signal/paper_trader.py",
+      "type": "file",
+      "name": "paper_trader.py",
+      "filePath": "modules/signal/paper_trader.py",
+      "summary": "Paper trading engine: signal-based entries/exits, PnL tracking, performance analytics",
+      "tags": [
+        "python",
+        "code",
+        "signals",
+        "paper-trading",
+        "performance"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/simulation.py",
+      "type": "file",
+      "name": "simulation.py",
+      "filePath": "modules/simulation.py",
+      "summary": "Paper trading simulation with realistic slippage, fees, and order execution modeling",
+      "tags": [
+        "python",
+        "code",
+        "simulation",
+        "paper-trading",
+        "backtest"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/stock_data.py",
+      "type": "file",
+      "name": "stock_data.py",
+      "filePath": "modules/stock_data.py",
+      "summary": "股票数据主模块：行情获取、OHLCV 缓存、复权处理",
+      "tags": [
+        "python",
+        "code",
+        "data",
+        "quotes",
+        "fallback",
+        "cache"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:modules/stock_decision_report.py",
+      "type": "file",
+      "name": "stock_decision_report.py",
+      "filePath": "modules/stock_decision_report.py",
+      "summary": "LLM-powered stock decision reports: multi-dimension analysis with buy/sell/hold recommendations",
+      "tags": [
+        "python",
+        "code",
+        "reports",
+        "decision",
+        "llm"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:modules/strategy/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "modules/strategy/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "strategy",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/strategy/base.py",
+      "type": "file",
+      "name": "base.py",
+      "filePath": "modules/strategy/base.py",
+      "summary": "ParametrizedStrategy 策略基类，定义策略生命周期和参数注入",
+      "tags": [
+        "python",
+        "code",
+        "strategy",
+        "base-class",
+        "params"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/strategy/comparator.py",
+      "type": "file",
+      "name": "comparator.py",
+      "filePath": "modules/strategy/comparator.py",
+      "summary": "comparator",
+      "tags": [
+        "python",
+        "code",
+        "strategy"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/strategy/kfold.py",
+      "type": "file",
+      "name": "kfold.py",
+      "filePath": "modules/strategy/kfold.py",
+      "summary": "kfold",
+      "tags": [
+        "python",
+        "code",
+        "strategy"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/strategy/library.py",
+      "type": "file",
+      "name": "library.py",
+      "filePath": "modules/strategy/library.py",
+      "summary": "Strategy library (609 lines): trend-following, mean-reversion, breakout, and custom parametrized strategies",
+      "tags": [
+        "python",
+        "code",
+        "strategy",
+        "library",
+        "trading"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/strategy/optimizer.py",
+      "type": "file",
+      "name": "optimizer.py",
+      "filePath": "modules/strategy/optimizer.py",
+      "summary": "策略参数网格搜索优化器，自动保存最优参数",
+      "tags": [
+        "python",
+        "code",
+        "optimization",
+        "grid-search",
+        "params"
+      ],
+      "language": "python",
+      "complexity": "moderate",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/strategy/walkforward.py",
+      "type": "file",
+      "name": "walkforward.py",
+      "filePath": "modules/strategy/walkforward.py",
+      "summary": "walkforward",
+      "tags": [
+        "python",
+        "code",
+        "strategy"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/swing_low_absorb.py",
+      "type": "file",
+      "name": "swing_low_absorb.py",
+      "filePath": "modules/swing_low_absorb.py",
+      "summary": "Swing Low Absorption strategy (3653 lines): accumulation pattern detection at swing lows with volume confirmation",
+      "tags": [
+        "python",
+        "code",
+        "strategy",
+        "swing",
+        "accumulation",
+        "volume"
+      ],
+      "language": "python",
+      "complexity": "complex",
+      "layer": "layer:strategy"
+    },
+    {
+      "id": "file:modules/utils.py",
+      "type": "file",
+      "name": "utils.py",
+      "filePath": "modules/utils.py",
+      "summary": "工具函数库：Sina 代码转换、日期处理、数值格式化",
+      "tags": [
+        "python",
+        "code",
+        "utilities",
+        "helpers",
+        "conversion"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:pyproject.toml",
+      "type": "file",
+      "name": "pyproject.toml",
+      "filePath": "pyproject.toml",
+      "summary": "pyproject.toml",
+      "tags": [
+        "toml",
+        "config",
+        "misc"
+      ],
+      "language": "toml",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "MoatX project README: overview, setup instructions, usage guide, feature list",
+      "tags": [
+        "markdown",
+        "docs",
+        "readme"
+      ],
+      "language": "markdown",
+      "complexity": "simple",
+      "layer": "layer:docs"
+    },
+    {
+      "id": "file:scripts/competition_monitor.py",
+      "type": "file",
+      "name": "competition_monitor.py",
+      "filePath": "scripts/competition_monitor.py",
+      "summary": "competition monitor",
+      "tags": [
+        "python",
+        "code",
+        "competition_monitor.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:scripts/daily_report.py",
+      "type": "file",
+      "name": "daily_report.py",
+      "filePath": "scripts/daily_report.py",
+      "summary": "daily report",
+      "tags": [
+        "python",
+        "code",
+        "daily_report.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:scripts/diagnose_crawler.py",
+      "type": "file",
+      "name": "diagnose_crawler.py",
+      "filePath": "scripts/diagnose_crawler.py",
+      "summary": "diagnose crawler",
+      "tags": [
+        "python",
+        "code",
+        "diagnose_crawler.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:scripts/import_candidates.py",
+      "type": "file",
+      "name": "import_candidates.py",
+      "filePath": "scripts/import_candidates.py",
+      "summary": "import candidates",
+      "tags": [
+        "python",
+        "code",
+        "import_candidates.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:scripts/migrate_feishu_to_toml.py",
+      "type": "file",
+      "name": "migrate_feishu_to_toml.py",
+      "filePath": "scripts/migrate_feishu_to_toml.py",
+      "summary": "migrate feishu to toml",
+      "tags": [
+        "python",
+        "code",
+        "migrate_feishu_to_toml.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:scripts/probe_api.py",
+      "type": "file",
+      "name": "probe_api.py",
+      "filePath": "scripts/probe_api.py",
+      "summary": "probe api",
+      "tags": [
+        "python",
+        "code",
+        "probe_api.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:scripts/set_pending.py",
+      "type": "file",
+      "name": "set_pending.py",
+      "filePath": "scripts/set_pending.py",
+      "summary": "set pending",
+      "tags": [
+        "python",
+        "code",
+        "set_pending.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:scripts/verify_candidates.py",
+      "type": "file",
+      "name": "verify_candidates.py",
+      "filePath": "scripts/verify_candidates.py",
+      "summary": "verify candidates",
+      "tags": [
+        "python",
+        "code",
+        "verify_candidates.py"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "tests/__init__.py",
+      "summary": "DatabaseManager 核心：WAL 模式、子存储路由、连接池",
+      "tags": [
+        "python",
+        "code",
+        "package"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/conftest.py",
+      "type": "file",
+      "name": "conftest.py",
+      "filePath": "tests/conftest.py",
+      "summary": "Tests for conftest",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_announcement_risk.py",
+      "type": "file",
+      "name": "test_announcement_risk.py",
+      "filePath": "tests/test_announcement_risk.py",
+      "summary": "Tests for test announcement risk",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_backtest_constraints.py",
+      "type": "file",
+      "name": "test_backtest_constraints.py",
+      "filePath": "tests/test_backtest_constraints.py",
+      "summary": "Tests for test backtest constraints",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_config.py",
+      "type": "file",
+      "name": "test_config.py",
+      "filePath": "tests/test_config.py",
+      "summary": "Tests for test config",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_datasource_consensus.py",
+      "type": "file",
+      "name": "test_datasource_consensus.py",
+      "filePath": "tests/test_datasource_consensus.py",
+      "summary": "Tests for test datasource consensus",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:tests/test_event_context.py",
+      "type": "file",
+      "name": "test_event_context.py",
+      "filePath": "tests/test_event_context.py",
+      "summary": "Tests for test event context",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_event_driver.py",
+      "type": "file",
+      "name": "test_event_driver.py",
+      "filePath": "tests/test_event_driver.py",
+      "summary": "Tests for test event driver",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_event_elasticity.py",
+      "type": "file",
+      "name": "test_event_elasticity.py",
+      "filePath": "tests/test_event_elasticity.py",
+      "summary": "Tests for test event elasticity",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_event_intelligence.py",
+      "type": "file",
+      "name": "test_event_intelligence.py",
+      "filePath": "tests/test_event_intelligence.py",
+      "summary": "Tests for test event intelligence",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_event_notifier.py",
+      "type": "file",
+      "name": "test_event_notifier.py",
+      "filePath": "tests/test_event_notifier.py",
+      "summary": "Tests for test event notifier",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_event_scheduler.py",
+      "type": "file",
+      "name": "test_event_scheduler.py",
+      "filePath": "tests/test_event_scheduler.py",
+      "summary": "Tests for test event scheduler",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_event_sources_config.py",
+      "type": "file",
+      "name": "test_event_sources_config.py",
+      "filePath": "tests/test_event_sources_config.py",
+      "summary": "Tests for test event sources config",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_event_status_labels.py",
+      "type": "file",
+      "name": "test_event_status_labels.py",
+      "filePath": "tests/test_event_status_labels.py",
+      "summary": "Tests for test event status labels",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_event_summary.py",
+      "type": "file",
+      "name": "test_event_summary.py",
+      "filePath": "tests/test_event_summary.py",
+      "summary": "Tests for test event summary",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_indicators.py",
+      "type": "file",
+      "name": "test_indicators.py",
+      "filePath": "tests/test_indicators.py",
+      "summary": "Tests for test indicators",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_integration.py",
+      "type": "file",
+      "name": "test_integration.py",
+      "filePath": "tests/test_integration.py",
+      "summary": "Tests for test integration",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_llm_semantics.py",
+      "type": "file",
+      "name": "test_llm_semantics.py",
+      "filePath": "tests/test_llm_semantics.py",
+      "summary": "Tests for test llm semantics",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_market_filters.py",
+      "type": "file",
+      "name": "test_market_filters.py",
+      "filePath": "tests/test_market_filters.py",
+      "summary": "Tests for test market filters",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_market_index.py",
+      "type": "file",
+      "name": "test_market_index.py",
+      "filePath": "tests/test_market_index.py",
+      "summary": "Tests for test market index",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_new_strategies.py",
+      "type": "file",
+      "name": "test_new_strategies.py",
+      "filePath": "tests/test_new_strategies.py",
+      "summary": "Tests for test new strategies",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_news_factors.py",
+      "type": "file",
+      "name": "test_news_factors.py",
+      "filePath": "tests/test_news_factors.py",
+      "summary": "Tests for test news factors",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_news_intelligence.py",
+      "type": "file",
+      "name": "test_news_intelligence.py",
+      "filePath": "tests/test_news_intelligence.py",
+      "summary": "Tests for test news intelligence",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_optional_akshare.py",
+      "type": "file",
+      "name": "test_optional_akshare.py",
+      "filePath": "tests/test_optional_akshare.py",
+      "summary": "Tests for test optional akshare",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_portfolio.py",
+      "type": "file",
+      "name": "test_portfolio.py",
+      "filePath": "tests/test_portfolio.py",
+      "summary": "Tests for test portfolio",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_risk_checker.py",
+      "type": "file",
+      "name": "test_risk_checker.py",
+      "filePath": "tests/test_risk_checker.py",
+      "summary": "Tests for test risk checker",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_scoring_engine.py",
+      "type": "file",
+      "name": "test_scoring_engine.py",
+      "filePath": "tests/test_scoring_engine.py",
+      "summary": "Tests for test scoring engine",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_sector_tags.py",
+      "type": "file",
+      "name": "test_sector_tags.py",
+      "filePath": "tests/test_sector_tags.py",
+      "summary": "Tests for test sector tags",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_stock_decision_report.py",
+      "type": "file",
+      "name": "test_stock_decision_report.py",
+      "filePath": "tests/test_stock_decision_report.py",
+      "summary": "Tests for test stock decision report",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:tests/test_stock_topic_exposure.py",
+      "type": "file",
+      "name": "test_stock_topic_exposure.py",
+      "filePath": "tests/test_stock_topic_exposure.py",
+      "summary": "Tests for test stock topic exposure",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:data"
+    },
+    {
+      "id": "file:tests/test_swing_low_absorb.py",
+      "type": "file",
+      "name": "test_swing_low_absorb.py",
+      "filePath": "tests/test_swing_low_absorb.py",
+      "summary": "Tests for test swing low absorb",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_topic_memory.py",
+      "type": "file",
+      "name": "test_topic_memory.py",
+      "filePath": "tests/test_topic_memory.py",
+      "summary": "Tests for test topic memory",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    },
+    {
+      "id": "file:tests/test_utils.py",
+      "type": "file",
+      "name": "test_utils.py",
+      "filePath": "tests/test_utils.py",
+      "summary": "Tests for test utils",
+      "tags": [
+        "python",
+        "code",
+        "test"
+      ],
+      "language": "python",
+      "complexity": "simple",
+      "layer": "layer:infra"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:examples/backtest_600734.py",
+      "target": "file:modules/backtest/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/backtest_600734.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/debug_600734.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/debug_order.py",
+      "target": "file:modules/backtest/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/debug_order.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/debug_signal.py",
+      "target": "file:modules/backtest/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/debug_signal.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/debug_strategy.py",
+      "target": "file:modules/backtest/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/debug_strategy.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:examples/test_benchmark.py",
+      "target": "file:modules/backtest/datafeed.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__init__.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__init__.py",
+      "target": "file:modules/indicators.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__init__.py",
+      "target": "file:modules/analyzer.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__init__.py",
+      "target": "file:modules/charts.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__init__.py",
+      "target": "file:modules/screener.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__init__.py",
+      "target": "file:modules/rank_engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__init__.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__init__.py",
+      "target": "file:modules/cli/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/__main__.py",
+      "target": "file:modules/cli/__init__.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/alert_manager.py",
+      "target": "file:modules/analyzer.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/alerter.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/analyzer.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/analyzer.py",
+      "target": "file:modules/indicators.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/analyzer.py",
+      "target": "file:modules/charts.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/analyzer.py",
+      "target": "file:modules/screener.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/analyzer.py",
+      "target": "file:modules/calendar.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/announcement_risk.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/announcement_risk.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/__init__.py",
+      "target": "file:modules/signal/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/__init__.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/calendar.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/datafeed.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/engine.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/engine.py",
+      "target": "file:modules/indicators.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/engine.py",
+      "target": "file:modules/calendar.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/engine.py",
+      "target": "file:modules/backtest/datafeed.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/engine.py",
+      "target": "file:modules/backtest/order.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/engine.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/engine.py",
+      "target": "file:modules/backtest/metrics.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/engine.py",
+      "target": "file:modules/charts.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/backtest/fees.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/calendar.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/calendar.py",
+      "target": "file:modules/backtest/calendar.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/candidate.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/cli/market.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/cli/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/cli/risk.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/cli/tool/monitor.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/cli/quote.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__init__.py",
+      "target": "file:modules/scheduler.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/__main__.py",
+      "target": "file:modules/cli/__init__.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/alerter.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/alerter.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/alerter.py",
+      "target": "file:modules/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/alerter.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/market.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/market.py",
+      "target": "file:modules/market_index.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/portfolio.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/portfolio.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/quote.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/quote.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/quote.py",
+      "target": "file:modules/calendar.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/risk.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/risk.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/risk.py",
+      "target": "file:modules/risk_controller.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/risk.py",
+      "target": "file:modules/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/risk.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/__init__.py",
+      "target": "file:modules/cli/tool/diagnose.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/__init__.py",
+      "target": "file:modules/cli/tool/event.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/__init__.py",
+      "target": "file:modules/cli/tool/intraday.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/__init__.py",
+      "target": "file:modules/cli/tool/probe.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/__init__.py",
+      "target": "file:modules/cli/tool/signal.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/__init__.py",
+      "target": "file:modules/cli/tool/paper.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/__init__.py",
+      "target": "file:modules/cli/tool/stock_report.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/__init__.py",
+      "target": "file:modules/cli/tool/swing.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/diagnose.py",
+      "target": "file:scripts/diagnose_crawler.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/context.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/source_registry.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/collector.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/manual_ingest.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/extractor.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/probability.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/opportunity.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/reporter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/service.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/topic_memory.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/llm_semantics.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/notifier.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/summary.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/event.py",
+      "target": "file:modules/event_intelligence/elasticity.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/intraday.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/monitor.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/monitor.py",
+      "target": "file:modules/scheduler.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/monitor.py",
+      "target": "file:modules/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/paper.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/paper.py",
+      "target": "file:modules/signal/paper_trader.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/probe.py",
+      "target": "file:scripts/probe_api.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/signal.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/signal.py",
+      "target": "file:modules/signal/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/signal.py",
+      "target": "file:modules/signal/journal.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/signal.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/signal.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/stock_report.py",
+      "target": "file:modules/stock_decision_report.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/swing.py",
+      "target": "file:modules/swing_low_absorb.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/swing.py",
+      "target": "file:modules/market_filters.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/swing.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/cli/tool/swing.py",
+      "target": "file:modules/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/api_probe.py",
+      "target": "file:modules/strategy/base.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/api_probe.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/base.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/base.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/cache.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/eastmoney.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/eastmoney.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/eastmoney.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/fundflow.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/fundflow.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/fundflow.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/fundflow.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/local_sector.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/local_sector.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/local_sector.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/local_sector.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/sector.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/sina.py",
+      "target": "file:modules/strategy/base.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/sina.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/tencent.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/tencent.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/tencent.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/ths_fund_flow.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/ths.py",
+      "target": "file:modules/crawler/ths_fund_flow.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/ths.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/ths.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/crawler/ths.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/datasource.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/datasource.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/datasource.py",
+      "target": "file:modules/crawler/tencent.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/db/__init__.py",
+      "target": "file:modules/db/backtest_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/db/__init__.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/db/__init__.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/db/__init__.py",
+      "target": "file:modules/db/price_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/db/__init__.py",
+      "target": "file:modules/db/signal_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/db/__init__.py",
+      "target": "file:modules/db/task_log.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/db/event_store.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_driver.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_driver.py",
+      "target": "file:modules/event_intelligence/exposure.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_driver.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_driver.py",
+      "target": "file:modules/event_intelligence/news_factors.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_driver.py",
+      "target": "file:modules/datasource.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_driver.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_driver.py",
+      "target": "file:modules/announcement_risk.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/__init__.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/collector.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/collector.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/collector.py",
+      "target": "file:modules/event_intelligence/source_registry.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/event_intelligence/history.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/event_intelligence/llm_semantics.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/event_intelligence/news_factors.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/event_intelligence/source_quality.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/context.py",
+      "target": "file:modules/event_intelligence/topic_memory.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/elasticity.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/elasticity.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/elasticity.py",
+      "target": "file:modules/event_intelligence/history.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/elasticity.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/elasticity.py",
+      "target": "file:modules/event_intelligence/transmission.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/elasticity.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/exposure.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/exposure.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/extractor.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/extractor.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/extractor.py",
+      "target": "file:modules/event_intelligence/transmission.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/history.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/llm_semantics.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/llm_semantics.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/llm_semantics.py",
+      "target": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/manual_ingest.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/manual_ingest.py",
+      "target": "file:modules/event_intelligence/collector.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/manual_ingest.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/news_factors.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/news_factors.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/news_factors.py",
+      "target": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/news_intelligence.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/notifier.py",
+      "target": "file:modules/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/notifier.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/notifier.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/notifier.py",
+      "target": "file:modules/event_intelligence/reporter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/opportunity.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/opportunity.py",
+      "target": "file:modules/market_filters.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/opportunity.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/opportunity.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/opportunity.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/opportunity.py",
+      "target": "file:modules/event_intelligence/transmission.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/probability.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/probability.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/probability.py",
+      "target": "file:modules/event_intelligence/transmission.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/reporter.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/reporter.py",
+      "target": "file:modules/datasource.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/reporter.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/reporter.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/reporter.py",
+      "target": "file:modules/event_intelligence/llm_semantics.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/reporter.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/reporter.py",
+      "target": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/reporter.py",
+      "target": "file:modules/event_intelligence/source_quality.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/collector.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/context.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/elasticity.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/extractor.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/manual_ingest.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/llm_semantics.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/news_factors.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/notifier.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/opportunity.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/probability.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/reporter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/service.py",
+      "target": "file:modules/event_intelligence/topic_memory.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/source_registry.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/source_registry.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/summary.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/summary.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/summary.py",
+      "target": "file:modules/event_intelligence/news_factors.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/topic_memory.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/topic_memory.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/topic_memory.py",
+      "target": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/transmission.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/event_intelligence/transmission.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/__init__.py",
+      "target": "file:modules/intraday_radar/service.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/data.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/detector.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/sector.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/sector.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/sector.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/service.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/service.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/service.py",
+      "target": "file:modules/intraday_radar/data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/service.py",
+      "target": "file:modules/intraday_radar/detector.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/service.py",
+      "target": "file:modules/intraday_radar/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/service.py",
+      "target": "file:modules/intraday_radar/sector.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/service.py",
+      "target": "file:modules/intraday_radar/storage.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/service.py",
+      "target": "file:modules/intraday_radar/universe.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/universe.py",
+      "target": "file:modules/market_filters.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/intraday_radar/universe.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/market_index.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/portfolio.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/portfolio.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/portfolio.py",
+      "target": "file:modules/candidate.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/portfolio.py",
+      "target": "file:modules/alert_manager.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/portfolio.py",
+      "target": "file:modules/risk_controller.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/rank_engine.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/risk_checker.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/risk_checker.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scheduler.py",
+      "target": "file:modules/cli/tool/signal.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scheduler.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scheduler.py",
+      "target": "file:modules/simulation.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scheduler.py",
+      "target": "file:modules/alert_manager.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scheduler.py",
+      "target": "file:modules/alerter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scheduler.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scoring_engine.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scoring_engine.py",
+      "target": "file:modules/indicators.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scoring_engine.py",
+      "target": "file:modules/market_filters.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scoring_engine.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scoring_engine.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/scoring_engine.py",
+      "target": "file:modules/event_driver.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/screener.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/screener.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/screener.py",
+      "target": "file:modules/market_filters.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/screener.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/screener.py",
+      "target": "file:modules/crawler/fundflow.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/sector_tags.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/sector_tags.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/sector_tags.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/sector_tags.py",
+      "target": "file:modules/crawler/ths_fund_flow.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/sell_signal.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/sell_signal.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/sell_signal.py",
+      "target": "file:modules/indicators.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/__init__.py",
+      "target": "file:modules/signal/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/__init__.py",
+      "target": "file:modules/signal/journal.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/__init__.py",
+      "target": "file:modules/signal/paper_trader.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/engine.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/engine.py",
+      "target": "file:modules/indicators.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/engine.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/engine.py",
+      "target": "file:modules/strategy/optimizer.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/journal.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/journal.py",
+      "target": "file:modules/signal/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/paper_trader.py",
+      "target": "file:modules/backtest/fees.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/paper_trader.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/paper_trader.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/paper_trader.py",
+      "target": "file:modules/signal/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/signal/paper_trader.py",
+      "target": "file:modules/signal/journal.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/simulation.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/simulation.py",
+      "target": "file:modules/scoring_engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/simulation.py",
+      "target": "file:modules/screener.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/simulation.py",
+      "target": "file:modules/signal/paper_trader.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/simulation.py",
+      "target": "file:modules/sell_signal.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/crawler/eastmoney.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/market_filters.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/datasource.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/crawler/tencent.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/risk_checker.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_data.py",
+      "target": "file:modules/crawler/fundflow.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_decision_report.py",
+      "target": "file:modules/datasource.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_decision_report.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_decision_report.py",
+      "target": "file:modules/scoring_engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_decision_report.py",
+      "target": "file:modules/event_driver.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/stock_decision_report.py",
+      "target": "file:modules/announcement_risk.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/__init__.py",
+      "target": "file:modules/strategy/base.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/__init__.py",
+      "target": "file:modules/strategy/library.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/__init__.py",
+      "target": "file:modules/strategy/optimizer.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/__init__.py",
+      "target": "file:modules/strategy/comparator.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/__init__.py",
+      "target": "file:modules/strategy/walkforward.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/base.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/base.py",
+      "target": "file:modules/strategy/kfold.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/comparator.py",
+      "target": "file:modules/backtest/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/comparator.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/library.py",
+      "target": "file:modules/backtest/strategy.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/library.py",
+      "target": "file:modules/strategy/base.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/library.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/optimizer.py",
+      "target": "file:modules/backtest/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/optimizer.py",
+      "target": "file:modules/strategy/base.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/walkforward.py",
+      "target": "file:modules/backtest/engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/walkforward.py",
+      "target": "file:modules/strategy/base.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/strategy/walkforward.py",
+      "target": "file:modules/strategy/optimizer.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/announcement_risk.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/market_filters.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/backtest/fees.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/scoring_engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/event_driver.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:modules/swing_low_absorb.py",
+      "target": "file:modules/datasource.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/competition_monitor.py",
+      "target": "file:modules/datasource.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/competition_monitor.py",
+      "target": "file:modules/event_intelligence/summary.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/competition_monitor.py",
+      "target": "file:modules/market_index.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/daily_report.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/diagnose_crawler.py",
+      "target": "file:modules/crawler/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/diagnose_crawler.py",
+      "target": "file:modules/akshare_compat.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/diagnose_crawler.py",
+      "target": "file:modules/crawler/fundflow.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/diagnose_crawler.py",
+      "target": "file:modules/crawler/ths_fund_flow.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/diagnose_crawler.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/import_candidates.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/import_candidates.py",
+      "target": "file:modules/screener.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/import_candidates.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/import_candidates.py",
+      "target": "file:modules/analyzer.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/set_pending.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/set_pending.py",
+      "target": "file:modules/candidate.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/verify_candidates.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/verify_candidates.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:scripts/verify_candidates.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_announcement_risk.py",
+      "target": "file:modules/announcement_risk.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_backtest_constraints.py",
+      "target": "file:modules/backtest/order.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_config.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_datasource_consensus.py",
+      "target": "file:modules/datasource.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_datasource_consensus.py",
+      "target": "file:modules/config.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_context.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_context.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_context.py",
+      "target": "file:modules/event_intelligence/context.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_context.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_driver.py",
+      "target": "file:modules/event_driver.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_driver.py",
+      "target": "file:modules/event_intelligence/exposure.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_elasticity.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_elasticity.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_elasticity.py",
+      "target": "file:modules/db/price_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_elasticity.py",
+      "target": "file:modules/event_intelligence/elasticity.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_elasticity.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/event_intelligence/collector.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/event_intelligence/extractor.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/event_intelligence/manual_ingest.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/event_intelligence/opportunity.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/event_intelligence/probability.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_intelligence.py",
+      "target": "file:modules/event_intelligence/reporter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_notifier.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_notifier.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_notifier.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_notifier.py",
+      "target": "file:modules/event_intelligence/notifier.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_scheduler.py",
+      "target": "file:modules/scheduler.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_sources_config.py",
+      "target": "file:modules/event_intelligence/source_registry.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_status_labels.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_status_labels.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_status_labels.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_status_labels.py",
+      "target": "file:modules/event_intelligence/reporter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_status_labels.py",
+      "target": "file:modules/event_intelligence/summary.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_summary.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_summary.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_summary.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_event_summary.py",
+      "target": "file:modules/event_intelligence/summary.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_indicators.py",
+      "target": "file:modules/indicators.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_integration.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_integration.py",
+      "target": "file:modules/stock_data.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_integration.py",
+      "target": "file:modules/crawler/tencent.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_integration.py",
+      "target": "file:modules/datasource.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_integration.py",
+      "target": "file:modules/risk_controller.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_llm_semantics.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_llm_semantics.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_llm_semantics.py",
+      "target": "file:modules/event_intelligence/llm_semantics.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_llm_semantics.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_market_filters.py",
+      "target": "file:modules/market_filters.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_market_index.py",
+      "target": "file:modules/market_index.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_new_strategies.py",
+      "target": "file:modules/strategy/library.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_new_strategies.py",
+      "target": "file:modules/strategy/kfold.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_new_strategies.py",
+      "target": "file:modules/strategy/base.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_factors.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_factors.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_factors.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_factors.py",
+      "target": "file:modules/event_intelligence/news_factors.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_intelligence.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_intelligence.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_intelligence.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_intelligence.py",
+      "target": "file:modules/event_intelligence/news_intelligence.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_news_intelligence.py",
+      "target": "file:modules/event_intelligence/reporter.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_optional_akshare.py",
+      "target": "file:modules/crawler/fundflow.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_optional_akshare.py",
+      "target": "file:modules/crawler/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_optional_akshare.py",
+      "target": "file:modules/crawler/ths_fund_flow.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_optional_akshare.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_portfolio.py",
+      "target": "file:modules/portfolio.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_risk_checker.py",
+      "target": "file:modules/risk_checker.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_scoring_engine.py",
+      "target": "file:modules/scoring_engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_sector_tags.py",
+      "target": "file:modules/sector_tags.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_stock_decision_report.py",
+      "target": "file:modules/scoring_engine.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_stock_decision_report.py",
+      "target": "file:modules/stock_decision_report.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_stock_topic_exposure.py",
+      "target": "file:modules/event_intelligence/exposure.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_swing_low_absorb.py",
+      "target": "file:modules/swing_low_absorb.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_topic_memory.py",
+      "target": "file:modules/db/event_store.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_topic_memory.py",
+      "target": "file:modules/db/migrations.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_topic_memory.py",
+      "target": "file:modules/event_intelligence/models.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_topic_memory.py",
+      "target": "file:modules/event_intelligence/topic_memory.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:tests/test_utils.py",
+      "target": "file:modules/utils.py",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:data",
+      "name": "数据层",
+      "description": "股票行情数据采集，多源爬虫（腾讯/东财/新浪/同花顺），OHLCV 日线存储，缓存管理，市场节假日历",
+      "nodeIds": [
+        "file:data/event_history.toml",
+        "file:data/event_sector_map.toml",
+        "file:data/event_sources.toml",
+        "file:data/event_transmission_map.toml",
+        "file:data/feishu.toml.example",
+        "file:data/llm_intelligence.toml.example",
+        "file:data/moatx.toml",
+        "file:data/schedule_config.toml",
+        "file:data/sector_graph.toml",
+        "file:data/stock_topic_exposure.toml",
+        "file:modules/akshare_compat.py",
+        "file:modules/calendar.py",
+        "file:modules/crawler/__init__.py",
+        "file:modules/crawler/api_probe.py",
+        "file:modules/crawler/base.py",
+        "file:modules/crawler/cache.py",
+        "file:modules/crawler/eastmoney.py",
+        "file:modules/crawler/fundflow.py",
+        "file:modules/crawler/js/ths.js",
+        "file:modules/crawler/local_sector.py",
+        "file:modules/crawler/models.py",
+        "file:modules/crawler/sector.py",
+        "file:modules/crawler/sina.py",
+        "file:modules/crawler/tencent.py",
+        "file:modules/crawler/ths_fund_flow.py",
+        "file:modules/crawler/ths.py",
+        "file:modules/datasource.py",
+        "file:modules/db/price_store.py",
+        "file:modules/intraday_radar/data.py",
+        "file:modules/market_filters.py",
+        "file:modules/market_index.py",
+        "file:modules/stock_data.py",
+        "file:scripts/diagnose_crawler.py",
+        "file:tests/test_datasource_consensus.py",
+        "file:tests/test_stock_decision_report.py",
+        "file:tests/test_stock_topic_exposure.py"
+      ]
+    },
+    {
+      "id": "layer:analysis",
+      "name": "分析层",
+      "description": "技术指标计算引擎，综合评分系统，股票筛选器，行业板块分类，市场过滤器",
+      "nodeIds": [
+        "file:modules/analyzer.py",
+        "file:modules/indicators.py",
+        "file:modules/scoring_engine.py",
+        "file:modules/screener.py",
+        "file:modules/sector_tags.py"
+      ]
+    },
+    {
+      "id": "layer:strategy",
+      "name": "策略层",
+      "description": "交易策略定义与执行，参数网格优化，信号生成引擎，模拟交易",
+      "nodeIds": [
+        "file:modules/db/signal_store.py",
+        "file:modules/event_driver.py",
+        "file:modules/signal/__init__.py",
+        "file:modules/signal/engine.py",
+        "file:modules/signal/journal.py",
+        "file:modules/signal/paper_trader.py",
+        "file:modules/strategy/__init__.py",
+        "file:modules/strategy/base.py",
+        "file:modules/strategy/comparator.py",
+        "file:modules/strategy/kfold.py",
+        "file:modules/strategy/library.py",
+        "file:modules/strategy/optimizer.py",
+        "file:modules/strategy/walkforward.py",
+        "file:modules/swing_low_absorb.py"
+      ]
+    },
+    {
+      "id": "layer:risk",
+      "name": "风控层",
+      "description": "风险控制，仓位管理，止损止盈，交易前检查，回撤限制",
+      "nodeIds": [
+        "file:modules/risk_checker.py",
+        "file:modules/risk_controller.py"
+      ]
+    },
+    {
+      "id": "layer:portfolio",
+      "name": "持仓层",
+      "description": "实盘持仓管理，交易记录，每日盈亏追踪，候选股管理",
+      "nodeIds": [
+        "file:modules/cli/portfolio.py",
+        "file:modules/portfolio.py"
+      ]
+    },
+    {
+      "id": "layer:event",
+      "name": "事件情报层",
+      "description": "财经新闻 NLP 处理，情感分析，事件检测，机会识别，LLM 语义理解",
+      "nodeIds": [
+        "file:modules/db/event_store.py",
+        "file:modules/event_intelligence/__init__.py",
+        "file:modules/event_intelligence/collector.py",
+        "file:modules/event_intelligence/context.py",
+        "file:modules/event_intelligence/elasticity.py",
+        "file:modules/event_intelligence/exposure.py",
+        "file:modules/event_intelligence/extractor.py",
+        "file:modules/event_intelligence/history.py",
+        "file:modules/event_intelligence/llm_semantics.py",
+        "file:modules/event_intelligence/manual_ingest.py",
+        "file:modules/event_intelligence/models.py",
+        "file:modules/event_intelligence/news_factors.py",
+        "file:modules/event_intelligence/news_intelligence.py",
+        "file:modules/event_intelligence/notifier.py",
+        "file:modules/event_intelligence/opportunity.py",
+        "file:modules/event_intelligence/probability.py",
+        "file:modules/event_intelligence/reporter.py",
+        "file:modules/event_intelligence/service.py",
+        "file:modules/event_intelligence/source_quality.py",
+        "file:modules/event_intelligence/source_registry.py",
+        "file:modules/event_intelligence/summary.py",
+        "file:modules/event_intelligence/topic_memory.py",
+        "file:modules/event_intelligence/transmission.py"
+      ]
+    },
+    {
+      "id": "layer:visualization",
+      "name": "可视化层",
+      "description": "Matplotlib 图表，K线图，权益曲线，回测可视化",
+      "nodeIds": [
+        "file:modules/charts.py"
+      ]
+    },
+    {
+      "id": "layer:cli",
+      "name": "命令行",
+      "description": "基于 argparse 的子命令路由系统，提供统一 CLI 入口",
+      "nodeIds": [
+        "file:modules/cli/__init__.py",
+        "file:modules/cli/__main__.py",
+        "file:modules/cli/alerter.py",
+        "file:modules/cli/market.py",
+        "file:modules/cli/quote.py",
+        "file:modules/cli/risk.py",
+        "file:modules/cli/tool/__init__.py",
+        "file:modules/cli/tool/diagnose.py",
+        "file:modules/cli/tool/event.py",
+        "file:modules/cli/tool/intraday.py",
+        "file:modules/cli/tool/monitor.py",
+        "file:modules/cli/tool/paper.py",
+        "file:modules/cli/tool/probe.py",
+        "file:modules/cli/tool/signal.py",
+        "file:modules/cli/tool/stock_report.py",
+        "file:modules/cli/tool/swing.py"
+      ]
+    },
+    {
+      "id": "layer:backtest",
+      "name": "回测层",
+      "description": "回测引擎：滑点模拟，基准对比，绩效指标（夏普/卡玛/Alpha），订单模拟",
+      "nodeIds": [
+        "file:modules/backtest/__init__.py",
+        "file:modules/backtest/calendar.py",
+        "file:modules/backtest/datafeed.py",
+        "file:modules/backtest/engine.py",
+        "file:modules/backtest/fees.py",
+        "file:modules/backtest/metrics.py",
+        "file:modules/backtest/order.py",
+        "file:modules/backtest/strategy.py",
+        "file:modules/db/backtest_store.py"
+      ]
+    },
+    {
+      "id": "layer:infra",
+      "name": "基础设施层",
+      "description": "数据库管理器，Schema 迁移，APScheduler 定时任务，配置系统，工具函数，程序入口",
+      "nodeIds": [
+        "file:.understand-anything/config.json",
+        "file:.understand-anything/knowledge-graph.json",
+        "file:docs/eastmoney-api/openapi.yaml",
+        "file:examples/backtest_600734.py",
+        "file:examples/debug_600734.py",
+        "file:examples/debug_order.py",
+        "file:examples/debug_signal.py",
+        "file:examples/debug_strategy.py",
+        "file:examples/test_benchmark.py",
+        "file:modules/__init__.py",
+        "file:modules/__main__.py",
+        "file:modules/alert_manager.py",
+        "file:modules/alerter.py",
+        "file:modules/announcement_risk.py",
+        "file:modules/candidate.py",
+        "file:modules/cli_portfolio.py",
+        "file:modules/config.py",
+        "file:modules/db/__init__.py",
+        "file:modules/db/migrations.py",
+        "file:modules/db/task_log.py",
+        "file:modules/intraday_radar/__init__.py",
+        "file:modules/intraday_radar/detector.py",
+        "file:modules/intraday_radar/models.py",
+        "file:modules/intraday_radar/sector.py",
+        "file:modules/intraday_radar/service.py",
+        "file:modules/intraday_radar/storage.py",
+        "file:modules/intraday_radar/universe.py",
+        "file:modules/logger.py",
+        "file:modules/rank_engine.py",
+        "file:modules/scheduler.py",
+        "file:modules/sell_signal.py",
+        "file:modules/simulation.py",
+        "file:modules/stock_decision_report.py",
+        "file:modules/utils.py",
+        "file:pyproject.toml",
+        "file:scripts/competition_monitor.py",
+        "file:scripts/daily_report.py",
+        "file:scripts/import_candidates.py",
+        "file:scripts/migrate_feishu_to_toml.py",
+        "file:scripts/probe_api.py",
+        "file:scripts/set_pending.py",
+        "file:scripts/verify_candidates.py",
+        "file:tests/__init__.py",
+        "file:tests/conftest.py",
+        "file:tests/test_announcement_risk.py",
+        "file:tests/test_backtest_constraints.py",
+        "file:tests/test_config.py",
+        "file:tests/test_event_context.py",
+        "file:tests/test_event_driver.py",
+        "file:tests/test_event_elasticity.py",
+        "file:tests/test_event_intelligence.py",
+        "file:tests/test_event_notifier.py",
+        "file:tests/test_event_scheduler.py",
+        "file:tests/test_event_sources_config.py",
+        "file:tests/test_event_status_labels.py",
+        "file:tests/test_event_summary.py",
+        "file:tests/test_indicators.py",
+        "file:tests/test_integration.py",
+        "file:tests/test_llm_semantics.py",
+        "file:tests/test_market_filters.py",
+        "file:tests/test_market_index.py",
+        "file:tests/test_new_strategies.py",
+        "file:tests/test_news_factors.py",
+        "file:tests/test_news_intelligence.py",
+        "file:tests/test_optional_akshare.py",
+        "file:tests/test_portfolio.py",
+        "file:tests/test_risk_checker.py",
+        "file:tests/test_scoring_engine.py",
+        "file:tests/test_sector_tags.py",
+        "file:tests/test_swing_low_absorb.py",
+        "file:tests/test_topic_memory.py",
+        "file:tests/test_utils.py"
+      ]
+    },
+    {
+      "id": "layer:docs",
+      "name": "文档层",
+      "description": "项目文档和 AI 智能体指令文件",
+      "nodeIds": [
+        "file:AGENTS.md",
+        "file:CLAUDE.md",
+        "file:README.md"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "模块入口",
+      "description": "MoatX 包初始化，通过 getattr 懒加载所有主要模块的导出",
+      "nodeIds": [
+        "file:modules/__init__.py"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "配置系统",
+      "description": "配置优先级链：TOML 文件 → 环境变量 → 运行时覆盖",
+      "nodeIds": [
+        "file:modules/config.py"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "数据层",
+      "description": "多源行情数据采集，三级回退链：腾讯 → 东财 → 新浪",
+      "nodeIds": [
+        "file:modules/stock_data.py",
+        "file:modules/datasource.py"
+      ]
+    },
+    {
+      "order": 4,
+      "title": "Database Architecture",
+      "description": "Dual-database design: portfolio.db and warehouse.db with sub-store pattern",
+      "nodeIds": [
+        "file:modules/db/__init__.py",
+        "file:modules/portfolio.py"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "Analysis & Scoring",
+      "description": "Technical indicators, multi-factor scoring, stock screening",
+      "nodeIds": [
+        "file:modules/analyzer.py",
+        "file:modules/indicators.py",
+        "file:modules/scoring_engine.py"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "策略系统",
+      "description": "ParametrizedStrategy 基类，参数注入，信号生成引擎",
+      "nodeIds": [
+        "file:modules/strategy/base.py",
+        "file:modules/strategy/library.py",
+        "file:modules/strategy/optimizer.py"
+      ]
+    },
+    {
+      "order": 7,
+      "title": "回测引擎",
+      "description": "完整回测闭环：数据加载 → 策略执行 → 绩效计算 → 可视化",
+      "nodeIds": [
+        "file:modules/backtest/engine.py",
+        "file:modules/backtest/metrics.py"
+      ]
+    },
+    {
+      "order": 8,
+      "title": "Risk Management",
+      "description": "Position sizing, stop-loss rules, pre-trade risk checks",
+      "nodeIds": [
+        "file:modules/risk_controller.py",
+        "file:modules/risk_checker.py"
+      ]
+    },
+    {
+      "order": 9,
+      "title": "事件情报",
+      "description": "NLP 处理财经新闻，情感评分，事件分类，LLM 语义分析",
+      "nodeIds": [
+        "file:modules/event_intelligence/news_intelligence.py",
+        "file:modules/event_intelligence/reporter.py"
+      ]
+    },
+    {
+      "order": 10,
+      "title": "Task Scheduler",
+      "description": "APScheduler with 7 weekday tasks, subprocess execution, failure tracking",
+      "nodeIds": [
+        "file:modules/scheduler.py"
+      ]
+    },
+    {
+      "order": 11,
+      "title": "命令行接口",
+      "description": "argparse 子命令系统，覆盖数据/策略/回测/风控/事件分析",
+      "nodeIds": [
+        "file:modules/cli/__init__.py"
+      ]
+    },
+    {
+      "order": 12,
+      "title": "Data Crawlers",
+      "description": "Multi-source crawlers with retry, caching, and rate limiting",
+      "nodeIds": [
+        "file:modules/crawler/base.py",
+        "file:modules/crawler/eastmoney.py"
+      ]
+    },
+    {
+      "order": 13,
+      "title": "Swing Low Absorption",
+      "description": "Flagship strategy: accumulation pattern detection with volume confirmation (3653 lines)",
+      "nodeIds": [
+        "file:modules/swing_low_absorb.py"
+      ]
+    },
+    {
+      "order": 14,
+      "title": "AI Agent Docs",
+      "description": "Instructions and conventions for AI coding assistants working with MoatX",
+      "nodeIds": [
+        "file:AGENTS.md"
+      ]
+    }
+  ]
+}

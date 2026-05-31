@@ -1,0 +1,2213 @@
+{
+  "filesScanned": 165,
+  "filesWithImports": 137,
+  "totalEdges": 441,
+  "pythonFallback": true,
+  "edges": [
+    {
+      "from": "examples/backtest_600734.py",
+      "to": "modules/backtest/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/backtest_600734.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/debug_600734.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/debug_order.py",
+      "to": "modules/backtest/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/debug_order.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/debug_signal.py",
+      "to": "modules/backtest/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/debug_signal.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/debug_strategy.py",
+      "to": "modules/backtest/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/debug_strategy.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "examples/test_benchmark.py",
+      "to": "modules/backtest/datafeed.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__init__.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__init__.py",
+      "to": "modules/indicators.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__init__.py",
+      "to": "modules/analyzer.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__init__.py",
+      "to": "modules/charts.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__init__.py",
+      "to": "modules/screener.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__init__.py",
+      "to": "modules/rank_engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__init__.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__init__.py",
+      "to": "modules/cli/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/__main__.py",
+      "to": "modules/cli/__init__.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/alert_manager.py",
+      "to": "modules/analyzer.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/alerter.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/analyzer.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/analyzer.py",
+      "to": "modules/indicators.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/analyzer.py",
+      "to": "modules/charts.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/analyzer.py",
+      "to": "modules/screener.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/analyzer.py",
+      "to": "modules/calendar.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/announcement_risk.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/announcement_risk.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/__init__.py",
+      "to": "modules/signal/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/__init__.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/calendar.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/datafeed.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/engine.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/engine.py",
+      "to": "modules/indicators.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/engine.py",
+      "to": "modules/calendar.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/engine.py",
+      "to": "modules/backtest/datafeed.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/engine.py",
+      "to": "modules/backtest/order.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/engine.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/engine.py",
+      "to": "modules/backtest/metrics.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/engine.py",
+      "to": "modules/charts.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/backtest/fees.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/calendar.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/calendar.py",
+      "to": "modules/backtest/calendar.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/candidate.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/cli/market.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/cli/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/cli/risk.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/cli/tool/monitor.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/cli/quote.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__init__.py",
+      "to": "modules/scheduler.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/__main__.py",
+      "to": "modules/cli/__init__.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/alerter.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/alerter.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/alerter.py",
+      "to": "modules/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/alerter.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/market.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/market.py",
+      "to": "modules/market_index.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/portfolio.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/portfolio.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/quote.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/quote.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/quote.py",
+      "to": "modules/calendar.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/risk.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/risk.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/risk.py",
+      "to": "modules/risk_controller.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/risk.py",
+      "to": "modules/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/risk.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/__init__.py",
+      "to": "modules/cli/tool/diagnose.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/__init__.py",
+      "to": "modules/cli/tool/event.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/__init__.py",
+      "to": "modules/cli/tool/intraday.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/__init__.py",
+      "to": "modules/cli/tool/probe.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/__init__.py",
+      "to": "modules/cli/tool/signal.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/__init__.py",
+      "to": "modules/cli/tool/paper.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/__init__.py",
+      "to": "modules/cli/tool/stock_report.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/__init__.py",
+      "to": "modules/cli/tool/swing.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/diagnose.py",
+      "to": "scripts/diagnose_crawler.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/context.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/source_registry.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/collector.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/manual_ingest.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/extractor.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/probability.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/opportunity.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/reporter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/service.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/news_intelligence.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/topic_memory.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/llm_semantics.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/notifier.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/summary.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/event.py",
+      "to": "modules/event_intelligence/elasticity.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/intraday.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/monitor.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/monitor.py",
+      "to": "modules/scheduler.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/monitor.py",
+      "to": "modules/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/paper.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/paper.py",
+      "to": "modules/signal/paper_trader.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/probe.py",
+      "to": "scripts/probe_api.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/signal.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/signal.py",
+      "to": "modules/signal/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/signal.py",
+      "to": "modules/signal/journal.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/signal.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/signal.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/stock_report.py",
+      "to": "modules/stock_decision_report.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/swing.py",
+      "to": "modules/swing_low_absorb.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/swing.py",
+      "to": "modules/market_filters.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/swing.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/cli/tool/swing.py",
+      "to": "modules/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/api_probe.py",
+      "to": "modules/strategy/base.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/api_probe.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/base.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/base.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/cache.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/eastmoney.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/eastmoney.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/eastmoney.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/fundflow.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/fundflow.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/fundflow.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/fundflow.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/local_sector.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/local_sector.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/local_sector.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/local_sector.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/sector.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/sina.py",
+      "to": "modules/strategy/base.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/sina.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/tencent.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/tencent.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/tencent.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/ths_fund_flow.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/ths.py",
+      "to": "modules/crawler/ths_fund_flow.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/ths.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/ths.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/crawler/ths.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/datasource.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/datasource.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/datasource.py",
+      "to": "modules/crawler/tencent.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/db/__init__.py",
+      "to": "modules/db/backtest_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/db/__init__.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/db/__init__.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/db/__init__.py",
+      "to": "modules/db/price_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/db/__init__.py",
+      "to": "modules/db/signal_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/db/__init__.py",
+      "to": "modules/db/task_log.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/db/event_store.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_driver.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_driver.py",
+      "to": "modules/event_intelligence/exposure.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_driver.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_driver.py",
+      "to": "modules/event_intelligence/news_factors.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_driver.py",
+      "to": "modules/datasource.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_driver.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_driver.py",
+      "to": "modules/announcement_risk.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/__init__.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/collector.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/collector.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/collector.py",
+      "to": "modules/event_intelligence/source_registry.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/event_intelligence/history.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/event_intelligence/llm_semantics.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/event_intelligence/news_factors.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/event_intelligence/news_intelligence.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/event_intelligence/source_quality.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/context.py",
+      "to": "modules/event_intelligence/topic_memory.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/elasticity.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/elasticity.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/elasticity.py",
+      "to": "modules/event_intelligence/history.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/elasticity.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/elasticity.py",
+      "to": "modules/event_intelligence/transmission.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/elasticity.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/exposure.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/exposure.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/extractor.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/extractor.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/extractor.py",
+      "to": "modules/event_intelligence/transmission.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/history.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/llm_semantics.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/llm_semantics.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/llm_semantics.py",
+      "to": "modules/event_intelligence/news_intelligence.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/manual_ingest.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/manual_ingest.py",
+      "to": "modules/event_intelligence/collector.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/manual_ingest.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/news_factors.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/news_factors.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/news_factors.py",
+      "to": "modules/event_intelligence/news_intelligence.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/news_intelligence.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/notifier.py",
+      "to": "modules/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/notifier.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/notifier.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/notifier.py",
+      "to": "modules/event_intelligence/reporter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/opportunity.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/opportunity.py",
+      "to": "modules/market_filters.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/opportunity.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/opportunity.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/opportunity.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/opportunity.py",
+      "to": "modules/event_intelligence/transmission.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/probability.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/probability.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/probability.py",
+      "to": "modules/event_intelligence/transmission.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/reporter.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/reporter.py",
+      "to": "modules/datasource.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/reporter.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/reporter.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/reporter.py",
+      "to": "modules/event_intelligence/llm_semantics.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/reporter.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/reporter.py",
+      "to": "modules/event_intelligence/news_intelligence.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/reporter.py",
+      "to": "modules/event_intelligence/source_quality.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/collector.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/context.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/elasticity.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/extractor.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/manual_ingest.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/llm_semantics.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/news_factors.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/news_intelligence.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/notifier.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/opportunity.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/probability.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/reporter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/service.py",
+      "to": "modules/event_intelligence/topic_memory.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/source_registry.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/source_registry.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/summary.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/summary.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/summary.py",
+      "to": "modules/event_intelligence/news_factors.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/topic_memory.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/topic_memory.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/topic_memory.py",
+      "to": "modules/event_intelligence/news_intelligence.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/transmission.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/event_intelligence/transmission.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/__init__.py",
+      "to": "modules/intraday_radar/service.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/data.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/detector.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/sector.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/sector.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/sector.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/service.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/service.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/service.py",
+      "to": "modules/intraday_radar/data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/service.py",
+      "to": "modules/intraday_radar/detector.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/service.py",
+      "to": "modules/intraday_radar/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/service.py",
+      "to": "modules/intraday_radar/sector.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/service.py",
+      "to": "modules/intraday_radar/storage.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/service.py",
+      "to": "modules/intraday_radar/universe.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/universe.py",
+      "to": "modules/market_filters.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/intraday_radar/universe.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/market_index.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/portfolio.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/portfolio.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/portfolio.py",
+      "to": "modules/candidate.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/portfolio.py",
+      "to": "modules/alert_manager.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/portfolio.py",
+      "to": "modules/risk_controller.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/rank_engine.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/risk_checker.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/risk_checker.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scheduler.py",
+      "to": "modules/cli/tool/signal.py",
+      "relation": "import"
+    },
+    {
+      "from": "modules/scheduler.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scheduler.py",
+      "to": "modules/simulation.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scheduler.py",
+      "to": "modules/alert_manager.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scheduler.py",
+      "to": "modules/alerter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scheduler.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scoring_engine.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scoring_engine.py",
+      "to": "modules/indicators.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scoring_engine.py",
+      "to": "modules/market_filters.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scoring_engine.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scoring_engine.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/scoring_engine.py",
+      "to": "modules/event_driver.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/screener.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/screener.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/screener.py",
+      "to": "modules/market_filters.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/screener.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/screener.py",
+      "to": "modules/crawler/fundflow.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/sector_tags.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/sector_tags.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/sector_tags.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/sector_tags.py",
+      "to": "modules/crawler/ths_fund_flow.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/sell_signal.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/sell_signal.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/sell_signal.py",
+      "to": "modules/indicators.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/__init__.py",
+      "to": "modules/signal/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/__init__.py",
+      "to": "modules/signal/journal.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/__init__.py",
+      "to": "modules/signal/paper_trader.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/engine.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/engine.py",
+      "to": "modules/indicators.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/engine.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/engine.py",
+      "to": "modules/strategy/optimizer.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/journal.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/journal.py",
+      "to": "modules/signal/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/paper_trader.py",
+      "to": "modules/backtest/fees.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/paper_trader.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/paper_trader.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/paper_trader.py",
+      "to": "modules/signal/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/signal/paper_trader.py",
+      "to": "modules/signal/journal.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/simulation.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/simulation.py",
+      "to": "modules/scoring_engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/simulation.py",
+      "to": "modules/screener.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/simulation.py",
+      "to": "modules/signal/paper_trader.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/simulation.py",
+      "to": "modules/sell_signal.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/crawler/eastmoney.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/market_filters.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/datasource.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/crawler/tencent.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/risk_checker.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_data.py",
+      "to": "modules/crawler/fundflow.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_decision_report.py",
+      "to": "modules/datasource.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_decision_report.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_decision_report.py",
+      "to": "modules/scoring_engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_decision_report.py",
+      "to": "modules/event_driver.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/stock_decision_report.py",
+      "to": "modules/announcement_risk.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/__init__.py",
+      "to": "modules/strategy/base.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/__init__.py",
+      "to": "modules/strategy/library.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/__init__.py",
+      "to": "modules/strategy/optimizer.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/__init__.py",
+      "to": "modules/strategy/comparator.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/__init__.py",
+      "to": "modules/strategy/walkforward.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/base.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/base.py",
+      "to": "modules/strategy/kfold.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/comparator.py",
+      "to": "modules/backtest/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/comparator.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/library.py",
+      "to": "modules/backtest/strategy.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/library.py",
+      "to": "modules/strategy/base.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/library.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/optimizer.py",
+      "to": "modules/backtest/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/optimizer.py",
+      "to": "modules/strategy/base.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/walkforward.py",
+      "to": "modules/backtest/engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/walkforward.py",
+      "to": "modules/strategy/base.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/strategy/walkforward.py",
+      "to": "modules/strategy/optimizer.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/announcement_risk.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/market_filters.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/backtest/fees.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/scoring_engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/event_driver.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "modules/swing_low_absorb.py",
+      "to": "modules/datasource.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/competition_monitor.py",
+      "to": "modules/datasource.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/competition_monitor.py",
+      "to": "modules/event_intelligence/summary.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/competition_monitor.py",
+      "to": "modules/market_index.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/daily_report.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/diagnose_crawler.py",
+      "to": "modules/crawler/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/diagnose_crawler.py",
+      "to": "modules/akshare_compat.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/diagnose_crawler.py",
+      "to": "modules/crawler/fundflow.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/diagnose_crawler.py",
+      "to": "modules/crawler/ths_fund_flow.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/diagnose_crawler.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/import_candidates.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/import_candidates.py",
+      "to": "modules/screener.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/import_candidates.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/import_candidates.py",
+      "to": "modules/analyzer.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/set_pending.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/set_pending.py",
+      "to": "modules/candidate.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/verify_candidates.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/verify_candidates.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "scripts/verify_candidates.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_announcement_risk.py",
+      "to": "modules/announcement_risk.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_backtest_constraints.py",
+      "to": "modules/backtest/order.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_config.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_datasource_consensus.py",
+      "to": "modules/datasource.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_datasource_consensus.py",
+      "to": "modules/config.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_context.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_context.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_context.py",
+      "to": "modules/event_intelligence/context.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_context.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_driver.py",
+      "to": "modules/event_driver.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_driver.py",
+      "to": "modules/event_intelligence/exposure.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_elasticity.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_elasticity.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_elasticity.py",
+      "to": "modules/db/price_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_elasticity.py",
+      "to": "modules/event_intelligence/elasticity.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_elasticity.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/event_intelligence/collector.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/event_intelligence/extractor.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/event_intelligence/manual_ingest.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/event_intelligence/opportunity.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/event_intelligence/probability.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_intelligence.py",
+      "to": "modules/event_intelligence/reporter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_notifier.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_notifier.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_notifier.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_notifier.py",
+      "to": "modules/event_intelligence/notifier.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_scheduler.py",
+      "to": "modules/scheduler.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_sources_config.py",
+      "to": "modules/event_intelligence/source_registry.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_status_labels.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_status_labels.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_status_labels.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_status_labels.py",
+      "to": "modules/event_intelligence/reporter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_status_labels.py",
+      "to": "modules/event_intelligence/summary.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_summary.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_summary.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_summary.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_event_summary.py",
+      "to": "modules/event_intelligence/summary.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_indicators.py",
+      "to": "modules/indicators.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_integration.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_integration.py",
+      "to": "modules/stock_data.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_integration.py",
+      "to": "modules/crawler/tencent.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_integration.py",
+      "to": "modules/datasource.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_integration.py",
+      "to": "modules/risk_controller.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_llm_semantics.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_llm_semantics.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_llm_semantics.py",
+      "to": "modules/event_intelligence/llm_semantics.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_llm_semantics.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_market_filters.py",
+      "to": "modules/market_filters.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_market_index.py",
+      "to": "modules/market_index.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_new_strategies.py",
+      "to": "modules/strategy/library.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_new_strategies.py",
+      "to": "modules/strategy/kfold.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_new_strategies.py",
+      "to": "modules/strategy/base.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_factors.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_factors.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_factors.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_factors.py",
+      "to": "modules/event_intelligence/news_factors.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_intelligence.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_intelligence.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_intelligence.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_intelligence.py",
+      "to": "modules/event_intelligence/news_intelligence.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_news_intelligence.py",
+      "to": "modules/event_intelligence/reporter.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_optional_akshare.py",
+      "to": "modules/crawler/fundflow.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_optional_akshare.py",
+      "to": "modules/crawler/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_optional_akshare.py",
+      "to": "modules/crawler/ths_fund_flow.py",
+      "relation": "import"
+    },
+    {
+      "from": "tests/test_optional_akshare.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_portfolio.py",
+      "to": "modules/portfolio.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_risk_checker.py",
+      "to": "modules/risk_checker.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_scoring_engine.py",
+      "to": "modules/scoring_engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_sector_tags.py",
+      "to": "modules/sector_tags.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_stock_decision_report.py",
+      "to": "modules/scoring_engine.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_stock_decision_report.py",
+      "to": "modules/stock_decision_report.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_stock_topic_exposure.py",
+      "to": "modules/event_intelligence/exposure.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_swing_low_absorb.py",
+      "to": "modules/swing_low_absorb.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_topic_memory.py",
+      "to": "modules/db/event_store.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_topic_memory.py",
+      "to": "modules/db/migrations.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_topic_memory.py",
+      "to": "modules/event_intelligence/models.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_topic_memory.py",
+      "to": "modules/event_intelligence/topic_memory.py",
+      "relation": "import_from"
+    },
+    {
+      "from": "tests/test_utils.py",
+      "to": "modules/utils.py",
+      "relation": "import_from"
+    }
+  ]
+}
