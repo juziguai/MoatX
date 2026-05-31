@@ -1,13 +1,14 @@
 """
-datasource.py - 数据源抽象层
+datasource.py - Backward-compatibility layer (DEPRECATED)
 
-定义统一查询接口，业务层通过 QuoteManager 查询实时行情。
-当前支持的实时行情数据源：Tencent / EastMoney / Sina。
-默认行为为多源查询、交叉校验、聚合输出；单源失败时自动降级为可用源。
+QuoteManager / QuoteSource / SinaSource kept for backward compat.
+New code: use DataSourceManager from modules.data_source_manager.
+Real providers: modules.data_sources/ (TencentProvider, SinaProvider, etc.)
 """
 
 from abc import ABC, abstractmethod
 import logging
+import warnings
 import time
 from dataclasses import dataclass
 from typing import Literal
@@ -15,7 +16,7 @@ from typing import Literal
 import requests
 
 from modules.config import cfg
-from modules.utils import to_eastmoney_secid, to_full_code, to_sina_code
+from modules.utils import to_full_code, to_sina_code
 
 logger = logging.getLogger("moatx.datasource")
 logger.setLevel(logging.WARNING)
@@ -32,6 +33,7 @@ class SourceHealth:
 
 
 
+# DEPRECATED: use DataSource ABC from modules.data_source instead
 class QuoteSource(ABC):
     """实时行情数据源基类"""
 
@@ -81,107 +83,7 @@ class QuoteSource(ABC):
         return f"<{type(self).__name__}[{self.name}]>"
 
 
-class TencentSource(QuoteSource):
-    """腾讯财经 —— qt.gtimg.cn"""
-
-    @property
-    def name(self) -> str:
-        return "tencent"
-
-    def fetch_quotes(self, symbols: list[str]) -> dict[str, dict]:
-        if not symbols:
-            return {}
-        try:
-            from modules.crawler.tencent import fetch_quotes_batch
-            result = fetch_quotes_batch(symbols, use_cache=False)
-            if not result.ok or not result.data:
-                return {}
-            rows = result.data if isinstance(result.data, list) else [result.data]
-            out = {}
-            for q in rows:
-                code = str(q.get("code", ""))
-                if not code:
-                    continue
-                full_code = to_full_code(code)
-                out[full_code] = {
-                    "code": full_code,
-                    "name": q.get("name", ""),
-                    "price": q.get("price", 0) or 0,
-                    "change_pct": q.get("pct_change", 0) or 0,
-                    "volume": int(q.get("volume", 0) or 0),
-                    "amount": float(q.get("amount", 0) or 0),
-                    "turnover": q.get("turnover", 0) or 0,
-                    "pe": q.get("pe"),
-                    "high": q.get("high", 0) or 0,
-                    "low": q.get("low", 0) or 0,
-                    "open": q.get("open", 0) or 0,
-                    "prev_close": q.get("prev_close", 0) or 0,
-                }
-            return out
-        except Exception as e:
-            logger.warning("TencentSource: %s", e)
-            return {}
-
-
-class EastMoneySource(QuoteSource):
-    """东方财富 —— push2.eastmoney.com"""
-
-    @property
-    def name(self) -> str:
-        return "eastmoney"
-
-    def fetch_quotes(self, symbols: list[str]) -> dict[str, dict]:
-        if not symbols:
-            return {}
-        secids = [to_eastmoney_secid(s) for s in symbols]
-        try:
-            session = requests.Session()
-            session.trust_env = False
-            session.proxies = {"http": None, "https": None}
-            r = session.get(
-                "http://push2.eastmoney.com/api/qt/ulist.np/get",
-                params={
-                    "fltt": 2,
-                    "secids": ",".join(secids),
-                    "fields": "f2,f3,f4,f12,f14,f15,f16,f17,f18",
-                },
-                timeout=cfg().crawler.timeout,
-                headers={"User-Agent": "Mozilla/5.0"},
-            )
-            if r.status_code != 200:
-                return {}
-            items = (r.json().get("data") or {}).get("diff")
-            if not items:
-                return {}
-            out = {}
-            for item in items:
-                code = str(item.get("f12", ""))
-                if not code:
-                    continue
-                full_code = to_full_code(code)
-                price = item.get("f2") or 0
-                pct = item.get("f3") or 0
-                prev_close = round(price / (1 + pct / 100), 2) if abs(pct) > 0.001 else price
-                out[full_code] = {
-                    "code": full_code,
-                    "name": item.get("f14", ""),
-                    "price": price,
-                    "change_pct": pct,
-                    "volume": int(item.get("f17") or 0) * 100 if item.get("f17") else 0,
-                    "prev_close": prev_close,
-                    "high": item.get("f15") or 0,
-                    "low": item.get("f16") or 0,
-                    "open": item.get("f18") or 0,
-                    "amount": 0,
-                    "turnover": 0,
-                    "pe": None,
-                }
-            return out
-        except Exception as e:
-            logger.warning("EastMoneySource: %s", e)
-            return {}
-
-
+# DEPRECATED: use SinaProvider from modules.data_sources.sina instead
 class SinaSource(QuoteSource):
     """新浪财经 —— hq.sinajs.cn"""
 
@@ -257,6 +159,10 @@ class QuoteManager:
         mode: Literal["single", "validate"] | None = None,
         tolerance_pct: float = DEFAULT_QUOTE_TOLERANCE_PCT,
     ):
+        warnings.warn(
+            "QuoteManager is deprecated; use DataSourceManager instead.",
+            DeprecationWarning, stacklevel=2,
+        )
         self._sources = sources or _build_sources_from_config(source_names=source_names, mode=mode)
         self._tolerance_pct = tolerance_pct
 
@@ -355,21 +261,18 @@ class QuoteManager:
 def _build_sources_from_config(
     source_names: list[str] | None = None,
     mode: Literal["single", "validate"] | None = None,
-) -> list[QuoteSource]:
-    """Build quote sources from cfg().datasource, preserving configured priority."""
-    registry: dict[str, type[QuoteSource]] = {
-        "sina": SinaSource,
-        "tencent": TencentSource,
-        "eastmoney": EastMoneySource,
-    }
-    sources: list[QuoteSource] = []
+) -> list:
+    """Build quote sources from config, delegating to data_sources registry."""
+    from modules.data_sources import get_provider
+
     names = (
         [str(item).strip().lower() for item in source_names if str(item).strip()]
         if source_names is not None
         else cfg().datasource.ordered_sources(mode=mode)
     )
+    sources = []
     for name in names:
-        source_cls = registry.get(name)
-        if source_cls is not None:
-            sources.append(source_cls())
-    return sources or [SinaSource(), TencentSource(), EastMoneySource()]
+        p = get_provider(name)
+        if p is not None:
+            sources.append(p)
+    return sources

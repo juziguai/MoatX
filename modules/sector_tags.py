@@ -346,13 +346,22 @@ class SectorTagProvider:
         return out
 
     def _live_members(self, target: str, target_type: str) -> pd.DataFrame:
-        eastmoney = self._eastmoney_members(target, target_type)
-        if not eastmoney.empty:
-            return eastmoney
+        # Read tag source order from config (data_sources driven)
+        try:
+            from modules.config import cfg
+            order = list(cfg().boards.tag_sources)
+        except Exception:
+            order = ["eastmoney", "ths"]
 
-        ths_detail = self._ths_detail_members(target, target_type)
-        if not ths_detail.empty:
-            return ths_detail
+        for src_name in order:
+            if src_name == "eastmoney":
+                result = self._eastmoney_members(target, target_type)
+                if not result.empty:
+                    return result
+            elif src_name == "ths":
+                result = self._ths_detail_members(target, target_type)
+                if not result.empty:
+                    return result
 
         ak = self._akshare()
         if target_type == "concept":

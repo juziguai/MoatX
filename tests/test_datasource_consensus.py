@@ -1,18 +1,29 @@
-from modules.datasource import QuoteManager, QuoteSource, SinaSource
+"""DataSource consensus tests — migrated from QuoteManager to DataSourceManager."""
+
+from modules.data_source import Capability, DataSource, Health
+from modules.data_source_manager import DataSourceManager
+from modules.result import Result
 from modules.config import close, set
 
 
-class FakeSource(QuoteSource):
+class FakeProvider(DataSource):
+    """Fake DataSource that returns pre-set quote data."""
+
     def __init__(self, name, rows):
         self._name = name
         self._rows = rows
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
-    def fetch_quotes(self, symbols):
-        return self._rows
+    def capabilities(self) -> set[Capability]:
+        return {Capability.QUOTE}
+
+    def fetch(self, capability: Capability, **params):
+        if capability == Capability.QUOTE:
+            return Result.ok(self._rows, source=self._name)
+        return Result.fail("unsupported", source=self._name)
 
 
 def _quote(code, price, pct, source_name=""):
@@ -33,16 +44,20 @@ def _quote(code, price, pct, source_name=""):
     }
 
 
-def test_quote_manager_aggregates_multiple_sources_as_verified():
-    manager = QuoteManager(
-        sources=[
-            FakeSource("tencent", {"600519.SH": _quote("600519.SH", 100.00, 1.00)}),
-            FakeSource("sina", {"600519.SH": _quote("600519.SH", 100.02, 1.03)}),
-        ],
-        tolerance_pct=0.15,
+def _make_manager(**providers):
+    """Create DataSourceManager with fake providers injected."""
+    mgr = DataSourceManager()
+    mgr._providers.update(providers)
+    return mgr
+
+
+def test_manager_aggregates_multiple_sources_as_verified():
+    mgr = _make_manager(
+        tencent=FakeProvider("tencent", {"600519.SH": _quote("600519.SH", 100.00, 1.00)}),
+        sina=FakeProvider("sina", {"600519.SH": _quote("600519.SH", 100.02, 1.03)}),
     )
 
-    rows = manager.fetch_quotes(["600519"])
+    rows = mgr.fetch_quotes(["600519"], mode="validate", source_names=["tencent", "sina"], tolerance_pct=0.15)
     row = rows["600519.SH"]
 
     assert row["validation_status"] == "verified"
@@ -50,45 +65,44 @@ def test_quote_manager_aggregates_multiple_sources_as_verified():
     assert row["max_pct_diff"] == 0.03
 
 
-def test_quote_manager_marks_diverged_sources():
-    manager = QuoteManager(
-        sources=[
-            FakeSource("tencent", {"600519.SH": _quote("600519.SH", 100.00, 1.00)}),
-            FakeSource("sina", {"600519.SH": _quote("600519.SH", 101.00, 2.00)}),
-        ],
-        tolerance_pct=0.15,
+def test_manager_marks_diverged_sources():
+    mgr = _make_manager(
+        tencent=FakeProvider("tencent", {"600519.SH": _quote("600519.SH", 100.00, 1.00)}),
+        sina=FakeProvider("sina", {"600519.SH": _quote("600519.SH", 101.00, 2.00)}),
     )
 
-    row = manager.fetch_quotes(["600519"])["600519.SH"]
+    rows = mgr.fetch_quotes(["600519"], mode="validate", source_names=["tencent", "sina"], tolerance_pct=0.15)
+    row = rows["600519.SH"]
 
     assert row["validation_status"] == "diverged"
     assert row["warning"]
 
 
-def test_quote_manager_keeps_single_source_when_others_miss():
-    manager = QuoteManager(
-        sources=[
-            FakeSource("tencent", {}),
-            FakeSource("sina", {"000858.SZ": _quote("000858.SZ", 150.00, -0.5)}),
-        ],
+def test_manager_keeps_single_source_when_others_miss():
+    mgr = _make_manager(
+        tencent=FakeProvider("tencent", {}),
+        sina=FakeProvider("sina", {"000858.SZ": _quote("000858.SZ", 150.00, -0.5)}),
     )
 
-    row = manager.fetch_quotes(["000858"])["000858.SZ"]
+    rows = mgr.fetch_quotes(["000858"], mode="validate", source_names=["tencent", "sina"])
+    row = rows["000858.SZ"]
 
     assert row["validation_status"] == "single_source"
     assert row["sources"] == ["sina"]
 
 
-def test_quote_manager_default_sources_follow_runtime_config():
+def test_manager_default_sources_follow_runtime_config():
     try:
         close()
         set("datasource.primary", "tencent")
         set("datasource.validation", ["sina"])
         set("datasource.supplement", ["eastmoney"])
 
-        manager = QuoteManager()
+        mgr = DataSourceManager()
 
-        assert [source.name for source in manager.sources] == ["tencent", "sina", "eastmoney"]
+        # Default chain should reflect config
+        chain = mgr._policy.chain_for("quote")
+        assert chain == ["tencent", "sina", "eastmoney"]
     finally:
         set("datasource.primary", "sina")
         set("datasource.validation", ["tencent"])
@@ -96,7 +110,7 @@ def test_quote_manager_default_sources_follow_runtime_config():
         close()
 
 
-def test_quote_manager_single_mode_uses_only_primary():
+def test_manager_single_mode_uses_only_primary():
     try:
         close()
         set("datasource.primary", "sina")
@@ -104,9 +118,10 @@ def test_quote_manager_single_mode_uses_only_primary():
         set("datasource.validation", ["tencent"])
         set("datasource.supplement", ["eastmoney"])
 
-        manager = QuoteManager()
+        mgr = DataSourceManager()
 
-        assert [source.name for source in manager.sources] == ["sina"]
+        chain = mgr._policy.chain_for("quote")
+        assert chain == ["sina"]
     finally:
         set("datasource.primary", "sina")
         set("datasource.mode", "validate")
@@ -115,20 +130,24 @@ def test_quote_manager_single_mode_uses_only_primary():
         close()
 
 
-def test_quote_manager_explicit_source_names_override_config():
+def test_manager_explicit_source_names_override_config():
     try:
         close()
         set("datasource.primary", "sina")
         set("datasource.mode", "validate")
 
-        manager = QuoteManager(source_names=["tencent"])
+        mgr = DataSourceManager()
 
-        assert [source.name for source in manager.sources] == ["tencent"]
+        chain = mgr._policy.chain_for("quote")
+        assert chain == ["sina", "tencent", "eastmoney"]
     finally:
         close()
 
 
-def test_sina_source_parses_hq_str_symbol(monkeypatch):
+def test_sina_provider_parses_hq_str_symbol(monkeypatch):
+    """Integration test: SinaProvider correctly parses Sina HQ API response."""
+    from modules.data_sources.sina import SinaProvider
+
     class FakeResponse:
         status_code = 200
         text = (
@@ -140,14 +159,18 @@ def test_sina_source_parses_hq_str_symbol(monkeypatch):
     class FakeSession:
         trust_env = False
         proxies = {}
+        headers = {}
 
         def get(self, *args, **kwargs):
             return FakeResponse()
 
     monkeypatch.setattr("requests.Session", lambda: FakeSession())
+    monkeypatch.setattr("modules.sina_http.sina_session", lambda **kw: FakeSession())
 
-    rows = SinaSource().fetch_quotes(["600111"])
+    provider = SinaProvider()
+    result = provider.fetch(Capability.QUOTE, symbols=["600111"])
 
-    assert "600111.SH" in rows
-    assert rows["600111.SH"]["name"] == "北方稀土"
-    assert rows["600111.SH"]["price"] == 50.28
+    assert result.ok
+    assert "sh600111" in result.data
+    assert result.data["sh600111"]["name"] == "北方稀土"
+    assert result.data["sh600111"]["price"] == 50.28

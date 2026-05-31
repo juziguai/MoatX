@@ -3580,9 +3580,9 @@ class LowAbsorbSwingEngine:
         if not symbols:
             return {}
         try:
-            from modules.datasource import QuoteManager
+            from modules.data_source_manager import DataSourceManager
 
-            manager = QuoteManager(source_names=["sina", "tencent", "eastmoney"], mode="single")
+            manager = DataSourceManager()
             out: dict[str, dict[str, Any]] = {}
             chunk_size = 40
             for index in range(0, len(symbols), chunk_size):

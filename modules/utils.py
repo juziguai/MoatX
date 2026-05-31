@@ -9,8 +9,19 @@ import os
 
 
 def normalize_symbol(symbol: str) -> str:
-    """去掉 SH/SZ/BJ 后缀，只保留数字部分。"""
+    """去掉市场标识（前缀/后缀），只保留数字部分。
+
+    支持格式: 600519, 600519.SH, sh600519, SZ002342, 002342.SZ, bj888888 等
+    """
     s = symbol.strip().upper()
+    # Strip prefix: sh600519 -> 600519, sz002342 -> 002342
+    if s.startswith("SZ") and len(s) > 2 and s[2:].isdigit():
+        s = s[2:]
+    elif s.startswith("SH") and len(s) > 2 and s[2:].isdigit():
+        s = s[2:]
+    elif s.startswith("BJ") and len(s) > 2 and s[2:].isdigit():
+        s = s[2:]
+    # Strip suffix: 600519.SH -> 600519
     for suffix in (".SH", ".SZ", ".BJ", "SH", "SZ", "BJ"):
         if s.endswith(suffix):
             s = s[:-len(suffix)]

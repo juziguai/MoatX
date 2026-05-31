@@ -94,6 +94,46 @@ class CrawlerSettings:
             raise ValueError(f"CrawlerSettings.retries 不能为负数，实际为 {self.retries}")
 
 
+def _quote_source_names() -> set[str]:
+    """Return registered quote source names dynamically."""
+    try:
+        from modules.data_sources import quote_provider_names
+        return quote_provider_names()
+    except Exception:
+        return {"sina", "tencent", "eastmoney"}
+
+
+def _board_source_names() -> set[str]:
+    """Return registered board source names dynamically."""
+    try:
+        from modules.data_sources import board_provider_names
+        return board_provider_names()
+    except Exception:
+        return {"ths", "sina", "local"}
+
+@dataclass
+class BoardSettings:
+    """Board data source priority configuration."""
+    sources: tuple[str, ...] | list[str] = field(default_factory=lambda: ("ths", "sina", "local"))
+    tag_sources: tuple[str, ...] | list[str] = field(default_factory=lambda: ("eastmoney", "ths"))
+
+    def __post_init__(self) -> None:
+        supported = _board_source_names()
+        sources = tuple(str(s).strip().lower() for s in self.sources if str(s).strip())
+        unknown = [s for s in sources if s not in supported]
+        if unknown:
+            raise ValueError(f"BoardSettings contains unsupported sources: {unknown}")
+        object.__setattr__(self, "sources", sources)
+
+        tag_sources = tuple(str(s).strip().lower() for s in self.tag_sources if str(s).strip())
+        # tag_sources can reference both board and quote sources (e.g. eastmoney)
+        tag_supported = supported | _quote_source_names()
+        tag_unknown = [s for s in tag_sources if s not in tag_supported]
+        if tag_unknown:
+            raise ValueError(f"BoardSettings.tag_sources unsupported: {tag_unknown}")
+        object.__setattr__(self, "tag_sources", tag_sources)
+
+
 @dataclass(frozen=True)
 class DataSourceSettings:
     """实时行情数据源优先级配置。"""
@@ -104,7 +144,7 @@ class DataSourceSettings:
     supplement: tuple[str, ...] | list[str] = field(default_factory=lambda: ("eastmoney",))
 
     def __post_init__(self) -> None:
-        supported = {"sina", "tencent", "eastmoney"}
+        supported = _quote_source_names()
         supported_modes = {"single", "validate"}
         primary = str(self.primary).strip().lower()
         mode = str(self.mode).strip().lower()
@@ -340,6 +380,7 @@ class MoatXConfig:
     cache: CacheSettings = field(default_factory=CacheSettings)
     crawler: CrawlerSettings = field(default_factory=CrawlerSettings)
     datasource: DataSourceSettings = field(default_factory=DataSourceSettings)
+    boards: BoardSettings = field(default_factory=BoardSettings)
     thread_pool: ThreadPoolSettings = field(default_factory=ThreadPoolSettings)
     analysis: AnalysisSettings = field(default_factory=AnalysisSettings)
     fees: FeeSettings = field(default_factory=FeeSettings)

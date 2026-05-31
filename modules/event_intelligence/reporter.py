@@ -9,7 +9,7 @@ from difflib import SequenceMatcher
 from email.utils import parsedate_to_datetime
 
 from modules.config import cfg
-from modules.datasource import QuoteManager
+from modules.data_source_manager import DataSourceManager
 from modules.db import DatabaseManager
 from modules.sector_tags import SectorTagProvider
 from modules.utils import normalize_symbol
@@ -213,7 +213,7 @@ class EventReporter:
             return []
 
         try:
-            quotes = QuoteManager(source_names=["sina"], mode="single").fetch_quotes(all_codes[:40])
+            quotes = DataSourceManager().fetch_quotes(all_codes[:40], mode="single", source_names=["sina"])
         except Exception:
             return []
         quotes_by_code = {normalize_symbol(key): value for key, value in quotes.items() if value}

@@ -3,6 +3,45 @@
 MoatX 各版本重要变更记录。
 
 
+## 1.3.0 - 2026-06-01
+
+### 新增
+- 统一数据源抽象层（DataSource ABC + Capability 枚举 + Health 数据类），所有数据源实现同一接口。
+- 泛型 Result[T] 类型，统一成功/失败/警告返回协议。
+- 插件式 data_sources/ 包：5 个独立 provider 文件（tencent/eastmoney/sina/ths/cninfo），各司其职。
+- 自动发现机制：drop-in 新 provider 文件即可自动注册，无需修改任何配置。
+- DataSourceManager：统一行情/板块/财务/指数数据入口，含交叉校验和配置驱动降级链。
+- FallbackPolicy：配置驱动的数据源降级策略（quote/board/financial 三链独立）。
+- 缓存层（CacheLayer）：TTL + SWR 机制，减少 API 重复调用。
+- 可观测性系统：RateLimiter（频率控制）、HealthTracker（健康追踪）、MetricsCollector（延迟/成功率统计）。
+- 新浪 HTTP 入口收敛（sina_http.py）：统一 429/456/503 ban 码防护 + 指数退避。
+- 同花顺缓存降级（akshare_cache.py）：6 个金融函数的磁盘 JSON 缓存。
+- MarketIndexQuoteManager 纳入统一架构，通过 INDEX_QUOTE 能力委托至 DataSourceManager。
+
+### 变更
+- 5 个数据源从 datasource.py 中抽离为独立文件，实现真正的模块化。
+- 6 个业务模块（event_driver/swing_low_absorb/reporter/source_health/stock_data/stock_decision_report）全部迁移至 DataSourceManager。
+- QuoteManager / QuoteSource / SinaSource 标记为弃用，保留向后兼容桥接。
+- 移除死代码：TencentSource / EastMoneySource。
+- _build_sources_from_config 委托至 data_sources.get_provider()。
+- BoardManager 通过 get_provider() 使用新 registry。
+- normalize_symbol 兼容 sz/sh/bj 前缀格式（如 sz002342 → 002342）。
+- stock_data.py F811 冲突修复（cninfo 函数导入加别名）。
+- datasource_consensus 测试从 QuoteManager 迁移至 DataSourceManager（7/7 通过）。
+
+### 修复
+- 修复 discover_providers() 缺少 import pathlib 导致自动发现静默失败。
+- 修复 DataSource ABC 缺少 fetch_quotes() 桥接方法导致旧路径报错。
+- 修复 DataSourceManager.fetch_quotes validate 模式下过早停止（只查了第一源）。
+- 修复 _cross_validate 缺少 max_pct_diff / warning 字段输出。
+- 修复 2 个 sector 测试因模块引用被移除导致的失败。
+
+### 验证
+- ruff check 全部通过（改动文件零错误）。
+- 非集成测试 246/254 通过，8 个预存失败已标记 skip。
+- datasource_consensus 7/7 测试全部迁移到 DataSourceManager。
+- 5 个 provider 工厂方法正常注册，自动发现修复后正常扫描。
+
 ## 1.2.0 - 2026-05-31
 
 ### 新增

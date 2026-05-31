@@ -12,15 +12,14 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
-import requests
 
+from modules.sina_http import sina_get
 from . import cache
 from .models import CrawlResult, SOURCE_UNAVAILABLE
 
 _logger = logging.getLogger("moatx.crawler.sina")
 
 SOURCE = "sina"
-BAN_HTTP_CODES = {429, 456, 503}
 API_BASE = "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php"
 NODE_TREE_CACHE_KEY = "sina_node_tree"
 MAX_WORKERS = 3
@@ -31,38 +30,15 @@ STANDARD_COLUMNS = [
 ]
 
 
-def _api_session():
-    s = requests.Session()
-    s.trust_env = False
-    s.proxies = {"http": None, "https": None}
-    s.headers.update({
-        "User-Agent": "Mozilla/5.0",
-        "Referer": "https://vip.stock.finance.sina.com.cn/mkt/",
-    })
-    return s
-
-
 def _call_api(method: str, params: dict | None = None) -> dict | list | str:
-    """Call Sina Market_Center API with HTTP status code check and retry for bans."""
-    s = _api_session()
-    for attempt in range(3):
-        r = s.get(f"{API_BASE}/Market_Center.{method}", params=params or {}, timeout=10)
-        if r.status_code in BAN_HTTP_CODES:
-            if attempt < 2:
-                wait = (2 ** attempt) * 3
-                _logger.warning("Sina API HTTP %d (ban), retrying in %ds (attempt %d/3)",
-                                r.status_code, wait, attempt + 1)
-                time.sleep(wait)
-                s = _api_session()
-                continue
-            raise RuntimeError(f"Sina API blocked (HTTP {r.status_code}) after 3 retries")
-        if r.status_code != 200:
-            if attempt < 2:
-                _logger.warning("Sina API HTTP %d, retrying (attempt %d/3)", r.status_code, attempt + 1)
-                time.sleep(1)
-                continue
-            raise RuntimeError(f"Sina API returned HTTP {r.status_code}")
-        break
+    """Call Sina Market_Center API via unified sina_http protection layer."""
+    try:
+        r = sina_get(
+            f"{API_BASE}/Market_Center.{method}",
+            params=params,
+        )
+    except RuntimeError:
+        return ""
     try:
         text = r.text.strip()
     except Exception:

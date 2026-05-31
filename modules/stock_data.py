@@ -18,7 +18,17 @@ from modules.akshare_compat import AkshareUnavailable, import_akshare
 from modules.crawler.eastmoney import fetch_stock_info as _em_stock_info
 from modules.config import cfg
 from modules.market_filters import filter_selection_universe
-from modules.datasource import QuoteManager
+from modules.data_source_manager import DataSourceManager
+from modules.sina_http import sina_session, sina_get
+from modules.akshare_cache import read_cache, write_cache
+from modules.data_sources.cninfo import (  # noqa: F401
+    get_dividend as _cninfo_get_dividend,
+    get_profit_forecast as _cninfo_get_profit_forecast,
+    get_major_shareholders as _cninfo_get_major_shareholders,
+    get_shareholder_changes as _cninfo_get_shareholder_changes,
+    get_profit_sheet_summary as _cninfo_get_profit_sheet_summary,
+    get_cash_flow_summary as _cninfo_get_cash_flow_summary,
+)
 from modules.utils import _clear_all_proxy, normalize_symbol, to_full_code
 
 _logger = logging.getLogger("moatx.stock_data")
@@ -35,6 +45,32 @@ def _get_akshare() -> Any:
         else:
             _ak = import_akshare()
     return _ak
+
+
+def _cached_akshare_call(func_name, symbol, fetch_fn):
+    try:
+        result = fetch_fn()
+        if result and not (isinstance(result, dict) and result.get("error")):
+            write_cache(symbol, func_name, result)
+        return result
+    except Exception:
+        cached = read_cache(symbol, func_name)
+        if cached is not None:
+            return cached
+        raise
+
+
+def _cached_akshare_call(func_name, symbol, fetch_fn):
+    try:
+        result = fetch_fn()
+        if result and not (isinstance(result, dict) and result.get("error")):
+            write_cache(symbol, func_name, result)
+        return result
+    except Exception:
+        cached = read_cache(symbol, func_name)
+        if cached is not None:
+            return cached
+        raise
 
 
 def retry_on_network_error(max_retries: int = 2, base_delay: float = 1.0):
@@ -146,8 +182,7 @@ class StockData:
 
         try:
             import concurrent.futures
-            session = requests.Session()
-            session.trust_env = False
+            session = sina_session()
             base_url = "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData"
 
             def fetch_page(page):
@@ -155,7 +190,7 @@ class StockData:
                     "page": page, "num": 100, "sort": "symbol",
                     "asc": 1, "node": "hs_a", "_s_r_a": "page",
                 }
-                r = session.get(base_url, params=params, timeout=self.timeout)
+                r = sina_get(base_url, params=params, timeout=self.timeout, session=session)
                 return r.json()
 
             all_data = []
@@ -474,8 +509,7 @@ class StockData:
             prefix = "sh" if code.startswith(("6", "5", "9")) else "sz"
             url = (f"https://money.finance.sina.com.cn/quotes_service/api/json_v2.php"
                    f"/CN_MarketData.getKLineData?symbol={prefix}{code}&scale=240&ma=no&datalen={count}")
-            r = requests.get(url, timeout=self.timeout)
-            r.encoding = "utf-8"
+            r = sina_get(url, timeout=self.timeout, encoding="utf-8")
             return code, r.json()
 
         results = {}
@@ -585,7 +619,7 @@ class StockData:
         mode=single/validate 覆盖配置模式。
         """
         source_names = [source] if source else None
-        return QuoteManager(source_names=source_names, mode=mode).fetch_quotes(symbols)
+        return DataSourceManager().fetch_quotes(symbols, mode=mode, source_names=source_names)
 
     def get_money_flow(self, symbol: str) -> Dict[str, Any]:
         """
@@ -801,8 +835,11 @@ class StockData:
                     "description": str(row.get("实施方案分红说明", "")),
                 })
             return results
-        except Exception as e:
-            return [{"error": str(e)}]
+        except Exception:
+            cached = read_cache(symbol, "dividend")
+            if cached is not None:
+                return cached
+            raise
 
     def get_profit_forecast(self, symbol: str) -> Dict[str, Any]:
         """
@@ -830,8 +867,11 @@ class StockData:
                         "num_firms": num_firms,
                     })
             return {"forecasts": forecasts}
-        except Exception as e:
-            return {"forecasts": [], "error": str(e)}
+        except Exception:
+            cached = read_cache(symbol, "profit_forecast")
+            if cached is not None:
+                return cached
+            raise
 
     def get_major_shareholders(self, symbol: str) -> List[Dict[str, Any]]:
         """
@@ -860,8 +900,11 @@ class StockData:
                     "截止日期": str(row.get("截至日期", "")),
                 })
             return holders
-        except Exception as e:
-            return [{"error": str(e)}]
+        except Exception:
+            cached = read_cache(symbol, "major_shareholders")
+            if cached is not None:
+                return cached
+            raise
 
     def get_shareholder_changes(self, symbol: str, limit: int = 5) -> List[Dict[str, Any]]:
         """
@@ -885,8 +928,11 @@ class StockData:
                     "method": str(row.get("变动途径", "")),
                 })
             return changes
-        except Exception as e:
-            return [{"error": str(e)}]
+        except Exception:
+            cached = read_cache(symbol, "shareholder_changes")
+            if cached is not None:
+                return cached
+            raise
 
     def get_profit_sheet_summary(self, symbol: str) -> Dict[str, Any]:
         """
@@ -919,8 +965,11 @@ class StockData:
                 "net_margin": round(net_margin, 2),
                 "basic_eps": self._parse_number(latest.get("BASIC_EPS", 0)),
             }
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception:
+            cached = read_cache(symbol, "profit_sheet")
+            if cached is not None:
+                return cached
+            raise
 
     def get_cash_flow_summary(self, symbol: str) -> Dict[str, Any]:
         """
@@ -951,8 +1000,11 @@ class StockData:
                 "cash_end": cash_end,
                 "free_cf": op_cf + inv_cf,  # 自由现金流近似
             }
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception:
+            cached = read_cache(symbol, "cash_flow")
+            if cached is not None:
+                return cached
+            raise
 
     # ─── 财务风险检测（委托给 FinancialRiskChecker） ─────────────────
 

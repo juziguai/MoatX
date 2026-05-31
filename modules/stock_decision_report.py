@@ -6,7 +6,7 @@ from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from typing import Any
 
-from modules.datasource import QuoteManager
+from modules.data_source_manager import DataSourceManager
 from modules.utils import normalize_symbol
 
 
@@ -168,10 +168,20 @@ class StockDecisionReporter:
 
     def _quote(self, symbol: str) -> tuple[dict[str, Any], str]:
         try:
-            manager = self._quote_manager or QuoteManager(source_names=["sina"], mode="single")
-            quotes = manager.fetch_quotes([symbol])
+            if self._quote_manager:
+                quotes = self._quote_manager.fetch_quotes([symbol])
+            else:
+                quotes = DataSourceManager().fetch_quotes([symbol], mode="single", source_names=["sina"])
             for key, value in quotes.items():
-                if normalize_symbol(str(key)) == symbol:
+                key_str = str(key)
+                # Handle both old format (002342.SZ) and new format (sz002342)
+                if normalize_symbol(key_str) == symbol:
+                    quote = dict(value)
+                    quote["code"] = symbol
+                    return quote, ""
+                # Also try stripping sh/sz prefix from new-format keys
+                stripped = key_str.lower()
+                if (stripped.startswith("sz") or stripped.startswith("sh")) and stripped[2:] == symbol:
                     quote = dict(value)
                     quote["code"] = symbol
                     return quote, ""

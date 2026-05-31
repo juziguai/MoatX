@@ -125,6 +125,29 @@ db.failure_tracker()  # Consecutive failure tracking
 
 ---
 
+
+## 长命令执行规范
+
+### 孤儿进程防护
+
+执行任何预计超过 5 秒的 Python 命令前，必须先执行：
+
+`powershell
+.\scripts\kill_orphans.ps1
+`
+
+禁止连续多次起同类长命令不检查残留进程。
+
+### 测试执行规则
+
+- 改动后默认只跑**本次相关的测试文件**，禁止跑全量 	ests/
+- 测试文件超 5 个时，合并为 pytest file1 file2 file3 -q
+- 带 yield_time_ms 的命令，timeout 不超命令预期时长的 2 倍
+- 超 10 秒的命令加 	ty=true
+
+### 命令后检查
+
+每次跑完长命令后，确认 Get-Process python* 无异常残留。
 ## Karpathy Skills (Behavioral Guidelines)
 
 > Source: forrestchang/andrej-karpathy-skills

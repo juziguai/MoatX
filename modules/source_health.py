@@ -7,43 +7,43 @@ from __future__ import annotations
 
 import logging
 
-from modules.datasource import QuoteManager, SourceHealth
+from modules.data_source_manager import DataSourceManager
 from modules.db import DatabaseManager
 
 logger = logging.getLogger("moatx.source_health")
 
 
-def run_health_check(db: DatabaseManager | None = None) -> list[SourceHealth]:
+def run_health_check(db: DatabaseManager | None = None) -> dict[str, dict]:
     """Run health check on all configured quote sources and log results.
 
     Returns list of SourceHealth results.
     """
-    mgr = QuoteManager()
-    results = mgr.health_check_all()
+    mgr = DataSourceManager()
+    results = mgr.health_all()
 
     if db is None:
         db = DatabaseManager()
 
     store = db.source_health()
-    for r in results:
+    for source_name, r in results.items():
         store.log(
-            source=r.source,
-            healthy=r.healthy,
-            latency_ms=r.latency_ms,
-            error=r.error,
-            sample_count=r.sample_count,
+            source=source_name,
+            healthy=r["healthy"],
+            latency_ms=r["latency_ms"],
+            error=r.get("error", ""),
+            sample_count=1 if r["healthy"] else 0,
         )
 
     # Check for consecutive failures and alert
-    for r in results:
-        if not r.healthy:
-            consecutive = store.consecutive_failures(r.source)
+    for source_name, r in results.items():
+        if not r["healthy"]:
+            consecutive = store.consecutive_failures(source_name)
             if consecutive >= 3:
                 logger.warning(
                     "Source %%s has %%d consecutive failures, alert triggered",
-                    r.source, consecutive,
+                    source_name, consecutive,
                 )
-                _send_feishu_alert(r.source, consecutive)
+                _send_feishu_alert(source_name, consecutive)
 
     return results
 

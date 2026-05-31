@@ -13,6 +13,7 @@ from typing import Any
 import requests
 
 from modules.config import cfg
+from modules.sina_http import sina_get
 
 
 DEFAULT_INDEX_CODES = ["sh000001", "sz399001", "sz399006", "sh000300", "sh000688", "bj899050"]
@@ -105,21 +106,11 @@ class MarketIndexQuoteManager:
         codes: list[str] | None = None,
         sources: list[str] | None = None,
     ) -> list[AggregatedIndexQuote]:
+        """Fetch market index quotes, delegating to DataSourceManager."""
+        from modules.data_source_manager import DataSourceManager
         normalized_codes = normalize_index_codes(codes or DEFAULT_INDEX_CODES)
         source_names = [s.lower() for s in (sources or ["tencent", "sina"])]
-        source_results: dict[str, dict[str, IndexQuote]] = {}
-        if "tencent" in source_names:
-            source_results["tencent"] = fetch_tencent_indices(normalized_codes, timeout=self.timeout)
-        if "sina" in source_names:
-            source_results["sina"] = fetch_sina_indices(normalized_codes, timeout=self.timeout)
-
-        rows: list[AggregatedIndexQuote] = []
-        for code in normalized_codes:
-            quotes = [result[code] for result in source_results.values() if code in result]
-            if not quotes:
-                continue
-            rows.append(self._aggregate(code, quotes))
-        return rows
+        return DataSourceManager().fetch_indices(normalized_codes, sources=source_names)
 
     def _aggregate(self, code: str, quotes: list[IndexQuote]) -> AggregatedIndexQuote:
         quotes = sorted(quotes, key=lambda q: (q.datetime, q.source), reverse=True)
@@ -200,15 +191,12 @@ def fetch_tencent_indices(codes: list[str], timeout: int | None = None) -> dict[
 
 
 def fetch_sina_indices(codes: list[str], timeout: int | None = None) -> dict[str, IndexQuote]:
-    """Fetch index quotes from Sina hq.sinajs.cn."""
-    session = _session()
-    resp = session.get(
+    """Fetch index quotes from Sina hq.sinajs.cn (unified ban protection)."""
+    resp = sina_get(
         "https://hq.sinajs.cn/list=" + ",".join(codes),
         timeout=timeout or cfg().crawler.timeout,
-        headers={"Referer": "https://finance.sina.com.cn", "User-Agent": "Mozilla/5.0"},
+        encoding="gbk",
     )
-    resp.encoding = "gbk"
-    resp.raise_for_status()
 
     rows: dict[str, IndexQuote] = {}
     for line in resp.text.strip().splitlines():
@@ -261,14 +249,11 @@ def fetch_sina_market_breadth(timeout: int | None = None, page_size: int = 100) 
 
 
 def _sina_stock_count(timeout: int | None = None) -> int:
-    session = _session()
-    resp = session.get(
+    resp = sina_get(
         "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeStockCount",
         params={"node": "hs_a"},
         timeout=timeout or cfg().crawler.timeout,
-        headers={"Referer": "https://finance.sina.com.cn", "User-Agent": "Mozilla/5.0"},
     )
-    resp.raise_for_status()
     return int(str(resp.text).strip().strip('"'))
 
 
@@ -341,8 +326,7 @@ def _sina_sorted_rows_page(
     timeout: int | None = None,
     page_size: int = 100,
 ) -> list[dict[str, Any]]:
-    session = _session()
-    resp = session.get(
+    resp = sina_get(
         "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData",
         params={
             "node": "hs_a",
@@ -353,7 +337,6 @@ def _sina_sorted_rows_page(
             "_s_r_a": "page",
         },
         timeout=timeout or cfg().crawler.timeout,
-        headers={"Referer": "https://finance.sina.com.cn", "User-Agent": "Mozilla/5.0"},
     )
     resp.raise_for_status()
     data = resp.json()

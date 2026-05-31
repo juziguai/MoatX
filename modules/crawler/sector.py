@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import pandas as pd
 
-from . import local_sector
-from . import sina
-from . import ths
+# Backward-compat module refs (used by tests via monkeypatch)
+from . import local_sector  # noqa: F401
+from . import sina  # noqa: F401
+from . import ths  # noqa: F401
+
 from .models import CrawlResult, SOURCE_UNAVAILABLE
 
 
@@ -31,70 +33,114 @@ STANDARD_COLUMNS = [
 ]
 
 
-def get_industry_boards(use_cache: bool = True) -> CrawlResult:
-    result = ths.fetch_industry_boards(use_cache=use_cache)
-    if result.ok:
-        return _with_normalized_data(result)
+class BoardManager:
+    """Config-driven board data manager with fallback chain.
 
-    fallback = sina.fetch_industry_boards(use_cache=use_cache)
-    if fallback.ok:
-        fallback.warnings.append("THS 行业板块不可用，已切换 Sina fallback")
-        fallback.user_message = "THS 行业板块不可用，已切换 Sina fallback"
-        return _with_normalized_data(fallback)
+    Usage:
+        mgr = BoardManager()                     # use config order
+        mgr = BoardManager(sources=["ths","sina","local"])  # explicit order
+        result = mgr.get_industry_boards()
+    """
 
-    local = local_sector.fetch_industry_boards(use_cache=use_cache)
-    if local.ok:
-        local.warnings.append("Realtime industry boards unavailable; using local sector graph quote snapshot")
-        local.user_message = "Realtime industry boards unavailable; using local sector graph quote snapshot"
-        return _with_normalized_data(local)
+    _REGISTRY: dict[str, type] = {}
 
-    return CrawlResult(
-        ok=False,
-        source="sector",
-        error=SOURCE_UNAVAILABLE,
-        error_detail=(
-            f"ths={result.error}: {result.error_detail}; "
-            f"sina={fallback.error}: {fallback.error_detail}; "
-            f"local={local.error}: {local.error_detail}"
-        ),
-        user_message="行业板块数据不可用：THS 和 Sina 均失败",
-        warnings=result.warnings + fallback.warnings + local.warnings,
-    )
+    def __init__(self, sources: list[str] | None = None):
+        if not self._REGISTRY:
+            self._register_defaults()
+        names = sources or _board_source_order()
+        self._sources: list = [self._REGISTRY[n]() for n in names if n in self._REGISTRY]
+
+    @classmethod
+    def _register_defaults(cls):
+        from modules.data_sources import get_provider
+        cls._REGISTRY.update({
+            "ths": type(get_provider("ths")),
+            "sina": type(get_provider("sina")),
+            "local": type(get_provider("local")) if get_provider("local") else None,
+        })
+        # Remove None entries
+        cls._REGISTRY = {k: v for k, v in cls._REGISTRY.items() if v is not None}
+        # Add local from board_sources
+        from modules.crawler.board_sources import LocalSectorBoardSource
+        cls._REGISTRY["local"] = LocalSectorBoardSource
+
+    @classmethod
+    def register(cls, name: str, source_cls: type):
+        """Register a new board source. Call before creating BoardManager."""
+        cls._REGISTRY[name] = source_cls
+
+    @property
+    def sources(self):
+        return list(self._sources)
+
+    def get_industry_boards(self, use_cache: bool = True) -> "CrawlResult":
+        return self._try_chain("industry", use_cache)
+
+    def get_concept_boards(self, use_cache: bool = True) -> "CrawlResult":
+        return self._try_chain("concept", use_cache)
+
+    def _try_chain(self, board_type: str, use_cache: bool) -> "CrawlResult":
+        from .models import CrawlResult
+
+        warnings: list[str] = []
+        for src in self._sources:
+            try:
+                fetch = src.fetch_industry_boards if board_type == "industry" else src.fetch_concept_boards
+                result = fetch(use_cache=use_cache)
+            except Exception as exc:
+                warnings.append(f"{src.name}: {exc}")
+                continue
+
+            if result.ok:
+                if src.name == "local" and warnings:
+                    result.warnings.append("Realtime boards unavailable; using local sector graph quote snapshot")
+                result.warnings.extend(warnings)
+                return result
+            warnings.append(f"{src.name}: {result.error}")
+
+        return CrawlResult(
+            ok=False, source="board_manager", error=SOURCE_UNAVAILABLE,
+            warnings=warnings, user_message=f"All sources failed for {board_type} boards",
+        )
 
 
-def get_concept_boards(use_cache: bool = True) -> CrawlResult:
-    result = ths.fetch_concept_boards(use_cache=use_cache)
-    if result.ok:
-        return _with_normalized_data(result)
-
-    sina_result = sina.fetch_concept_boards(use_cache=use_cache)
-    if sina_result.ok:
-        sina_result.warnings.append("THS 概念板块不可用，已切换 Sina fallback")
-        sina_result.user_message = "THS 概念板块不可用，已切换 Sina fallback"
-        return _with_normalized_data(sina_result)
-
-    local = local_sector.fetch_concept_boards(use_cache=use_cache)
-    if local.ok:
-        local.warnings.append("Realtime concept boards unavailable; using local sector graph quote snapshot")
-        local.user_message = "Realtime concept boards unavailable; using local sector graph quote snapshot"
-        return _with_normalized_data(local)
-
-    return CrawlResult(
-        ok=False,
-        source="sector",
-        error=SOURCE_UNAVAILABLE,
-        error_detail=f"ths={result.error}: {result.error_detail}; sina={sina_result.error}: {sina_result.error_detail}; local={local.error}: {local.error_detail}",
-        user_message="概念板块数据不可用：THS/Sina 均失败",
-        warnings=result.warnings + sina_result.warnings + local.warnings,
-    )
+def _board_source_order() -> list[str]:
+    """Read board source order from config, fall back to defaults."""
+    try:
+        from modules.config import cfg
+        order = getattr(cfg(), "boards", None)
+        if order and hasattr(order, "sources"):
+            return list(order.sources)
+    except Exception:
+        pass
+    return ["ths", "sina", "local"]
 
 
-def get_all_boards(
-    use_cache: bool = True,
-    board_types: tuple[str, ...] = ("行业", "概念"),
-) -> CrawlResult:
+# Backward-compatible module-level API
+_default_manager: BoardManager | None = None
+
+
+def _get_manager() -> BoardManager:
+    global _default_manager
+    if _default_manager is None:
+        _default_manager = BoardManager()
+    return _default_manager
+
+
+def get_industry_boards(use_cache: bool = True):
+    return _get_manager().get_industry_boards(use_cache=use_cache)
+
+
+def get_concept_boards(use_cache: bool = True):
+    return _get_manager().get_concept_boards(use_cache=use_cache)
+
+
+def get_all_boards(use_cache: bool = True, board_types=("行业", "概念")):
+    """Backward-compatible get_all_boards."""
+    from .models import CrawlResult
+
     results = []
-    warnings = []
+    warnings_list = []
     errors = []
 
     if "行业" in board_types:
@@ -103,7 +149,7 @@ def get_all_boards(
             results.append(industry.data)
         else:
             errors.append(f"行业: {industry.error} {industry.error_detail}".strip())
-        warnings.extend(industry.warnings)
+        warnings_list.extend(industry.warnings)
 
     if "概念" in board_types:
         concept = get_concept_boards(use_cache=use_cache)
@@ -111,46 +157,12 @@ def get_all_boards(
             results.append(concept.data)
         else:
             errors.append(f"概念: {concept.error} {concept.error_detail}".strip())
-        warnings.extend(concept.warnings)
+        warnings_list.extend(concept.warnings)
 
-    if not results:
-        return CrawlResult(
-            ok=False,
-            source="sector",
-            error=SOURCE_UNAVAILABLE,
-            error_detail="; ".join(errors),
-            user_message="行业/概念板块数据均不可用",
-            warnings=warnings,
-        )
-
-    df = pd.concat(results, ignore_index=True)
-    return CrawlResult(ok=True, data=_normalize_board_df(df), source="sector", warnings=warnings)
-
-
-def filter_boards_by_pct_change(
-    min_pct: float,
-    board_types: tuple[str, ...] = ("行业", "概念"),
-    use_cache: bool = True,
-) -> CrawlResult:
-    result = get_all_boards(use_cache=use_cache, board_types=board_types)
-    if not result.ok:
-        return result
-    df = result.data.copy()
-    result.data = df[df["pct_change"] >= min_pct].sort_values("pct_change", ascending=False)
-    return result
-
-
-def _with_normalized_data(result: CrawlResult) -> CrawlResult:
-    if result.ok:
-        result.data = _normalize_board_df(result.data)
-    return result
-
-
-def _normalize_board_df(df: pd.DataFrame | None) -> pd.DataFrame:
-    out = pd.DataFrame() if df is None else df.copy()
-    for column in STANDARD_COLUMNS:
-        if column not in out.columns:
-            out[column] = pd.NA
-    for column in ["pct_change", "price", "turnover", "rise_count", "fall_count", "top_stock_pct"]:
-        out[column] = pd.to_numeric(out[column], errors="coerce")
-    return out[STANDARD_COLUMNS]
+    if results:
+        df = pd.concat(results, ignore_index=True)
+        return CrawlResult(ok=True, data=df, source="board_manager", warnings=warnings_list)
+    return CrawlResult(
+        ok=False, source="board_manager", error="; ".join(errors) if errors else "no data",
+        warnings=warnings_list,
+    )

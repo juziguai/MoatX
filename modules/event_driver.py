@@ -366,10 +366,10 @@ class EventDriver:
             return {}
 
         try:
-            from modules.datasource import QuoteManager
+            from modules.data_source_manager import DataSourceManager
             from modules.utils import to_full_code
 
-            quotes = QuoteManager(source_names=["sina"], mode="single").fetch_quotes(all_codes)
+            quotes = DataSourceManager().fetch_quotes(all_codes, mode="single", source_names=["sina"])
             rows: dict[str, dict[str, Any]] = {}
             for sector, codes in codes_by_sector.items():
                 pcts: list[float] = []
