@@ -51,19 +51,44 @@ class EventStore:
         self._conn.commit()
         return cursor.lastrowid if cursor.rowcount else None
 
-    def list_news(self, limit: int = 50, processed: int | None = None) -> pd.DataFrame:
-        """List recent news items, optionally filtered by processed flag."""
+    def list_news(self, limit: int = 50, processed: int | None = None,
+                 since: str | None = None) -> pd.DataFrame:
+        """List recent news items.
+
+        Args:
+            limit: max rows
+            processed: filter by processed flag (None=all)
+            since: ISO datetime string, e.g. '2026-06-01 00:00:00'
+        """
         params: list = []
-        where = ""
+        clauses = []
         if processed is not None:
-            where = " WHERE processed = ?"
+            clauses.append("processed = ?")
             params.append(processed)
+        if since is not None:
+            clauses.append("fetched_at >= ?")
+            params.append(since)
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         params.append(limit)
         return pd.read_sql_query(
             f"SELECT * FROM event_news{where} ORDER BY id DESC LIMIT ?",
             self._conn,
             params=params,
         )
+
+    def delete_old_news(self, before: str) -> int:
+        """Delete news older than the given ISO datetime. Returns deleted count."""
+        cur = self._conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM event_news WHERE fetched_at < ?", (before,))
+        count = cur.fetchone()[0]
+        # Delete child records first (FK: event_signals.news_id -> event_news.id)
+        cur.execute(
+            "DELETE FROM event_signals WHERE news_id IN (SELECT id FROM event_news WHERE fetched_at < ?)",
+            (before,),
+        )
+        cur.execute("DELETE FROM event_news WHERE fetched_at < ?", (before,))
+        self._conn.commit()
+        return count
 
     def mark_news_processed(self, news_ids: list[int]) -> None:
         """Mark news rows as processed by the extractor."""

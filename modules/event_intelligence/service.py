@@ -152,9 +152,16 @@ class EventIntelligenceService:
 
     # ─── Agent Pipeline (for external AI Agent like Codex CLI) ──
 
-    def list_news_for_agent(self, limit: int = 50) -> list[dict[str, Any]]:
-        """Return raw news for an external AI Agent to reason over."""
-        return NewsManager(db=self._db).list_news(limit=limit)
+    def list_news_for_agent(self, limit: int = 50, period: str = "today") -> list[dict[str, Any]]:
+        """Return raw news for an external AI Agent to reason over.
+
+        period: 'today' | '3d' | '7d' | 'month' | ISO datetime
+        """
+        return NewsManager(db=self._db).list_news(limit=limit, period=period)
+
+    def cleanup_old_news(self, keep_days: int = 7) -> dict[str, Any]:
+        """Delete news older than keep_days."""
+        return NewsManager(db=self._db).cleanup_old_news(keep_days=keep_days)
 
     def resolve_sectors_for_agent(self, sectors: list[str]) -> list[str]:
         """Resolve sector/concept names to A-share stock codes."""
@@ -200,7 +207,7 @@ class EventIntelligenceService:
         result: dict[str, Any] = {}
         if collect_first:
             result["collected"] = self.collect_news()
-        result["raw_news"] = NewsManager(db=self._db).list_news(limit=limit)
+        NewsManager(db=self._db).list_news(limit=limit, period="3d")
         result["news_count"] = len(result["raw_news"])
         result["hint"] = "Call agent_report(insights) with your LLM analysis to produce final report."
         return result

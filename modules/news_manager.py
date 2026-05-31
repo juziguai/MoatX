@@ -169,9 +169,34 @@ class NewsManager:
 
     # ─── Data Interface (for external AI Agent) ──
 
-    def list_news(self, limit: int = 50) -> list[dict[str, Any]]:
-        """Return raw news records as a list of dicts."""
-        df = self._db.event().list_news(limit=limit)
+    # ─── Time range helpers ──────────────────────
+
+    @staticmethod
+    def _since_for(period: str) -> str | None:
+        """Resolve human-readable period to ISO datetime string."""
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        if period == "today":
+            return now.strftime("%Y-%m-%d 00:00:00")
+        elif period == "3d":
+            return (now - timedelta(days=3)).strftime("%Y-%m-%d 00:00:00")
+        elif period == "7d":
+            return (now - timedelta(days=7)).strftime("%Y-%m-%d 00:00:00")
+        elif period == "month":
+            return now.strftime("%Y-%m-01 00:00:00")
+        elif period and len(period) >= 10:
+            return period  # already ISO-like
+        return None
+
+    def list_news(self, limit: int = 50, period: str = "today") -> list[dict[str, Any]]:
+        """Return raw news records as a list of dicts.
+
+        Args:
+            limit: max rows
+            period: 'today' | '3d' | '7d' | 'month' | ISO datetime string
+        """
+        since = self._since_for(period)
+        df = self._db.event().list_news(limit=limit, since=since)
         if df.empty:
             return []
         records = df.to_dict(orient="records")
@@ -181,11 +206,19 @@ class NewsManager:
                     r[k] = v.item()
         return records
 
+    def cleanup_old_news(self, keep_days: int = 7) -> dict[str, Any]:
+        """Delete news older than keep_days. Returns deleted count."""
+        from datetime import datetime, timedelta
+        cutoff = (datetime.now() - timedelta(days=keep_days)).strftime("%Y-%m-%d 00:00:00")
+        deleted = self._db.event().delete_old_news(cutoff)
+        return {"deleted": deleted, "cutoff": cutoff, "kept_days": keep_days}
+
     # ─── Keyword Analysis (fast fallback) ─────────
 
-    def analyze(self, limit: int = 100) -> dict[str, Any]:
+    def analyze(self, limit: int = 100, period: str = "today") -> dict[str, Any]:
         """Keyword-only fast filter using TOPIC_RULES."""
-        df = self._db.event().list_news(limit=limit)
+        since = self._since_for(period)
+        df = self._db.event().list_news(limit=limit, since=since)
         if df.empty:
             return {"insights": [], "topic_summary": [], "stats": {"total": 0, "analyzed": 0}}
 
