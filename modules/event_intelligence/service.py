@@ -168,6 +168,18 @@ class EventIntelligenceService:
         """
         return NewsManager(db=self._db).agent_full_report(insights)
 
+    def news_health_check(self) -> dict[str, Any]:
+        """Run health check on all news providers."""
+        return NewsManager(db=self._db).health_check()
+
+    def news_health_status(self) -> dict[str, Any]:
+        """Get current health snapshot (no network call)."""
+        return NewsManager(db=self._db).health_status()
+
+    def news_metrics(self) -> dict[str, Any]:
+        """Get per-source and aggregate metrics."""
+        return NewsManager(db=self._db).metrics_summary()
+
     def run_agent_cycle(self, limit: int = 50, collect_first: bool = False) -> dict[str, Any]:
         """One-stop cycle for AI Agent:
         1. Optionally collect fresh news
