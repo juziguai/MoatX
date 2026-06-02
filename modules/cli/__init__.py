@@ -145,6 +145,9 @@ def main():
     p_stock_report.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
     p_stock_report.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
 
+    p_fusion = p_tool_sub.add_parser("fusion", help="多策略融合选股")
+    _build_fusion_parser(p_fusion)
+
     p_swing = p_tool_sub.add_parser("swing", help="低吸隔日冲高短线模型")
     _build_swing_parser(p_swing)
 
@@ -241,6 +244,10 @@ def main():
             from .tool import cmd_stock_report
 
             cmd_stock_report(args)
+        elif args.tool_action == "fusion":
+            from .tool import cmd_fusion
+
+            cmd_fusion(args)
         elif args.tool_action == "swing":
             from .tool import cmd_swing
 
@@ -379,6 +386,26 @@ def _build_event_parser(p_event):
     )
 
 
+def _build_fusion_parser(p_fusion):
+    p_fusion_sub = p_fusion.add_subparsers(dest="fusion_action")
+
+    p_scan = p_fusion_sub.add_parser("scan", help="融合短线/事件/多因子/技术策略选股")
+    p_scan.add_argument("--mode", choices=["fast", "tail", "full"], default="fast", help="融合模式: fast=快扫, tail=尾盘, full=满血")
+    p_scan.add_argument("--limit", type=int, default=10, help="输出候选数量")
+    p_scan.add_argument("--pool-limit", type=int, default=120, help="基础实时行情池数量")
+    p_scan.add_argument("--score-pool-limit", type=int, default=80, help="进入综合多因子评分的股票数量")
+    p_scan.add_argument("--min-score", type=float, default=35.0, help="融合总分最低阈值")
+    p_scan.add_argument("--workers", type=int, default=8, help="日线/盘中扫描并发数")
+    p_scan.add_argument("--deadline-seconds", type=float, default=120.0, help="短线扫描时间预算秒数")
+    p_scan.add_argument("--full-context", action="store_true", help="启用新闻事件上下文，速度较慢")
+    p_scan.add_argument("--deep-score", action="store_true", help="启用完整综合多因子评分，速度较慢")
+    p_scan.add_argument("--intraday", action="store_true", help="同时接入盘中异动雷达")
+    p_scan.add_argument("--intraday-limit", type=int, default=None, help="盘中雷达最多复核股票数，默认快扫/尾盘8、满血24")
+    p_scan.add_argument("--no-breakout", action="store_true", help="不启用放量突破首日追涨模式")
+    p_scan.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
+    p_scan.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
+
+
 def _build_swing_parser(p_swing):
     p_swing_sub = p_swing.add_subparsers(dest="swing_action")
 
@@ -401,6 +428,22 @@ def _build_swing_parser(p_swing):
     p_candidates.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
     p_candidates.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
 
+    p_today = p_swing_sub.add_parser("today", help="一次性跑今日短线选股并输出诊断")
+    p_today.add_argument("--limit", type=int, default=10, help="输出候选/观察数量")
+    p_today.add_argument("--pool-limit", type=int, default=120, help="从实时行情中取前 N 只做日线复核")
+    p_today.add_argument("--scan-limit", type=int, default=40, help="单次扫描保留的模型结果上限")
+    p_today.add_argument("--workers", type=int, default=8, help="候选日线复核并发数")
+    p_today.add_argument("--deadline-seconds", type=float, default=120.0, help="扫描时间预算秒数，0 表示不限制")
+    p_today.add_argument("--network-daily-fallback", action="store_true", help="仓库日线缺失时联网补日线")
+    p_today.add_argument("--full-context", action="store_true", help="启用新闻事件上下文，速度较慢但更完整")
+    p_today.add_argument("--min-candidate-score", type=float, default=70.0, help="强候选最低分")
+    p_today.add_argument("--min-watch-score", type=float, default=55.0, help="观察票最低分")
+    p_today.add_argument("--near-miss-limit", type=int, default=10, help="输出高分剔除样本数量")
+    p_today.add_argument("--check-risk", action="store_true", help="执行财务/公告风险检查")
+    p_today.add_argument("--no-breakout", action="store_true", help="不启用放量突破首日追涨模式")
+    p_today.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
+    p_today.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
+
     p_watchlist = p_swing_sub.add_parser("watchlist", help="盘后生成明日短线观察名单")
     p_watchlist.add_argument("--limit", type=int, default=10, help="观察名单数量")
     p_watchlist.add_argument("--pool-limit", type=int, default=120, help="从实时行情中取前 N 只做日线复核")
@@ -419,6 +462,28 @@ def _build_swing_parser(p_swing):
     p_watchlist.add_argument("--send", action="store_true", help="推送观察名单")
     p_watchlist.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
     p_watchlist.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
+
+    p_tail = p_swing_sub.add_parser("tail-scan", help="14:00 后尾盘扫描收盘买入名单")
+    p_tail.add_argument("--limit", type=int, default=10, help="观察名单数量")
+    p_tail.add_argument("--pool-limit", type=int, default=120, help="从实时行情中取前 N 只做日线复核")
+    p_tail.add_argument("--workers", type=int, default=8, help="候选日线复核并发数")
+    p_tail.add_argument("--deadline-seconds", type=float, default=120.0, help="扫描时间预算秒数，0 表示不限制")
+    p_tail.add_argument("--network-daily-fallback", action="store_true", help="仓库日线缺失时联网补日线")
+    p_tail.add_argument("--full-context", action="store_true", help="启用新闻事件上下文，速度较慢但更完整")
+    p_tail.add_argument("--min-score", type=float, default=55.0, help="最低入选分数")
+    p_tail.add_argument("--cash-per-stock", type=float, default=10_000.0, help="单票模拟投入金额")
+    p_tail.add_argument("--lot-size", type=int, default=100, help="A股一手股数")
+    p_tail.add_argument("--check-risk", action="store_true", help="执行财务/公告风险检查")
+    p_tail.add_argument("--candidate-only", action="store_true", help="只输出强候选，忽略观察票")
+    p_tail.add_argument("--no-breakout", action="store_true", help="不启用放量突破首日追涨模式")
+    p_tail.add_argument("--no-score-gate", action="store_true", help="跳过综合打分/风控门控")
+    p_tail.add_argument("--min-comprehensive-score", type=float, default=20.0, help="综合打分门控最低分")
+    p_tail.add_argument("--ignore-time-window", action="store_true", help="忽略 14:00-15:00 尾盘扫描窗口限制")
+    p_tail.add_argument("--no-save-active", action="store_true", help="不覆盖次日监控使用的最新短线名单")
+    p_tail.add_argument("--output", help="额外写入 JSON 文件路径")
+    p_tail.add_argument("--send", action="store_true", help="推送尾盘收盘买入名单")
+    p_tail.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
+    p_tail.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
 
     p_monitor = p_swing_sub.add_parser("monitor", help="盘中监控短线观察名单目标/止损")
     p_monitor.add_argument("--watchlist", help="观察名单 JSON 路径，默认 data/swing_watchlist_latest.json")
@@ -560,6 +625,7 @@ def _build_intraday_parser(p_intraday):
     p_radar.add_argument("--symbols", default="", help="逗号分隔股票代码")
     p_radar.add_argument("--symbols-file", default="", help="股票池文件，支持 JSON/TXT/CSV")
     p_radar.add_argument("--limit", type=int, default=80, help="最多扫描股票数")
+    p_radar.add_argument("--workers", type=int, default=6, help="盘中分钟数据并发扫描数")
     p_radar.add_argument("--write-snapshot", action="store_true", help="写入 data/intraday_radar 快照")
     add_common(p_radar)
 

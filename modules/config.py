@@ -182,6 +182,28 @@ class DataSourceSettings:
 
 
 @dataclass(frozen=True)
+class MarketLookupSettings:
+    """Common market lookup sites for manual and automated checks."""
+
+    quote_endpoint: str = "https://hq.sinajs.cn/list={code}"
+    quote_referer: str = "https://finance.sina.com.cn/"
+    fund_announcement_sites: tuple[str, ...] | list[str] = field(default_factory=lambda: ("https://www.cmfchina.com/",))
+    cross_check_sites: tuple[str, ...] | list[str] = field(
+        default_factory=lambda: ("https://finance.eastmoney.com/", "https://finance.sina.com.cn/")
+    )
+    priority: tuple[str, ...] | list[str] = field(
+        default_factory=lambda: ("fund_official", "eastmoney_cls", "sina_finance", "sina_quote")
+    )
+
+    def __post_init__(self) -> None:
+        if "{code}" not in self.quote_endpoint:
+            raise ValueError("MarketLookupSettings.quote_endpoint must contain {code}")
+        for name in ("fund_announcement_sites", "cross_check_sites", "priority"):
+            values = tuple(str(item).strip() for item in getattr(self, name) if str(item).strip())
+            object.__setattr__(self, name, values)
+
+
+@dataclass(frozen=True)
 class ThreadPoolSettings:
     sina_spot_workers: int = 8
     risk_check_workers: int = 20
@@ -380,6 +402,7 @@ class MoatXConfig:
     cache: CacheSettings = field(default_factory=CacheSettings)
     crawler: CrawlerSettings = field(default_factory=CrawlerSettings)
     datasource: DataSourceSettings = field(default_factory=DataSourceSettings)
+    market_lookup: MarketLookupSettings = field(default_factory=MarketLookupSettings)
     boards: BoardSettings = field(default_factory=BoardSettings)
     thread_pool: ThreadPoolSettings = field(default_factory=ThreadPoolSettings)
     analysis: AnalysisSettings = field(default_factory=AnalysisSettings)
@@ -399,6 +422,7 @@ class MoatXConfig:
             "cache",
             "crawler",
             "datasource",
+            "market_lookup",
             "thread_pool",
             "analysis",
             "fees",
@@ -589,6 +613,13 @@ def get_config(path: Path | None = None) -> MoatXConfig:
             "validation": ["tencent"],
             "supplement": ["eastmoney"],
         },
+        "market_lookup": {
+            "quote_endpoint": "https://hq.sinajs.cn/list={code}",
+            "quote_referer": "https://finance.sina.com.cn/",
+            "fund_announcement_sites": ["https://www.cmfchina.com/"],
+            "cross_check_sites": ["https://finance.eastmoney.com/", "https://finance.sina.com.cn/"],
+            "priority": ["fund_official", "eastmoney_cls", "sina_finance", "sina_quote"],
+        },
         "analysis": {
             "default_days": 120,
             "adjust": "qfq",
@@ -664,6 +695,7 @@ def get_config(path: Path | None = None) -> MoatXConfig:
         cache=CacheSettings(**raw.get("cache", {})),
         crawler=CrawlerSettings(**raw.get("crawler", {})),
         datasource=DataSourceSettings(**raw.get("datasource", {})),
+        market_lookup=MarketLookupSettings(**raw.get("market_lookup", {})),
         thread_pool=ThreadPoolSettings(**raw.get("thread_pool", {})),
         analysis=AnalysisSettings(**raw.get("analysis", {})),
         fees=FeeSettings(**raw.get("fees", {})),

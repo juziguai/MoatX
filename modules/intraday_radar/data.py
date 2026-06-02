@@ -20,6 +20,9 @@ class TencentMinuteClient:
 
     _BASE = "https://web.ifzq.gtimg.cn/appstock/app/day/query"
 
+    def __init__(self, *, timeout: float = 8.0) -> None:
+        self.timeout = max(1.0, float(timeout or 8.0))
+
     def fetch_day(self, symbol: str, *, trade_date: str | None = None) -> tuple[pd.DataFrame, dict[str, Any]]:
         code = normalize_symbol(symbol)
         market = "sh" if code.startswith(("5", "6", "9")) else "sz"
@@ -33,7 +36,7 @@ class TencentMinuteClient:
                 "User-Agent": "Mozilla/5.0",
                 "Referer": "https://gu.qq.com/",
             },
-            timeout=30,
+            timeout=self.timeout,
         )
         response.raise_for_status()
         payload = response.json()

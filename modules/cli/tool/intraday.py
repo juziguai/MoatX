@@ -33,6 +33,7 @@ def cmd_intraday(args) -> None:
             symbols=symbols[: max(1, int(args.limit or 1))],
             trade_date=args.date or None,
             write_snapshot=args.write_snapshot,
+            workers=getattr(args, "workers", 6),
         )
     else:
         raise SystemExit(f"Unknown intraday action: {action}")
@@ -68,8 +69,11 @@ def _print_radar(payload: dict[str, Any]) -> None:
     print(
         f"盘中异动雷达 | 扫描 {payload.get('scanned', 0)}/{payload.get('requested', 0)} | "
         f"信号 {payload.get('signal_count', 0)} | 错误 {len(payload.get('errors') or [])} | "
-        f"耗时 {float(payload.get('elapsed_seconds') or 0):.1f}s"
+        f"并发 {payload.get('workers', 1)} | 耗时 {float(payload.get('elapsed_seconds') or 0):.1f}s"
     )
+    timings = payload.get("timings") or {}
+    if timings:
+        print("耗时拆分: " + " | ".join(f"{key} {float(value or 0):.1f}s" for key, value in timings.items()))
     if payload.get("snapshot_path"):
         print(f"快照: {payload.get('snapshot_path')}")
     signals = payload.get("signals") or []

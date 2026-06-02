@@ -22,6 +22,13 @@ mode = "validate"            # ?????single=?????validate=??+???+???????
 validation = ["tencent"]      # ????????/??????
 supplement = ["eastmoney"]    # ??????????????????
 
+[market_lookup]
+quote_endpoint = "https://hq.sinajs.cn/list={code}"
+quote_referer = "https://finance.sina.com.cn/"
+fund_announcement_sites = ["https://www.cmfchina.com/"]
+cross_check_sites = ["https://finance.eastmoney.com/", "https://finance.sina.com.cn/"]
+priority = ["fund_official", "eastmoney_cls", "sina_finance", "sina_quote"]
+
 [thread_pool]
 sina_spot_workers = 8
 risk_check_workers = 20

@@ -7,9 +7,10 @@ volatility setup, not a long-term buy rating.
 
 from __future__ import annotations
 
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as day_time
 import json
 import math
 import logging
@@ -31,6 +32,8 @@ _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 _WATCHLIST_DIR = _DATA_DIR / "swing_watchlists"
 _WATCHLIST_LATEST = _DATA_DIR / "swing_watchlist_latest.json"
 _WATCHLIST_ALERT_STATE = _DATA_DIR / "swing_watchlist_alert_state.json"
+_TAIL_WATCHLIST_DIR = _DATA_DIR / "swing_tail_watchlists"
+_TAIL_WATCHLIST_LATEST = _DATA_DIR / "swing_tail_watchlist_latest.json"
 
 
 @dataclass
@@ -242,7 +245,28 @@ class LowAbsorbSwingEngine:
         low_absorb_warnings = warnings + risk_warnings
         setup = "低吸隔日冲高"
         exit_rule = "次日10:00前冲高分批兑现；跌破止损或冲高回落破分时均线则退出"
+        profile_metrics: dict[str, Any] = {}
         profiles = []
+        reversal_profile = self._bearish_reversal_profile(
+            df=df,
+            close=close,
+            ma10=ma10,
+            pct_change=pct_change,
+            day_range_pct=day_range_pct,
+            close_position=close_position,
+            volume_to_peak=volume_to_peak,
+            prior_impulse_pct=prior_impulse_pct,
+            amount=amount,
+            market_context=market_context,
+            sector_metrics=sector_metrics,
+            sector_adjust=sector_adjust,
+            event_metrics=event_metrics,
+            event_adjust=event_adjust,
+            risk_adjust=risk_adjust,
+            quote_bar_appended=quote_bar_appended,
+        )
+        if reversal_profile:
+            profiles.append(reversal_profile)
         trend_profile = self._trend_continuation_profile(
             df=df,
             close=close,
@@ -291,6 +315,7 @@ class LowAbsorbSwingEngine:
             warnings = list(best_profile["warnings"]) + risk_warnings
             setup = str(best_profile.get("setup") or "强趋势延续观察")
             exit_rule = str(best_profile.get("exit_rule") or "趋势票只做回踩承接或盘中换手确认；跌破MA10或放量长阴退出")
+            profile_metrics = dict(best_profile.get("metrics") or {})
         else:
             score = low_absorb_score
             warnings = low_absorb_warnings
@@ -380,6 +405,9 @@ class LowAbsorbSwingEngine:
             action = "skip"
         elif action == "candidate" and gate_decision == "watch":
             action = "watch"
+        if action == "candidate" and self._is_reversal_setup(setup):
+            action = "watch"
+            warnings.insert(0, "反包观察票默认不直接建仓，次日转强确认后再试")
         if action == "candidate" and self._should_downgrade_trend_setup(setup, historical_reference, warnings):
             action = "watch"
             warnings.insert(0, "强趋势/突破历史胜率不足，降级为观察，不作为优先建仓")
@@ -427,6 +455,7 @@ class LowAbsorbSwingEngine:
                 "market_state": (market_context or {}).get("state", ""),
                 "market_adjust": round(market_adjust, 3),
                 "historical_reference": historical_reference,
+                **profile_metrics,
                 **event_metrics,
                 **sector_metrics,
             },
@@ -501,6 +530,10 @@ class LowAbsorbSwingEngine:
         return heat_flags >= 3 or (str(setup).startswith("放量突破") and day_range >= 7.0)
 
     @staticmethod
+    def _is_reversal_setup(setup: str) -> bool:
+        return str(setup or "").startswith("阴线低吸反包")
+
+    @staticmethod
     def _attribution_risk_gate(
         *,
         setup: str,
@@ -525,6 +558,36 @@ class LowAbsorbSwingEngine:
         notes: list[str] = []
         decision = ""
         risk_points = 0
+
+        if LowAbsorbSwingEngine._is_reversal_setup(setup_text):
+            if sample_count >= 4 and avg_return <= -0.8 and stop_hit_rate >= 65.0:
+                risk_points += 2
+                score_adjust -= 8.0
+                notes.append("归因风控：反包历史亏损和止损率过高，降级观察")
+            elif sample_count >= 3 and avg_return <= 0.0 and stop_hit_rate >= 55.0:
+                risk_points += 1
+                score_adjust -= 4.0
+                notes.append("归因风控：反包历史胜率一般，只能等次日确认")
+            if day_range >= 7.0:
+                risk_points += 1
+                score_adjust -= 3.0
+                notes.append("归因风控：反包前一日振幅偏大，低开破位风险提高")
+            if ma_spread > 10.0:
+                risk_points += 1
+                score_adjust -= 3.0
+                notes.append("归因风控：反包底座过散，支撑可信度降低")
+            if risk_points >= 3:
+                decision = "skip"
+                notes.insert(0, "归因风控：反包风险信号叠加，剔除")
+            elif risk_points >= 1:
+                decision = "watch"
+                notes.insert(0, "归因风控：反包只给观察，等待盘中确认")
+            return {
+                "decision": decision,
+                "score_adjust": score_adjust,
+                "risk_points": risk_points,
+                "warnings": notes,
+            }
 
         if sample_count >= 3 and avg_return <= 0.0 and stop_hit_rate >= 45.0:
             risk_points += 3
@@ -598,13 +661,19 @@ class LowAbsorbSwingEngine:
         deadline_seconds: float | None = None,
         network_daily_fallback: bool = True,
         allow_breakout: bool = True,
+        collect_skips: bool = False,
+        skip_sample_limit: int = 20,
+        use_event_context: bool = True,
     ) -> list[dict[str, Any]]:
         started = time.monotonic()
+        last_mark = started
         deadline = started + float(deadline_seconds) if deadline_seconds and deadline_seconds > 0 else None
         self._last_candidates_meta = {
             "pool_limit": int(pool_limit or 0),
             "deadline_seconds": float(deadline_seconds or 0.0),
             "network_daily_fallback": bool(network_daily_fallback),
+            "collect_skips": bool(collect_skips),
+            "use_event_context": bool(use_event_context),
             "review_count": 0,
             "submitted_count": 0,
             "scanned_count": 0,
@@ -614,8 +683,20 @@ class LowAbsorbSwingEngine:
             "skipped_deadline": 0,
             "deadline_hit": False,
             "elapsed_seconds": 0.0,
+            "timings": {},
+            "action_counts": {"candidate": 0, "watch": 0, "skip": 0, "error": 0},
+            "skip_reasons": [],
+            "top_skipped": [],
         }
+
+        def mark(name: str) -> None:
+            nonlocal last_mark
+            now = time.monotonic()
+            self._last_candidates_meta["timings"][name] = round(now - last_mark, 3)
+            last_mark = now
+
         spot = self._spot_snapshot()
+        mark("spot_snapshot")
         if spot is None or spot.empty:
             return []
 
@@ -632,10 +713,13 @@ class LowAbsorbSwingEngine:
 
         pool_codes = [normalize_symbol(str(code)) for code in df.get("code", [])]
         sector_context = self._sector_context(pool_codes, spot=market_df)
-        event_context = self._event_context(pool_codes, sector_context=sector_context)
+        mark("sector_context")
+        event_context = self._event_context(pool_codes, sector_context=sector_context) if use_event_context else {}
         self._last_candidates_meta["event_context_count"] = len(event_context)
+        mark("event_context")
         df = self._rank_prefilter_pool(df, sector_context, event_context)
         review_df = self._select_prefilter_pool(df, pool_limit)
+        mark("prefilter")
         candidates = []
         for _, row in review_df.iterrows():
             code = normalize_symbol(str(row.get("code") or ""))
@@ -645,7 +729,9 @@ class LowAbsorbSwingEngine:
 
         self._last_candidates_meta["review_count"] = len(candidates)
         quotes = self._quote_snapshot([code for code, _ in candidates])
+        mark("quote_snapshot")
         daily_cache = self._daily_cache_snapshot([code for code, _ in candidates])
+        mark("daily_cache")
         work_items: list[tuple[str, str, pd.DataFrame | None]] = []
         for code, name in candidates:
             daily = daily_cache.get(code)
@@ -660,6 +746,8 @@ class LowAbsorbSwingEngine:
                     self._last_candidates_meta["skipped_uncached"] += 1
 
         rows: list[dict[str, Any]] = []
+        skipped: list[dict[str, Any]] = []
+        skip_counter: Counter[str] = Counter()
         max_workers = max(1, min(int(workers or 1), 8, len(work_items) or 1))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {}
@@ -688,14 +776,51 @@ class LowAbsorbSwingEngine:
                     plan = future.result()
                 except Exception as exc:
                     _logger.warning("low-absorb scan failed for %s: %s", futures[future], exc)
+                    self._last_candidates_meta["action_counts"]["error"] += 1
                     continue
                 self._last_candidates_meta["scanned_count"] += 1
-                if plan["action"] != "skip":
+                action = str(plan.get("action") or "skip")
+                if action in self._last_candidates_meta["action_counts"]:
+                    self._last_candidates_meta["action_counts"][action] += 1
+                else:
+                    self._last_candidates_meta["action_counts"][action] = 1
+                if action != "skip":
                     rows.append(plan)
+                elif collect_skips:
+                    reason = self._skip_reason(plan)
+                    skip_counter[reason] += 1
+                    skipped.append(
+                        {
+                            "symbol": plan.get("symbol"),
+                            "name": plan.get("name"),
+                            "score": plan.get("score", 0.0),
+                            "setup": plan.get("setup", ""),
+                            "reason": reason,
+                            "warnings": (plan.get("warnings") or [])[:3],
+                        }
+                    )
 
         rows.sort(key=self._candidate_sort_key, reverse=True)
+        mark("analysis")
+        if collect_skips:
+            skipped.sort(key=lambda item: float(item.get("score") or 0.0), reverse=True)
+            self._last_candidates_meta["skip_reasons"] = [
+                {"reason": reason, "count": count}
+                for reason, count in skip_counter.most_common(8)
+            ]
+            self._last_candidates_meta["top_skipped"] = skipped[: max(0, int(skip_sample_limit or 0))]
         self._last_candidates_meta["elapsed_seconds"] = round(time.monotonic() - started, 3)
         return rows[:limit]
+
+    @staticmethod
+    def _skip_reason(plan: dict[str, Any]) -> str:
+        warnings = [str(item) for item in (plan.get("warnings") or []) if item]
+        if warnings:
+            return warnings[0]
+        reasons = [str(item) for item in (plan.get("reasons") or []) if item]
+        if reasons:
+            return f"分数不足: {reasons[0]}"
+        return "未达到短线候选阈值"
 
     def _apply_comprehensive_score_gate(
         self,
@@ -884,7 +1009,14 @@ class LowAbsorbSwingEngine:
     def _candidate_sort_key(row: dict[str, Any]) -> tuple[float, float, float]:
         action_rank = {"candidate": 2.0, "watch": 1.0}.get(str(row.get("action") or ""), 0.0)
         setup = str(row.get("setup") or "")
-        setup_rank = 1.0 if setup.startswith("低吸") else 0.5 if setup.startswith("强趋势") else 0.25
+        if setup.startswith("低吸"):
+            setup_rank = 1.0
+        elif LowAbsorbSwingEngine._is_reversal_setup(setup):
+            setup_rank = 0.75
+        elif setup.startswith("强趋势"):
+            setup_rank = 0.5
+        else:
+            setup_rank = 0.25
         adjusted_score = float(row.get("score") or 0.0) - LowAbsorbSwingEngine._trend_heat_penalty(row)
         return (action_rank, adjusted_score, setup_rank)
 
@@ -1079,6 +1211,138 @@ class LowAbsorbSwingEngine:
         if output:
             self._write_watchlist_payload(payload, Path(output))
         return payload
+
+    def generate_tail_buy_watchlist(
+        self,
+        *,
+        limit: int = 10,
+        pool_limit: int = 120,
+        workers: int = 8,
+        min_score: float = 55.0,
+        cash_per_stock: float = 10_000.0,
+        lot_size: int = 100,
+        check_risk: bool = False,
+        include_watch: bool = True,
+        deadline_seconds: float | None = 120.0,
+        network_daily_fallback: bool = False,
+        score_gate: bool = True,
+        min_comprehensive_score: float = 20.0,
+        allow_breakout: bool = True,
+        use_event_context: bool = False,
+        enforce_time_window: bool = True,
+        output: str | Path | None = None,
+        save_latest: bool = True,
+        save_active_watchlist: bool = True,
+    ) -> dict[str, Any]:
+        """Generate same-day close-buy candidates during the 14:00 tail window."""
+        now = datetime.now()
+        generated_at = now.strftime("%Y-%m-%dT%H:%M:%S")
+        if enforce_time_window and not self._is_tail_scan_window(now):
+            return {
+                "watchlist_id": f"swing_tail_buy_{now.strftime('%Y%m%d_%H%M%S')}",
+                "generated_at": generated_at,
+                "trade_date": now.strftime("%Y-%m-%d"),
+                "mode": "tail_close_buy",
+                "strategy": "尾盘低吸隔日冲高",
+                "status": "outside_tail_scan_window",
+                "summary": {
+                    "candidate_count": 0,
+                    "source_count": 0,
+                    "min_score": float(min_score),
+                    "include_watch": bool(include_watch),
+                    "window": "14:00-15:00",
+                },
+                "positions": [],
+                "skipped": [],
+                "raw_candidates": [],
+                "review_plan": self._tail_review_plan(),
+            }
+
+        rows = self.candidates(
+            limit=max(int(limit or 1) * 3, int(limit or 1)),
+            pool_limit=pool_limit,
+            check_risk=check_risk,
+            workers=workers,
+            deadline_seconds=deadline_seconds,
+            network_daily_fallback=network_daily_fallback,
+            allow_breakout=allow_breakout,
+            use_event_context=use_event_context,
+        )
+        scan_meta = dict(self._last_candidates_meta)
+        allowed_actions = {"candidate", "watch"} if include_watch else {"candidate"}
+        short_list = [
+            row
+            for row in rows
+            if row.get("action") in allowed_actions and float(row.get("score") or 0.0) >= float(min_score)
+        ]
+        gate_meta: dict[str, Any] = {
+            "enabled": bool(score_gate),
+            "min_total": float(min_comprehensive_score),
+            "input_count": len(short_list),
+        }
+        if score_gate:
+            short_list, gate_meta = self._apply_comprehensive_score_gate(
+                short_list,
+                min_total=min_comprehensive_score,
+            )
+            short_list.sort(key=self._candidate_sort_key, reverse=True)
+        selected = [
+            row
+            for row in short_list
+            if row.get("action") in allowed_actions and float(row.get("score") or 0.0) >= float(min_score)
+        ][: max(1, int(limit or 1))]
+        account = self.build_paper_account(selected, cash_per_stock=cash_per_stock, lot_size=lot_size)
+        payload = {
+            "watchlist_id": f"swing_tail_buy_{now.strftime('%Y%m%d_%H%M%S')}",
+            "generated_at": generated_at,
+            "trade_date": now.strftime("%Y-%m-%d"),
+            "mode": "tail_close_buy",
+            "strategy": "尾盘低吸隔日冲高",
+            "status": "active",
+            "summary": {
+                "candidate_count": len(selected),
+                "source_count": len(rows),
+                "min_score": float(min_score),
+                "include_watch": bool(include_watch),
+                "cash_per_stock": float(cash_per_stock),
+                "scan": scan_meta,
+                "score_gate": gate_meta,
+                "window": "14:00-15:00",
+                "preferred_buy_window": "14:50-14:57",
+                "event_context": "enabled" if use_event_context else "disabled",
+            },
+            "positions": account.get("positions", []),
+            "skipped": account.get("skipped", []),
+            "raw_candidates": selected,
+            "review_plan": self._tail_review_plan(),
+        }
+        if save_latest:
+            self._write_watchlist_payload(payload, _TAIL_WATCHLIST_LATEST)
+            dated_path = _TAIL_WATCHLIST_DIR / f"{now.strftime('%Y%m%d_%H%M%S')}.json"
+            self._write_watchlist_payload(payload, dated_path)
+        if save_active_watchlist:
+            self._write_watchlist_payload(payload, _WATCHLIST_LATEST)
+        if output:
+            self._write_watchlist_payload(payload, Path(output))
+        return payload
+
+    @staticmethod
+    def _tail_review_plan() -> dict[str, Any]:
+        return {
+            "entry": "same_day_close_buy",
+            "scan_window": "14:00-15:00",
+            "preferred_buy_window": "14:50-14:57",
+            "exit": "next_trading_day_intraday_target_or_high",
+            "risk": "if late-day price breaks stop_loss before close, abandon the entry",
+            "monitor_fields": ["buy_price", "target_sell_price", "target_2_price", "stop_loss"],
+        }
+
+    @staticmethod
+    def _is_tail_scan_window(now: datetime) -> bool:
+        if now.weekday() >= 5:
+            return False
+        minutes = now.hour * 60 + now.minute
+        return 14 * 60 <= minutes <= 15 * 60
 
     def monitor_watchlist(
         self,
@@ -2676,6 +2940,13 @@ class LowAbsorbSwingEngine:
             return {}
 
     def _spot_snapshot(self) -> pd.DataFrame:
+        cached = self._spot_cache_snapshot(max_age_seconds=600)
+        if cached is not None and not cached.empty:
+            return cached
+        if self._is_off_live_window():
+            cached = self._spot_cache_snapshot(max_age_seconds=None)
+            if cached is not None and not cached.empty:
+                return cached
         try:
             spot = self._sd.get_spot(use_cache=True)
             if spot is not None and not spot.empty:
@@ -2683,17 +2954,29 @@ class LowAbsorbSwingEngine:
         except Exception as exc:
             _logger.warning("spot snapshot unavailable from StockData: %s", exc)
 
+        cached = self._spot_cache_snapshot(max_age_seconds=None)
+        if cached is not None and not cached.empty:
+            return cached
+        return pd.DataFrame()
+
+    @staticmethod
+    def _spot_cache_snapshot(*, max_age_seconds: int | None) -> pd.DataFrame:
         try:
             from modules.crawler import cache
 
-            cached = cache.read_df_cache("spot_sina", max_age_seconds=None)
+            cached = cache.read_df_cache("spot_sina", max_age_seconds=max_age_seconds)
             if cached.data is not None and not cached.data.empty:
                 if not cached.ok:
                     _logger.warning("using stale spot_sina cache for swing context: %s", cached.error)
-                return cached.data
+                return cached.data.copy()
         except Exception as exc:
             _logger.warning("spot_sina cache fallback unavailable: %s", exc)
         return pd.DataFrame()
+
+    @staticmethod
+    def _is_off_live_window() -> bool:
+        now = datetime.now().time()
+        return now < day_time(9, 20) or now >= day_time(15, 5)
 
     def _sector_context(self, symbols: list[str], *, spot: pd.DataFrame | None = None) -> dict[str, Any]:
         if not symbols or not self._enable_sector_context:
@@ -2972,6 +3255,190 @@ class LowAbsorbSwingEngine:
         current_amount = number(current.get("amount"))
         quote_amount = number(quote_row.get("amount"))
         return quote_amount > max(current_amount * 1.2, current_amount + 1)
+
+    @staticmethod
+    def _bearish_reversal_profile(
+        *,
+        df: pd.DataFrame,
+        close: float,
+        ma10: float,
+        pct_change: float,
+        day_range_pct: float,
+        close_position: float,
+        volume_to_peak: float,
+        prior_impulse_pct: float,
+        amount: float,
+        market_context: dict[str, Any] | None,
+        sector_metrics: dict[str, Any],
+        sector_adjust: float,
+        event_metrics: dict[str, Any],
+        event_adjust: float,
+        risk_adjust: float,
+        quote_bar_appended: bool,
+    ) -> dict[str, Any] | None:
+        if len(df) < 25 or close <= 0:
+            return None
+        if not (-5.5 <= pct_change <= -1.0):
+            return None
+        if volume_to_peak > 0.85 or amount < 50_000_000:
+            return None
+        if day_range_pct > 8.0:
+            return None
+
+        closes = pd.to_numeric(df["close"], errors="coerce")
+        highs = pd.to_numeric(df["high"], errors="coerce")
+        lows = pd.to_numeric(df["low"], errors="coerce")
+        pct_series = closes.pct_change() * 100
+        two_day_impulse = ((closes / closes.shift(2) - 1.0) * 100).shift(1)
+        recent_two_day_impulse = float(two_day_impulse.tail(12).max() or 0.0)
+        impulse_strength = max(float(prior_impulse_pct or 0.0), recent_two_day_impulse)
+        if impulse_strength < 5.5:
+            return None
+
+        recent_high = float(highs.iloc[-11:-1].max()) if len(highs) >= 11 else float(highs.iloc[:-1].max())
+        recent_low = float(lows.tail(10).min())
+        pullback_from_high_pct = (recent_high / close - 1.0) * 100 if recent_high > 0 else 0.0
+        support_gap_pct = (close / recent_low - 1.0) * 100 if recent_low > 0 else 99.0
+        negative_days_3 = int((pct_series.tail(3) < 0).sum())
+        ma_gap_pct = (close / ma10 - 1.0) * 100 if ma10 > 0 else 0.0
+
+        if pullback_from_high_pct < 4.0 and negative_days_3 < 2:
+            return None
+        if pullback_from_high_pct > 20.0:
+            return None
+        if support_gap_pct > 4.0:
+            return None
+
+        score = 20.0
+        reasons: list[str] = []
+        warnings: list[str] = ["反包观察票不直接建仓，必须等次日盘中确认"]
+        if quote_bar_appended:
+            warnings.append("日线末端使用实时行情临时补齐")
+
+        if -4.5 <= pct_change <= -1.5:
+            score += 6
+            reasons.append(f"阴线回落{pct_change:.1f}%，仍在可观察区间")
+        else:
+            score += 3
+            warnings.append(f"阴线跌幅{pct_change:.1f}%，反包难度偏高")
+
+        if impulse_strength >= 9.0:
+            score += 8
+            reasons.append(f"前期两日/单日脉冲{impulse_strength:.1f}%，具备资金记忆")
+        else:
+            score += 6
+            reasons.append("前期有脉冲上攻痕迹")
+
+        if negative_days_3 >= 2:
+            score += 6
+            reasons.append(f"近3日{negative_days_3}根回落K，次日存在修复预期")
+        if 5.0 <= pullback_from_high_pct <= 14.0:
+            score += 6
+            reasons.append(f"较近端高点回撤{pullback_from_high_pct:.1f}%，反包空间可观察")
+        elif pullback_from_high_pct > 14.0:
+            score += 2
+            warnings.append(f"较近端高点回撤{pullback_from_high_pct:.1f}%，形态偏弱")
+
+        if volume_to_peak <= 0.45:
+            score += 7
+            reasons.append("回落缩量明显，抛压较峰值收缩")
+        elif volume_to_peak <= 0.65:
+            score += 5
+            reasons.append("回落量能收缩")
+        else:
+            score += 2
+            warnings.append("回落缩量不充分，次日需放量确认")
+
+        if support_gap_pct <= 1.5:
+            score += 6
+            reasons.append("收盘贴近10日低点支撑，具备反包观察位")
+        elif support_gap_pct <= 3.0:
+            score += 4
+            reasons.append("收盘靠近近期支撑区")
+
+        if amount >= 300_000_000:
+            score += 5
+            reasons.append("成交额满足短线反包流动性")
+        elif amount >= 100_000_000:
+            score += 3
+            reasons.append("成交额满足观察流动性")
+
+        if 2.0 <= day_range_pct <= 6.0:
+            score += 3
+            reasons.append("日内振幅留有隔日修复空间")
+        elif day_range_pct >= 7.0:
+            score -= 3
+            warnings.append("前一日振幅偏大，低开破位风险提高")
+
+        if close_position < 0.12:
+            score -= 8
+            warnings.append("收盘贴近日低，必须等次日站回前一日中位")
+        elif close_position < 0.25:
+            score -= 5
+            warnings.append("收盘位置偏低，次日不转强就放弃")
+        elif close_position >= 0.45:
+            score += 3
+            reasons.append("收盘脱离日内低点，承接略有修复")
+
+        if ma_gap_pct >= -3.0:
+            score += 3
+            reasons.append("距离MA10不远，反包确认成本较低")
+        elif ma_gap_pct >= -6.0:
+            score += 2
+            reasons.append("跌离MA10可控，适合观察修复")
+        else:
+            score -= 4
+            warnings.append("跌离MA10较远，反包失败要快速放弃")
+
+        if sector_adjust > 0:
+            score += min(4.0, sector_adjust)
+            best_sector = sector_metrics.get("best_sector")
+            best_pct = float(sector_metrics.get("best_sector_pct") or 0.0)
+            if best_sector:
+                reasons.append(f"所属主题{best_sector}有盘面确认({best_pct:+.2f}%)")
+        elif sector_adjust <= -8:
+            score -= 4
+            warnings.append("所属主题偏弱，反包确认要求提高")
+
+        if event_adjust > 0:
+            event_points = min(3.0, event_adjust)
+            score += event_points
+            event_factors = event_metrics.get("event_factors") or []
+            top = event_factors[0] if event_factors else {}
+            topic = str(top.get("topic") or top.get("event_tag") or "")
+            if topic:
+                reasons.insert(0, f"新闻催化观察：{topic} 热度{float(event_metrics.get('event_boost') or 0):+.1f}")
+        elif event_adjust < 0:
+            score += event_adjust
+            warnings.append("新闻/事件偏负，反包观察降权")
+
+        state = (market_context or {}).get("state")
+        if state == "severe":
+            score -= 5
+            warnings.append("大盘宽度严重偏弱，反包只看盘中强确认")
+        elif state == "weak":
+            score -= 2
+            warnings.append("大盘宽度偏弱，反包仓位要更轻")
+        elif state == "supportive":
+            score += 2
+
+        score += risk_adjust
+        if score < 50:
+            return None
+        return {
+            "score": round(max(0.0, min(100.0, score)), 1),
+            "setup": "阴线低吸反包观察",
+            "exit_rule": "仅观察：次日高开或放量站回前一日中位/分时均价线再试；跌破前低立即放弃",
+            "reasons": reasons[:8],
+            "warnings": warnings[:8],
+            "metrics": {
+                "reversal_impulse_pct": round(impulse_strength, 3),
+                "reversal_pullback_from_high_pct": round(pullback_from_high_pct, 3),
+                "reversal_support_gap_pct": round(support_gap_pct, 3),
+                "reversal_negative_days_3": negative_days_3,
+                "reversal_ma10_gap_pct": round(ma_gap_pct, 3),
+            },
+        }
 
     @staticmethod
     def _trend_continuation_profile(
@@ -3471,6 +3938,13 @@ class LowAbsorbSwingEngine:
         recent_peak_volume = volumes.shift(1).rolling(20, min_periods=1).max()
         recent_pct = closes.pct_change() * 100
         prior_impulse = recent_pct.shift(1).rolling(20, min_periods=1).max()
+        two_day_impulse = ((closes / closes.shift(2) - 1.0) * 100).shift(1).rolling(12, min_periods=1).max()
+        day_range = (highs - lows) / prev_close.replace(0, pd.NA) * 100
+        negative_3_count = (pct < 0).rolling(3, min_periods=1).sum()
+        prev_high_10 = highs.shift(1).rolling(10, min_periods=1).max()
+        low_10 = lows.rolling(10, min_periods=1).min()
+        pullback_from_10_high = (prev_high_10 / closes - 1.0) * 100
+        support_gap = (closes / low_10.replace(0, pd.NA) - 1.0) * 100
         high_20 = highs.rolling(20).max()
         prev_high_20 = highs.shift(1).rolling(20, min_periods=1).max()
         avg_volume_5 = volumes.shift(1).rolling(5, min_periods=1).mean()
@@ -3487,6 +3961,11 @@ class LowAbsorbSwingEngine:
         data["_hist_close_position"] = data["_hist_close_position"].fillna(0.5)
         data["_hist_nearest_ma_gap_pct"] = nearest_gap
         data["_hist_prior_impulse_pct"] = prior_impulse
+        data["_hist_two_day_impulse_pct"] = two_day_impulse
+        data["_hist_day_range_pct"] = day_range
+        data["_hist_negative_3_count"] = negative_3_count
+        data["_hist_pullback_from_10_high_pct"] = pullback_from_10_high
+        data["_hist_support_gap_pct"] = support_gap
         data["_hist_volume_to_peak"] = volumes / recent_peak_volume.replace(0, pd.NA)
         data["_hist_volume_to_peak"] = data["_hist_volume_to_peak"].fillna(1.0)
         data["_hist_ret_5"] = ret_5
@@ -3528,6 +4007,21 @@ class LowAbsorbSwingEngine:
                 and max(features["close"], features["high"]) >= features["prev_high_20"] * 1.01
                 and features["volume_ratio_5"] >= 1.15
             )
+        if cls._is_reversal_setup(setup):
+            impulse = max(float(features["prior_impulse_pct"]), float(features["two_day_impulse_pct"]))
+            return (
+                -5.5 <= features["pct_change"] <= -1.0
+                and impulse >= 5.5
+                and features["volume_to_peak"] <= 0.75
+                and features["amount"] >= 50_000_000
+                and features["day_range_pct"] <= 7.2
+                and features["support_gap_pct"] <= 4.0
+                and features["pullback_from_10_high_pct"] <= 20.0
+                and (
+                    features["negative_3_count"] >= 2
+                    or features["pullback_from_10_high_pct"] >= 4.0
+                )
+            )
         return (
             features["ma10"] > features["ma20"] >= features["ma30"] * 0.995
             and -4.0 <= features["pct_change"] <= 1.2
@@ -3565,6 +4059,11 @@ class LowAbsorbSwingEngine:
             "close_position": float(row.get("_hist_close_position") or 0.5),
             "nearest_ma_gap_pct": float(row.get("_hist_nearest_ma_gap_pct") or 0.0),
             "prior_impulse_pct": float(row.get("_hist_prior_impulse_pct") or 0.0),
+            "two_day_impulse_pct": float(row.get("_hist_two_day_impulse_pct") or 0.0),
+            "day_range_pct": float(row.get("_hist_day_range_pct") or 0.0),
+            "negative_3_count": float(row.get("_hist_negative_3_count") or 0.0),
+            "pullback_from_10_high_pct": float(row.get("_hist_pullback_from_10_high_pct") or 0.0),
+            "support_gap_pct": float(row.get("_hist_support_gap_pct") or 99.0),
             "volume_to_peak": float(row.get("_hist_volume_to_peak") or 1.0),
             "ret_5": float(row.get("_hist_ret_5") or 0.0),
             "ret_10": float(row.get("_hist_ret_10") or 0.0),

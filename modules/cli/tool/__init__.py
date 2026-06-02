@@ -9,3 +9,4 @@ from .signal import cmd_signal as cmd_signal
 from .paper import cmd_paper as cmd_paper
 from .stock_report import cmd_stock_report as cmd_stock_report
 from .swing import cmd_swing as cmd_swing
+from .fusion import cmd_fusion as cmd_fusion

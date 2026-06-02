@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+import time
 from typing import Any
 
 import pandas as pd
@@ -39,28 +41,45 @@ class IntradayRadarService:
         symbols: list[str],
         trade_date: str | None = None,
         write_snapshot: bool = False,
+        workers: int = 6,
     ) -> dict[str, Any]:
         started = datetime.now()
+        mono_started = time.monotonic()
+        timings: dict[str, float] = {}
         names = self._quote_names(symbols)
+        timings["quote_names"] = round(time.monotonic() - mono_started, 3)
         rows = []
         errors = []
+        scan_started = time.monotonic()
+        normalized_symbols: list[str] = []
         for symbol in symbols:
             code = normalize_symbol(symbol)
             if code.isdigit():
                 code = code.zfill(6)
             if not code:
                 continue
-            try:
-                result = self.replay(symbol=code, trade_date=trade_date, name=names.get(code, ""))
-                rows.append(result)
-            except Exception as exc:
-                errors.append({"symbol": code, "error": str(exc)})
+            normalized_symbols.append(code)
+        max_workers = max(1, min(int(workers or 1), 8, len(normalized_symbols) or 1))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(self.replay, symbol=code, trade_date=trade_date, name=names.get(code, "")): code
+                for code in normalized_symbols
+            }
+            for future in as_completed(futures):
+                code = futures[future]
+                try:
+                    rows.append(future.result())
+                except Exception as exc:
+                    errors.append({"symbol": code, "error": str(exc)})
+        timings["replay"] = round(time.monotonic() - scan_started, 3)
         signals = []
         for row in rows:
             signals.extend(row.get("signals") or [])
         sector_resonance = []
+        sector_started = time.monotonic()
         if self.config.enable_sector_resonance:
             sector_resonance = self.sector_scorer.apply(results=rows, signals=signals)
+        timings["sector_resonance"] = round(time.monotonic() - sector_started, 3)
         signals.sort(key=lambda item: float(item.get("score") or 0.0), reverse=True)
         payload = {
             "engine": "intraday_radar_v1",
@@ -68,11 +87,13 @@ class IntradayRadarService:
             "trade_date": trade_date or "",
             "requested": len(symbols),
             "scanned": len(rows),
+            "workers": max_workers,
             "signal_count": len(signals),
             "signals": signals,
             "sector_resonance": sector_resonance,
             "results": rows,
             "errors": errors,
+            "timings": timings,
             "elapsed_seconds": round((datetime.now() - started).total_seconds(), 3),
         }
         if write_snapshot:

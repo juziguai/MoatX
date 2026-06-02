@@ -340,6 +340,28 @@ def swing_daily_watchlist(*args, **kwargs) -> _SubprocessResult:
     )
 
 
+def swing_tail_scan(*args, **kwargs) -> _SubprocessResult:
+    """Scan close-buy swing candidates during the 14:00 tail window."""
+    return _run_module(
+        "modules.cli",
+        [
+            "tool",
+            "swing",
+            "tail-scan",
+            "--limit",
+            "10",
+            "--pool-limit",
+            "120",
+            "--deadline-seconds",
+            "120",
+            "--min-score",
+            "55",
+            "--send",
+            "--json",
+        ],
+    )
+
+
 def swing_monitor_watchlist(*args, **kwargs) -> _SubprocessResult:
     """Monitor active swing watchlist for target/stop alerts."""
     return _run_module(
@@ -430,6 +452,13 @@ TASKS: list[TaskDict] = [
         "name": "短线盘后观察名单",
         "fn": _log_task("swing_daily_watchlist", "短线盘后观察名单", swing_daily_watchlist),
         "trigger": CronTrigger(hour=15, minute=25, day_of_week="mon-fri"),
+        "enabled": True,
+    },
+    {
+        "id": "swing_tail_scan",
+        "name": "短线尾盘收盘买入扫描",
+        "fn": _log_task("swing_tail_scan", "短线尾盘收盘买入扫描", swing_tail_scan),
+        "trigger": CronTrigger(hour=14, minute="0,15,30,45,55", day_of_week="mon-fri"),
         "enabled": True,
     },
     {

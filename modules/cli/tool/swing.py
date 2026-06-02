@@ -45,6 +45,8 @@ def cmd_swing(args) -> None:
             network_daily_fallback=not args.no_network_daily,
             allow_breakout=not args.no_breakout,
         )
+    elif action == "today":
+        payload = _run_today_scan(engine, args)
     elif action == "watchlist":
         payload = engine.generate_watchlist(
             limit=args.limit,
@@ -66,6 +68,30 @@ def cmd_swing(args) -> None:
             from modules.alerter import Alerter
 
             Alerter().send(_format_watchlist(payload), "MoatX 明日短线观察名单")
+    elif action == "tail-scan":
+        payload = engine.generate_tail_buy_watchlist(
+            limit=args.limit,
+            pool_limit=args.pool_limit,
+            workers=args.workers,
+            min_score=args.min_score,
+            cash_per_stock=args.cash_per_stock,
+            lot_size=args.lot_size,
+            check_risk=args.check_risk,
+            include_watch=not args.candidate_only,
+            deadline_seconds=args.deadline_seconds,
+            network_daily_fallback=args.network_daily_fallback,
+            score_gate=not args.no_score_gate,
+            min_comprehensive_score=args.min_comprehensive_score,
+            allow_breakout=not args.no_breakout,
+            use_event_context=args.full_context,
+            enforce_time_window=not args.ignore_time_window,
+            output=args.output,
+            save_active_watchlist=not args.no_save_active,
+        )
+        if args.send:
+            from modules.alerter import Alerter
+
+            Alerter().send(_format_tail_watchlist(payload), "MoatX 尾盘收盘买入名单")
     elif action == "monitor":
         payload = engine.monitor_watchlist(
             watchlist_path=args.watchlist,
@@ -145,14 +171,18 @@ def cmd_swing(args) -> None:
 
     if action == "freeze-universe":
         _print_frozen_universe(payload, getattr(args, "output", ""))
+    elif action == "today":
+        _print_today_scan(payload)
     elif action == "diagnose":
         _print_diagnosis(payload)
-    elif action in {"paper", "backtest", "watchlist", "validate"} and getattr(args, "output", None):
+    elif action in {"paper", "backtest", "watchlist", "tail-scan", "validate"} and getattr(args, "output", None):
         print(f"written: {args.output}")
     elif isinstance(payload, list):
         _print_candidates(payload)
     elif action == "watchlist":
         print(_format_watchlist(payload))
+    elif action == "tail-scan":
+        print(_format_tail_watchlist(payload))
     elif action == "monitor":
         print(_format_monitor(payload))
     elif action == "backtest":
@@ -219,6 +249,49 @@ def _load_symbols_file(path: str | Path) -> list[str]:
                 symbols.extend(_parse_symbols_arg(line))
 
     return _parse_symbols_arg(",".join(symbols))
+
+
+def _run_today_scan(engine: Any, args: Any) -> dict[str, Any]:
+    scan_limit = max(int(args.limit or 1) * 4, int(args.scan_limit or 40), int(args.limit or 1))
+    rows = engine.candidates(
+        limit=scan_limit,
+        pool_limit=args.pool_limit,
+        check_risk=args.check_risk,
+        workers=args.workers,
+        deadline_seconds=args.deadline_seconds,
+        network_daily_fallback=args.network_daily_fallback,
+        allow_breakout=not args.no_breakout,
+        collect_skips=True,
+        skip_sample_limit=args.near_miss_limit,
+        use_event_context=args.full_context,
+    )
+    scan_meta = dict(getattr(engine, "_last_candidates_meta", {}) or {})
+    strong = [
+        row
+        for row in rows
+        if row.get("action") == "candidate" and float(row.get("score") or 0.0) >= float(args.min_candidate_score)
+    ][: max(1, int(args.limit or 1))]
+    watch = [
+        row
+        for row in rows
+        if row.get("action") in {"candidate", "watch"} and float(row.get("score") or 0.0) >= float(args.min_watch_score)
+    ][: max(1, int(args.limit or 1))]
+    return {
+        "mode": "today",
+        "strategy": "低吸隔日冲高/强趋势延续",
+        "summary": {
+            "strong_count": len(strong),
+            "watch_count": len(watch),
+            "source_count": len(rows),
+            "min_candidate_score": float(args.min_candidate_score),
+            "min_watch_score": float(args.min_watch_score),
+            "scan": scan_meta,
+        },
+        "strong_candidates": strong,
+        "watch_candidates": watch,
+        "near_misses": (scan_meta.get("top_skipped") or [])[: int(args.near_miss_limit or 0)],
+        "skip_reasons": scan_meta.get("skip_reasons") or [],
+    }
 
 
 def _resolve_symbols(args: Any) -> list[str]:
@@ -967,6 +1040,59 @@ def _print_candidates(rows: list[dict[str, Any]]) -> None:
         _print_items("  警告", row.get("warnings") or [])
 
 
+def _print_today_scan(payload: dict[str, Any]) -> None:
+    summary = payload.get("summary") or {}
+    scan = summary.get("scan") or {}
+    print("今日短线选股")
+    print(
+        f"强候选 {summary.get('strong_count', 0)} | "
+        f"观察 {summary.get('watch_count', 0)} | "
+        f"模型来源 {summary.get('source_count', 0)} | "
+        f"复核 {scan.get('scanned_count', 0)}/{scan.get('review_count', 0)} | "
+        f"耗时 {float(scan.get('elapsed_seconds') or 0):.1f}s"
+    )
+    timings = scan.get("timings") or {}
+    if timings:
+        print(
+            "耗时拆分: "
+            + " | ".join(f"{key} {float(value or 0):.1f}s" for key, value in timings.items())
+        )
+    action_counts = scan.get("action_counts") or {}
+    if action_counts:
+        print(
+            "扫描分布: "
+            f"候选 {action_counts.get('candidate', 0)} | "
+            f"观察 {action_counts.get('watch', 0)} | "
+            f"剔除 {action_counts.get('skip', 0)} | "
+            f"错误 {action_counts.get('error', 0)}"
+        )
+
+    strong = payload.get("strong_candidates") or []
+    watch = payload.get("watch_candidates") or []
+    if strong:
+        print("强候选:")
+        _print_candidates(strong)
+    elif watch:
+        print("暂无强候选，观察票:")
+        _print_candidates(watch)
+    else:
+        print("今天没有达到阈值的隔日冲高观察票。")
+
+    skip_reasons = payload.get("skip_reasons") or []
+    if skip_reasons:
+        print("主要过滤原因:")
+        for row in skip_reasons[:5]:
+            print(f"- {row.get('reason')}: {row.get('count')} 只")
+    near_misses = payload.get("near_misses") or []
+    if near_misses:
+        print("近失误/高分剔除样本:")
+        for row in near_misses[:5]:
+            print(
+                f"- {row.get('symbol')} {row.get('name')} | "
+                f"{float(row.get('score') or 0):.1f} | {row.get('reason')}"
+            )
+
+
 def _print_plan(plan: dict[str, Any]) -> None:
     trade_plan = plan.get("plan") or {}
     metrics = plan.get("metrics") or {}
@@ -1066,6 +1192,64 @@ def _format_watchlist(payload: dict[str, Any]) -> str:
         if warnings:
             lines.append(f"   风险: {'；'.join(str(item) for item in warnings[:2])}")
     lines.append("口径: 次日只做分时承接确认，冲目标分批兑现，跌破止损执行纪律。")
+    return "\n".join(lines)
+
+
+def _format_tail_watchlist(payload: dict[str, Any]) -> str:
+    summary = payload.get("summary") or {}
+    positions = payload.get("positions") or []
+    lines = [
+        "MoatX 尾盘收盘买入名单",
+        f"生成时间: {payload.get('generated_at', '')}",
+        f"窗口: {summary.get('window', '14:00-15:00')} | 建议买入: {summary.get('preferred_buy_window', '14:50-14:57')}",
+        f"候选数量: {summary.get('candidate_count', 0)} / 来源 {summary.get('source_count', 0)}",
+    ]
+    if payload.get("status") == "outside_tail_scan_window":
+        lines.append("当前不在尾盘扫描窗口，本次不生成收盘买入名单。")
+        return "\n".join(lines)
+
+    scan = summary.get("scan") or {}
+    if scan:
+        lines.append(
+            "扫描: "
+            f"复核 {scan.get('scanned_count', 0)}/{scan.get('review_count', 0)} | "
+            f"缓存命中 {scan.get('daily_cache_hits', 0)} | "
+            f"新闻映射 {scan.get('event_context_count', 0)} | "
+            f"跳过未缓存 {scan.get('skipped_uncached', 0)} | "
+            f"耗时 {float(scan.get('elapsed_seconds') or 0):.1f}s"
+        )
+        if scan.get("deadline_hit"):
+            lines.append("提示: 已达到扫描时间预算，本次使用部分结果。")
+    gate = summary.get("score_gate") or {}
+    if gate and gate.get("enabled") and gate.get("status") == "ok":
+        lines.append(
+            "综合门控: "
+            f"复核 {gate.get('scored_count', 0)}/{gate.get('input_count', 0)} | "
+            f"通过 {gate.get('passed_count', 0)} | "
+            f"降级 {gate.get('downgraded_count', 0)} | "
+            f"剔除 {int(gate.get('failed_count', 0) or 0) + int(gate.get('vetoed_count', 0) or 0)}"
+        )
+    elif gate and gate.get("enabled"):
+        lines.append(f"综合门控: {gate.get('status', 'unknown')}，本次保留短线模型原始结果")
+
+    if not positions:
+        lines.append("当前没有达到阈值的尾盘收盘买入票。")
+        return "\n".join(lines)
+    for idx, row in enumerate(positions, 1):
+        lines.append(
+            f"{idx}. {row.get('symbol')} {row.get('name')} | "
+            f"{_action_label(row.get('action'))} {float(row.get('score') or 0):.1f} | "
+            f"收盘买入参考 {float(row.get('buy_price') or 0):.2f} | "
+            f"目标 {float(row.get('target_sell_price') or 0):.2f}/{float(row.get('target_2_price') or 0):.2f} | "
+            f"止损 {float(row.get('stop_loss') or 0):.2f}"
+        )
+        reasons = row.get("reasons") or []
+        warnings = row.get("warnings") or []
+        if reasons:
+            lines.append(f"   理由: {'；'.join(str(item) for item in reasons[:3])}")
+        if warnings:
+            lines.append(f"   风险: {'；'.join(str(item) for item in warnings[:2])}")
+    lines.append("口径: 今天尾盘/收盘前买入，隔日冲高按目标分批兑现；尾盘跌破止损则放弃。")
     return "\n".join(lines)
 
 
