@@ -7,23 +7,101 @@ import json
 
 def cmd_quick_decision(args) -> None:
     from modules.quick_decision import (
+        _normalize_sources,
+        backfill_quick_decision_samples,
         build_quick_decision,
         evaluate_quick_decisions,
         load_watchlist_symbols,
+        learn_quick_decision,
         print_quick_decision,
+        print_quick_decision_backfill,
         print_quick_decision_evaluation,
+        print_quick_decision_learn,
         print_quick_decision_review,
+        print_quick_decision_sample,
         print_quick_decision_summary,
         review_quick_decisions,
+        sample_quick_decisions,
         save_quick_decision,
         summarize_quick_decision_evaluations,
     )
 
-    mode = args.symbols[0] if args.symbols and args.symbols[0] in {"review", "evaluate", "summary", "dashboard"} else ""
+    mode = (
+        args.symbols[0]
+        if args.symbols
+        and args.symbols[0]
+        in {
+            "review",
+            "evaluate",
+            "summary",
+            "dashboard",
+            "sample",
+            "collect-samples",
+            "backfill-samples",
+            "replay-samples",
+            "learn",
+        }
+        else ""
+    )
     review_mode = args.review or mode == "review"
     evaluate_mode = mode == "evaluate"
     summary_mode = mode in {"summary", "dashboard"}
     review_symbols = args.symbols[1:] if mode else args.symbols
+    if mode in {"backfill-samples", "replay-samples"}:
+        if not args.start_date:
+            raise SystemExit("历史回放需要 --start YYYY-MM-DD")
+        payload = backfill_quick_decision_samples(
+            review_symbols,
+            start_date=args.start_date,
+            end_date=args.end_date or args.start_date,
+            source=args.replay_source,
+            limit=args.limit,
+            watchlist_file=args.watchlist_file,
+            min_event_score=args.min_event_score,
+            include_tags=not args.no_tags,
+            include_event_factors=not args.no_event_factors,
+            event_factor_max_age_days=args.event_factor_max_age_days,
+            save=not args.no_save,
+            evaluate_horizons=_parse_horizons(args.horizons) if args.save_evaluation else None,
+        )
+        if args.as_json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_quick_decision_backfill(payload)
+        return
+    if mode in {"sample", "collect-samples"}:
+        payload = sample_quick_decisions(
+            sources=_normalize_sources(args.sources) if args.sources else None,
+            limit=args.limit,
+            max_per_symbol_per_day=args.max_per_symbol_per_day,
+            source=args.source,
+            timeout=args.timeout,
+            include_tags=not args.no_tags,
+            include_event_factors=not args.no_event_factors,
+            watchlist_file=args.watchlist_file,
+            min_event_score=args.min_event_score,
+            fusion_limit=args.fusion_limit,
+            fusion_pool_limit=args.fusion_pool_limit,
+            fusion_deadline_seconds=args.fusion_deadline_seconds,
+            save=not args.no_save,
+        )
+        if args.as_json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_quick_decision_sample(payload)
+        return
+    if mode == "learn":
+        payload = learn_quick_decision(
+            horizon_days=args.horizon,
+            limit=args.limit,
+            min_samples=max(1, int(args.min_samples or 1)),
+            suggest_config=args.suggest_config,
+        )
+        if args.as_json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print_quick_decision_learn(payload)
+        return
     if summary_mode:
         payload = summarize_quick_decision_evaluations(
             horizon_days=args.horizon,

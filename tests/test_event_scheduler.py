@@ -38,6 +38,12 @@ def test_quick_decision_evaluation_scheduler_is_enabled():
     assert task["enabled"] is True
 
 
+def test_quick_decision_sample_scheduler_is_enabled():
+    task = next(task for task in TASKS if task["id"] == "quick_decision_collect_samples")
+
+    assert task["enabled"] is True
+
+
 def test_scheduler_pid_status_reports_foreign_process():
     running, reason = _pid_status_from_command_line("powershell.exe -NoProfile", profile="intraday")
 

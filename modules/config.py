@@ -371,6 +371,62 @@ class EventIntelligenceSettings:
 
 
 @dataclass(frozen=True)
+class QuickDecisionSettings:
+    """Quick intraday decision scoring and sampling settings."""
+
+    base_score: float = 50.0
+    pct_neutral_bonus: float = 10.0
+    pct_strong_bonus: float = 8.0
+    pct_weak_bonus: float = 0.0
+    pct_high_penalty: float = -4.0
+    pct_extreme_penalty: float = -12.0
+    near_limit_up_penalty: float = -28.0
+    early_surge_penalty: float = -15.0
+    intraday_strength_bonus: float = 8.0
+    calm_bonus: float = 4.0
+    daily_drop_penalty: float = -18.0
+    ma5_extended_penalty: float = -12.0
+    ma5_near_bonus: float = 7.0
+    high20_risk_penalty: float = -6.0
+    high20_room_bonus: float = 3.0
+    above_ma5_bonus: float = 4.0
+    below_ma20_penalty: float = -8.0
+    event_strong_bonus: float = 8.0
+    event_support_bonus: float = 4.0
+    event_bearish_penalty: float = -8.0
+    buy_score_threshold: float = 66.0
+    watch_score_threshold: float = 54.0
+    max_event_factor_age_days: int = 5
+    sample_sources: tuple[str, ...] | list[str] = field(default_factory=lambda: ("watchlist", "fusion", "event"))
+    sample_limit: int = 20
+    sample_max_per_symbol_per_day: int = 1
+    sample_min_event_score: float = 55.0
+    sample_fusion_limit: int = 10
+    sample_fusion_pool_limit: int = 80
+    sample_fusion_deadline_seconds: float = 35.0
+
+    def __post_init__(self) -> None:
+        if self.buy_score_threshold < self.watch_score_threshold:
+            raise ValueError("QuickDecisionSettings.buy_score_threshold must be >= watch_score_threshold")
+        if self.max_event_factor_age_days <= 0:
+            raise ValueError("QuickDecisionSettings.max_event_factor_age_days must be > 0")
+        if self.sample_limit <= 0:
+            raise ValueError("QuickDecisionSettings.sample_limit must be > 0")
+        if self.sample_max_per_symbol_per_day <= 0:
+            raise ValueError("QuickDecisionSettings.sample_max_per_symbol_per_day must be > 0")
+        if self.sample_fusion_limit <= 0 or self.sample_fusion_pool_limit <= 0:
+            raise ValueError("QuickDecisionSettings fusion limits must be > 0")
+        if self.sample_fusion_deadline_seconds <= 0:
+            raise ValueError("QuickDecisionSettings.sample_fusion_deadline_seconds must be > 0")
+        allowed_sources = {"watchlist", "fusion", "event"}
+        sources = tuple(str(item).strip().lower() for item in self.sample_sources if str(item).strip())
+        unknown = [item for item in sources if item not in allowed_sources]
+        if unknown:
+            raise ValueError(f"QuickDecisionSettings.sample_sources unsupported: {unknown}")
+        object.__setattr__(self, "sample_sources", sources or ("watchlist", "fusion", "event"))
+
+
+@dataclass(frozen=True)
 class RiskControlSettings:
     stop_loss_pct: float = 7.0           # 亏损 N% 触发止损预警
     stop_loss_action: str = "notify"      # notify | auto_sell
@@ -415,6 +471,7 @@ class MoatXConfig:
     backtest: BacktestSettings = field(default_factory=BacktestSettings)
     simulation: SimulationSettings = field(default_factory=SimulationSettings)
     event_intelligence: EventIntelligenceSettings = field(default_factory=EventIntelligenceSettings)
+    quick_decision: QuickDecisionSettings = field(default_factory=QuickDecisionSettings)
 
     def to_dict(self) -> dict[str, Any]:
         d = {}
@@ -434,6 +491,7 @@ class MoatXConfig:
             "backtest",
             "simulation",
             "event_intelligence",
+            "quick_decision",
         ):
             d[section] = {}
             for k, v in getattr(self, section).__dict__.items():
@@ -678,6 +736,38 @@ def get_config(path: Path | None = None) -> MoatXConfig:
             "monitor_enabled": True,
             "monitor_top_events": 3,
         },
+        "quick_decision": {
+            "base_score": 50.0,
+            "pct_neutral_bonus": 10.0,
+            "pct_strong_bonus": 8.0,
+            "pct_weak_bonus": 0.0,
+            "pct_high_penalty": -4.0,
+            "pct_extreme_penalty": -12.0,
+            "near_limit_up_penalty": -28.0,
+            "early_surge_penalty": -15.0,
+            "intraday_strength_bonus": 8.0,
+            "calm_bonus": 4.0,
+            "daily_drop_penalty": -18.0,
+            "ma5_extended_penalty": -12.0,
+            "ma5_near_bonus": 7.0,
+            "high20_risk_penalty": -6.0,
+            "high20_room_bonus": 3.0,
+            "above_ma5_bonus": 4.0,
+            "below_ma20_penalty": -8.0,
+            "event_strong_bonus": 8.0,
+            "event_support_bonus": 4.0,
+            "event_bearish_penalty": -8.0,
+            "buy_score_threshold": 66.0,
+            "watch_score_threshold": 54.0,
+            "max_event_factor_age_days": 5,
+            "sample_sources": ["watchlist", "fusion", "event"],
+            "sample_limit": 20,
+            "sample_max_per_symbol_per_day": 1,
+            "sample_min_event_score": 55.0,
+            "sample_fusion_limit": 10,
+            "sample_fusion_pool_limit": 80,
+            "sample_fusion_deadline_seconds": 35.0,
+        },
     }
 
     feishu_raw = _load_feishu_toml()
@@ -707,6 +797,7 @@ def get_config(path: Path | None = None) -> MoatXConfig:
         backtest=BacktestSettings(**raw.get("backtest", {})),
         simulation=SimulationSettings(**raw.get("simulation", {})),
         event_intelligence=EventIntelligenceSettings(**raw.get("event_intelligence", {})),
+        quick_decision=QuickDecisionSettings(**raw.get("quick_decision", {})),
     )
 
 

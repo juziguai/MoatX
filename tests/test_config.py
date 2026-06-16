@@ -11,6 +11,7 @@ from modules.config import (
     DataSourceSettings,
     EventIntelligenceSettings,
     FeishuSettings,
+    QuickDecisionSettings,
     get_config,
     cfg,
     set,
@@ -95,6 +96,19 @@ class TestEventIntelligenceSettings:
     def test_invalid_probability_threshold_rejected(self):
         with pytest.raises(ValueError, match="notify_probability_threshold"):
             EventIntelligenceSettings(notify_probability_threshold=1.1)
+
+
+class TestQuickDecisionSettings:
+    def test_default_scoring_and_sampling_settings(self):
+        settings = QuickDecisionSettings()
+
+        assert settings.base_score == 50.0
+        assert settings.buy_score_threshold == 66.0
+        assert settings.sample_sources == ("watchlist", "fusion", "event")
+
+    def test_rejects_unknown_sample_source(self):
+        with pytest.raises(ValueError, match="sample_sources"):
+            QuickDecisionSettings(sample_sources=["watchlist", "unknown"])
 
 
 class TestConfigSingleton:

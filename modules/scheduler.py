@@ -36,7 +36,7 @@ _INTRADAY_PID_FILE = _PROJECT_ROOT / "data" / "intraday_monitor.pid"
 _INTRADAY_DAEMON_LOG = _PROJECT_ROOT / "data" / "intraday_monitor.log"
 _SCHEDULER_PROFILES: dict[str, tuple[str, ...] | None] = {
     "default": None,
-    "intraday": ("swing_monitor_watchlist", "swing_tail_scan", "sim_monitor_holdings"),
+    "intraday": ("swing_monitor_watchlist", "swing_tail_scan", "sim_monitor_holdings", "quick_decision_collect_samples"),
 }
 
 
@@ -426,6 +426,19 @@ def quick_decision_evaluate(*args, **kwargs) -> _SubprocessResult:
     )
 
 
+def quick_decision_collect_samples(*args, **kwargs) -> _SubprocessResult:
+    """Persist intraday quick-decision samples without sending notifications."""
+    return _run_module(
+        "modules.cli",
+        [
+            "tool",
+            "quick-decision",
+            "collect-samples",
+            "--json",
+        ],
+    )
+
+
 TASKS: list[TaskDict] = [
     # ── 旧任务（已禁用，保留函数不删除）────────────────────
     {
@@ -489,6 +502,13 @@ TASKS: list[TaskDict] = [
         "name": "极速决策后验评价",
         "fn": _log_task("quick_decision_evaluate", "极速决策后验评价", quick_decision_evaluate),
         "trigger": CronTrigger(hour=15, minute=45, day_of_week="mon-fri"),
+        "enabled": True,
+    },
+    {
+        "id": "quick_decision_collect_samples",
+        "name": "极速决策盘中样本采集",
+        "fn": _log_task("quick_decision_collect_samples", "极速决策盘中样本采集", quick_decision_collect_samples),
+        "trigger": CronTrigger(hour="10-14", minute="5,35", day_of_week="mon-fri"),
         "enabled": True,
     },
     {
