@@ -27,6 +27,15 @@ def _fmt_volume(vol: int) -> str:
     return str(vol)
 
 
+def _to_float(value, default: float = 0.0) -> float:
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def cmd_quote(args):
     """查看实时行情。"""
     import time as _time
@@ -59,7 +68,7 @@ def cmd_quote(args):
         print("未获取到数据，请检查股票代码是否正确")
         return
 
-    items = sorted(result.items(), key=lambda x: float(x[1]["change_pct"]), reverse=True)
+    items = sorted(result.items(), key=lambda x: _to_float(x[1].get("change_pct")), reverse=True)
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"查询时间: {now}")
@@ -86,11 +95,13 @@ def cmd_quote(args):
     for code, q in items:
         short_code = code.replace(".SH", "").replace(".SZ", "").replace(".BJ", "")
         name = q["name"]
-        price = float(q["price"])
-        pct = float(q["change_pct"])
-        prev_close = round(price / (1 + pct / 100), 2) if abs(pct) > 0.001 else price
+        price = _to_float(q.get("price"))
+        pct = _to_float(q.get("change_pct"))
+        prev_close = _to_float(q.get("prev_close"))
+        if prev_close <= 0:
+            prev_close = round(price / (1 + pct / 100), 2) if price and abs(pct) > 0.001 else price
         change = price - prev_close
-        vol = int(q.get("volume", 0))
+        vol = int(_to_float(q.get("volume"), 0.0))
 
         vol_str = _fmt_volume(vol)
         fmt_change = f"{change:>+7.2f}"

@@ -10,6 +10,7 @@ from typing import Any
 from modules.data_source import Capability
 from modules.fallback_policy import FallbackPolicy
 from modules.result import Result
+from modules.utils import normalize_symbol, to_full_code
 
 
 class DataSourceManager:
@@ -68,13 +69,13 @@ class DataSourceManager:
             if p is None:
                 continue
             try:
-                r = p.fetch(Capability.QUOTE, symbols=list(unresolved))
+                query_symbols = list(unresolved) if single_mode else list(symbols)
+                r = p.fetch(Capability.QUOTE, symbols=query_symbols)
                 if r.ok and r.data:
-                    source_results[name] = r.data
-                    resolved = set(r.data.keys())
-                    # Normalize: strip market suffix for matching
-                    resolved_bare = {k.split(".")[0] if "." in k else k for k in resolved}
-                    unresolved -= resolved_bare
+                    normalized = self._normalize_quote_rows(r.data)
+                    source_results[name] = normalized
+                    if single_mode:
+                        unresolved -= {normalize_symbol(code) for code in normalized}
             except Exception:
                 continue
 
@@ -133,6 +134,7 @@ class DataSourceManager:
             else:
                 entry["validation_status"] = "single_source"
 
+            self._fill_missing_quote_fields(entry, quotes.values())
             merged[full_code] = entry
 
         return merged
@@ -143,6 +145,46 @@ class DataSourceManager:
             v["sources"] = [source]
             v["validation_status"] = status
         return data
+
+    @staticmethod
+    def _normalize_quote_rows(data: dict[str, dict]) -> dict[str, dict]:
+        out: dict[str, dict] = {}
+        for key, value in data.items():
+            row = dict(value or {})
+            code = normalize_symbol(str(row.get("code") or key or ""))
+            if not code:
+                continue
+            row["code"] = code
+            out[to_full_code(code)] = row
+        return out
+
+    @staticmethod
+    def _fill_missing_quote_fields(entry: dict, candidates) -> None:
+        for candidate in candidates:
+            for field in (
+                "name",
+                "price",
+                "prev_close",
+                "change_pct",
+                "open",
+                "high",
+                "low",
+                "volume",
+                "amount",
+                "turnover",
+                "pe",
+                "pb",
+            ):
+                if entry.get(field) is None and candidate.get(field) is not None:
+                    entry[field] = candidate.get(field)
+        if entry.get("change_pct") is None:
+            try:
+                price = float(entry.get("price") or 0)
+                prev_close = float(entry.get("prev_close") or 0)
+                if price > 0 and prev_close > 0:
+                    entry["change_pct"] = round((price / prev_close - 1.0) * 100, 2)
+            except Exception:
+                pass
 
     # ─── Boards ──────────────────────────────────────
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 18
 
 MIGRATIONS: dict[int, list[str]] = {
     1: [
@@ -402,6 +402,74 @@ MIGRATIONS: dict[int, list[str]] = {
         )""",
         """CREATE INDEX IF NOT EXISTS idx_source_health_source ON source_health_log(source)""",
         """CREATE INDEX IF NOT EXISTS idx_source_health_checked ON source_health_log(checked_at)""",
+    ],
+    16: [
+        """CREATE TABLE IF NOT EXISTS quick_decision_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            engine TEXT NOT NULL,
+            generated_at TEXT NOT NULL,
+            source TEXT DEFAULT '',
+            warning TEXT DEFAULT '',
+            symbol_count INTEGER DEFAULT 0,
+            quote_elapsed_seconds REAL DEFAULT 0,
+            elapsed_seconds REAL DEFAULT 0,
+            symbols_json TEXT DEFAULT '[]',
+            created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_quick_decision_runs_generated
+           ON quick_decision_runs(generated_at DESC)""",
+        """CREATE TABLE IF NOT EXISTS quick_decision_rows (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            name TEXT DEFAULT '',
+            action TEXT DEFAULT '',
+            score REAL DEFAULT 0,
+            price REAL DEFAULT 0,
+            prev_close REAL DEFAULT 0,
+            change_pct REAL DEFAULT 0,
+            buy_zone TEXT DEFAULT '',
+            recommendation TEXT DEFAULT '',
+            quote_json TEXT DEFAULT '{}',
+            metrics_json TEXT DEFAULT '{}',
+            tags_json TEXT DEFAULT '[]',
+            reasons_json TEXT DEFAULT '[]',
+            warnings_json TEXT DEFAULT '[]',
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(run_id) REFERENCES quick_decision_runs(id)
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_quick_decision_rows_symbol
+           ON quick_decision_rows(symbol, created_at DESC)""",
+        """CREATE INDEX IF NOT EXISTS idx_quick_decision_rows_run
+           ON quick_decision_rows(run_id)""",
+    ],
+    17: [
+        """ALTER TABLE quick_decision_rows
+           ADD COLUMN event_factor_json TEXT DEFAULT '{}'""",
+    ],
+    18: [
+        """CREATE TABLE IF NOT EXISTS quick_decision_evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            decision_row_id INTEGER NOT NULL,
+            horizon_days INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            action TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            outcome TEXT DEFAULT 'pending',
+            entry_price REAL DEFAULT 0,
+            exit_date TEXT DEFAULT '',
+            exit_close REAL,
+            forward_return_pct REAL,
+            max_drawdown_pct REAL,
+            evaluated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY(decision_row_id) REFERENCES quick_decision_rows(id),
+            UNIQUE(decision_row_id, horizon_days)
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_quick_decision_eval_symbol
+           ON quick_decision_evaluations(symbol, horizon_days, updated_at DESC)""",
+        """CREATE INDEX IF NOT EXISTS idx_quick_decision_eval_status
+           ON quick_decision_evaluations(horizon_days, status, updated_at DESC)""",
     ],
 }
 

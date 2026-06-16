@@ -32,6 +32,12 @@ _logger = logging.getLogger("moatx.scheduler")
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _PID_FILE = _PROJECT_ROOT / "data" / "scheduler.pid"
 _DAEMON_LOG = _PROJECT_ROOT / "data" / "scheduler_daemon.log"
+_INTRADAY_PID_FILE = _PROJECT_ROOT / "data" / "intraday_monitor.pid"
+_INTRADAY_DAEMON_LOG = _PROJECT_ROOT / "data" / "intraday_monitor.log"
+_SCHEDULER_PROFILES: dict[str, tuple[str, ...] | None] = {
+    "default": None,
+    "intraday": ("swing_monitor_watchlist", "swing_tail_scan", "sim_monitor_holdings"),
+}
 
 
 def _hidden_subprocess_kwargs(*, new_group: bool = False) -> dict[str, Any]:
@@ -78,35 +84,48 @@ def _log_task(task_id: str, task_name: str, fn: Callable[..., Any]) -> Callable[
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
+        log_id: int | None = None
+        db = None
+        start = time.time()
         if cfg().data.enable_warehouse:
             try:
                 from modules.db import DatabaseManager
                 db = DatabaseManager(cfg().data.warehouse_path)
                 log_id = db.task().start_run(task_id, task_name)
-                start = time.time()
+            except Exception as exc:
+                _logger.warning("仓库开始记录失败，任务继续执行一次: %s", exc)
+                db = None
+
+        try:
+            result = fn(*args, **kwargs)
+        except Exception as exc:
+            if db is not None and log_id is not None:
                 try:
-                    result = fn(*args, **kwargs)
-                    ok = getattr(result, "ok", True)
-                    out = getattr(result, "stdout", "") or ""
-                    err = getattr(result, "stderr", "") or ""
-                    # stdout 截断避免过长
                     db.task().finish_run(
-                        log_id, ok,
-                        output=out[:500] if out else "",
-                        error=err[:500] if err else "",
+                        log_id,
+                        False,
+                        error=str(exc),
                         duration_ms=int((time.time() - start) * 1000),
                     )
-                except Exception as e:
-                    db.task().finish_run(
-                        log_id, False, error=str(e),
-                        duration_ms=int((time.time() - start) * 1000),
-                    )
-                    raise
-            except Exception as e:
-                _logger.warning("仓库记录失败，任务继续执行: %s", e)
-                fn(*args, **kwargs)
-        else:
-            fn(*args, **kwargs)
+                except Exception as log_exc:
+                    _logger.warning("仓库结束记录失败: %s", log_exc)
+            raise
+
+        if db is not None and log_id is not None:
+            try:
+                ok = getattr(result, "ok", True)
+                out = getattr(result, "stdout", "") or ""
+                err = getattr(result, "stderr", "") or ""
+                db.task().finish_run(
+                    log_id,
+                    ok,
+                    output=out[:500] if out else "",
+                    error=err[:500] if err else "",
+                    duration_ms=int((time.time() - start) * 1000),
+                )
+            except Exception as exc:
+                _logger.warning("仓库结束记录失败: %s", exc)
+        return result
     return wrapper
 
 
@@ -389,6 +408,24 @@ def source_health_check(*args, **kwargs) -> _SubprocessResult:
         return _SubprocessResult(1, "", str(e))
 
 
+def quick_decision_evaluate(*args, **kwargs) -> _SubprocessResult:
+    """Persist T+1/T+3/T+5 post-evaluation for quick intraday decisions."""
+    return _run_module(
+        "modules.cli",
+        [
+            "tool",
+            "quick-decision",
+            "evaluate",
+            "--horizons",
+            "1,3,5",
+            "--limit",
+            "300",
+            "--save-evaluation",
+            "--json",
+        ],
+    )
+
+
 TASKS: list[TaskDict] = [
     # ── 旧任务（已禁用，保留函数不删除）────────────────────
     {
@@ -445,6 +482,13 @@ TASKS: list[TaskDict] = [
         "name": "数据源健康检查",
         "fn": _log_task("source_health_check", "数据源健康检查", source_health_check),
         "trigger": CronTrigger(hour=8, minute=30, day_of_week="mon-fri"),
+        "enabled": True,
+    },
+    {
+        "id": "quick_decision_evaluate",
+        "name": "极速决策后验评价",
+        "fn": _log_task("quick_decision_evaluate", "极速决策后验评价", quick_decision_evaluate),
+        "trigger": CronTrigger(hour=15, minute=45, day_of_week="mon-fri"),
         "enabled": True,
     },
     {
@@ -631,7 +675,11 @@ def _run_module(module: str, args: list[str]) -> _SubprocessResult:
 __scheduler_ref: BlockingScheduler | None = None
 
 
-def build_scheduler(enabled_only: bool = True) -> BlockingScheduler:
+def build_scheduler(
+    enabled_only: bool = True,
+    task_ids: set[str] | None = None,
+    run_immediate_task_ids: set[str] | None = None,
+) -> BlockingScheduler:
     """Build and configure the APScheduler instance."""
     global _scheduler_ref
     from modules.db import DatabaseManager
@@ -662,7 +710,7 @@ def build_scheduler(enabled_only: bool = True) -> BlockingScheduler:
         tracker = db.failure_tracker()
 
         # 跳过已暂停的任务
-        for task in TASKS:
+        for task in _selected_tasks(task_ids=task_ids):
             if enabled_only and not task.get("enabled", True):
                 continue
             job_id = task["id"]
@@ -670,12 +718,16 @@ def build_scheduler(enabled_only: bool = True) -> BlockingScheduler:
                 _logger.warning("  [跳过] %s (%s) — 已连续失败暂停", job_id, task["name"])
                 continue
             trigger = task["trigger"]
+            extra: dict[str, Any] = {}
+            if run_immediate_task_ids and job_id in run_immediate_task_ids:
+                extra["next_run_time"] = datetime.now()
             scheduler.add_job(
                 task["fn"],
                 trigger=trigger,
                 id=job_id,
                 name=task["name"],
                 replace_existing=True,
+                **extra,
             )
             _logger.info("  [%s] %s → %s", job_id, task["name"], trigger)
         db.close()
@@ -703,96 +755,274 @@ def build_scheduler(enabled_only: bool = True) -> BlockingScheduler:
                 else:
                     # 成功：重置失败计数
                     t.record_success(job_id)
-                db2.close()
             except Exception as e:
                 _logger.warning("任务失败追踪异常: %s", e)
 
         scheduler.add_listener(_on_job_event, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
     else:
-        for task in TASKS:
+        for task in _selected_tasks(task_ids=task_ids):
             if enabled_only and not task.get("enabled", True):
                 continue
             trigger = task["trigger"]
             job_id = task["id"]
+            extra: dict[str, Any] = {}
+            if run_immediate_task_ids and job_id in run_immediate_task_ids:
+                extra["next_run_time"] = datetime.now()
             scheduler.add_job(
                 task["fn"],
                 trigger=trigger,
                 id=job_id,
                 name=task["name"],
                 replace_existing=True,
+                **extra,
             )
             _logger.info("  [%s] %s → %s", job_id, task["name"], trigger)
 
     return scheduler
 
 
-def list_tasks() -> str:
+def _selected_tasks(*, task_ids: set[str] | None = None) -> list[TaskDict]:
+    if not task_ids:
+        return list(TASKS)
+    return [task for task in TASKS if task["id"] in task_ids]
+
+
+def _profile_task_ids(profile: str) -> set[str] | None:
+    value = _SCHEDULER_PROFILES.get(profile)
+    return set(value) if value else None
+
+
+def _profile_immediate_task_ids(profile: str) -> set[str]:
+    if profile == "intraday":
+        return {"swing_monitor_watchlist", "sim_monitor_holdings"}
+    return set()
+
+
+def _normalize_profile(profile: str | None) -> str:
+    value = str(profile or "default").strip().lower()
+    if value in {"monitor", "盘中", "intraday"}:
+        return "intraday"
+    return value if value in _SCHEDULER_PROFILES else "default"
+
+
+def list_tasks(profile: str = "default") -> str:
+    profile = _normalize_profile(profile)
+    task_ids = _profile_task_ids(profile)
     lines = [
-        "MoatX 调度任务",
+        f"MoatX 调度任务 [{profile}]",
         "=" * 50,
     ]
-    for t in TASKS:
+    for t in _selected_tasks(task_ids=task_ids):
         status = "✓" if t.get("enabled", True) else "✗"
         trigger = str(t["trigger"])
         lines.append(f"  {status} {t['id']:20s} {t['name']:<16s} {trigger}")
     lines.append("=" * 50)
-    lines.append(f"共 {len(TASKS)} 个任务")
+    lines.append(f"共 {len(_selected_tasks(task_ids=task_ids))} 个任务")
     return "\n".join(lines)
 
 
-def _pid_is_running(pid: int) -> bool:
+def _process_command_line(pid: int) -> str:
     if pid <= 0:
-        return False
+        return ""
     if os.name == "nt":
-        result = subprocess.run(
-            ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            **_hidden_subprocess_kwargs(),
-        )
-        return str(pid) in result.stdout
+        try:
+            result = subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f"(Get-CimInstance Win32_Process -Filter \"ProcessId={pid}\").CommandLine",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                **_hidden_subprocess_kwargs(),
+            )
+            return (result.stdout or "").strip()
+        except Exception:
+            return ""
+    return ""
+
+
+def _pid_status_from_command_line(command_line: str, *, profile: str = "default") -> tuple[bool, str]:
+    command_line = str(command_line or "").strip()
+    if not command_line:
+        return False, "process missing"
+    if "modules.scheduler" not in command_line:
+        return False, "pid belongs to another process"
+    if profile == "intraday" and "--profile intraday" not in command_line:
+        return False, "pid is scheduler for another profile"
+    return True, ""
+
+
+def _pid_state(pid: int, *, profile: str = "default") -> tuple[str, str]:
+    if pid <= 0:
+        return "stopped", "invalid pid"
+    if os.name == "nt":
+        running, reason = _pid_status_from_command_line(_process_command_line(pid), profile=profile)
+        return ("running", "") if running else ("stopped", reason)
     try:
         os.kill(pid, 0)
     except OSError:
-        return False
-    return True
+        return "stopped", "process missing"
+    return "running", ""
 
 
-def scheduler_status() -> str:
-    if not _PID_FILE.exists():
-        return "scheduler: stopped (no pid file)"
+def _pid_is_running(pid: int, *, profile: str = "default") -> bool:
+    return _pid_state(pid, profile=profile)[0] == "running"
+
+
+def _pid_file_for(profile: str) -> Path:
+    return _INTRADAY_PID_FILE if profile == "intraday" else _PID_FILE
+
+
+def _daemon_log_for(profile: str) -> Path:
+    return _INTRADAY_DAEMON_LOG if profile == "intraday" else _DAEMON_LOG
+
+
+def scheduler_status(profile: str = "default") -> str:
+    profile = _normalize_profile(profile)
+    pid_file = _pid_file_for(profile)
+    lines = [f"scheduler[{profile}] status"]
+    if not pid_file.exists():
+        lines.append("state: stopped (no pid file)")
+        lines.extend(_runtime_status_lines(profile))
+        return "\n".join(lines)
     try:
-        pid = int(_PID_FILE.read_text(encoding="utf-8").strip())
+        pid = int(pid_file.read_text(encoding="utf-8").strip())
     except ValueError:
-        return "scheduler: stopped (invalid pid file)"
-    state = "running" if _pid_is_running(pid) else "stopped"
-    return f"scheduler: {state} pid={pid}"
+        lines.append(f"state: stopped (invalid pid file: {pid_file})")
+        lines.extend(_runtime_status_lines(profile))
+        return "\n".join(lines)
+    state, reason = _pid_state(pid, profile=profile)
+    suffix = f" ({reason})" if reason else ""
+    lines.append(f"state: {state} pid={pid}{suffix}")
+    lines.append(f"pid_file: {pid_file}")
+    lines.append(f"log: {_daemon_log_for(profile)}")
+    lines.extend(_runtime_status_lines(profile))
+    return "\n".join(lines)
 
 
-def start_daemon() -> None:
+def _runtime_status_lines(profile: str) -> list[str]:
+    lines: list[str] = []
+    task_ids = _profile_task_ids(profile) or {task["id"] for task in TASKS}
+    if profile == "intraday":
+        lines.extend(_active_watchlist_lines())
+    try:
+        from modules.db import DatabaseManager
+
+        db = DatabaseManager(cfg().data.warehouse_path)
+        recent = db.task().recent_runs(limit=80)
+        db.close()
+        if recent.empty:
+            lines.append("last_runs: none")
+            return lines
+        lines.append("last_runs:")
+        for task_id in sorted(task_ids):
+            rows = recent[recent["task_id"] == task_id]
+            if rows.empty:
+                lines.append(f"- {task_id}: no recent run")
+                continue
+            row = rows.iloc[0]
+            success = "ok" if int(row.get("success") or 0) == 1 else "fail"
+            finished = _status_text(row.get("finished_at"))
+            started = _status_text(row.get("started_at"))
+            duration = int(row.get("duration_ms") or 0)
+            lines.append(f"- {task_id}: {success} start={started} finish={finished or 'running/unfinished'} {duration}ms")
+    except Exception as exc:
+        lines.append(f"last_runs: unavailable ({exc})")
+    return lines
+
+
+def _status_text(value: Any) -> str:
+    text = str(value or "").strip()
+    return "" if text.lower() in {"nan", "nat", "none"} else text
+
+
+def _active_watchlist_lines() -> list[str]:
+    import json
+
+    path = _PROJECT_ROOT / "data" / "swing_watchlist_latest.json"
+    if not path.exists():
+        return [f"watchlist: missing {path}"]
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return [f"watchlist: unreadable {path} ({exc})"]
+    positions = payload.get("positions") or []
+    generated_at = str(payload.get("generated_at") or "")
+    status = str(payload.get("status") or "")
+    lines = [f"watchlist: {status or 'unknown'} positions={len(positions)} generated_at={generated_at} path={path}"]
+    if not positions:
+        lines.append("watchlist_warning: empty positions, monitor has no target/stop symbols to alert")
+    if generated_at[:10] and generated_at[:10] != datetime.now().strftime("%Y-%m-%d"):
+        lines.append("watchlist_warning: stale watchlist date, run tail-scan/watchlist to refresh active symbols")
+    return lines
+
+
+def start_daemon(profile: str = "default", *, ensure: bool = False, immediate: bool | None = None) -> None:
     """Start scheduler in the background and persist its pid."""
-    if _PID_FILE.exists():
+    profile = _normalize_profile(profile)
+    pid_file = _pid_file_for(profile)
+    daemon_log = _daemon_log_for(profile)
+    if pid_file.exists():
         try:
-            pid = int(_PID_FILE.read_text(encoding="utf-8").strip())
-            if _pid_is_running(pid):
-                print(f"MoatX scheduler already running, pid={pid}")
+            pid = int(pid_file.read_text(encoding="utf-8").strip())
+            if _pid_is_running(pid, profile=profile):
+                action = "already running" if not ensure else "ok"
+                print(f"MoatX scheduler[{profile}] {action}, pid={pid}")
                 return
         except ValueError:
             pass
 
-    _DAEMON_LOG.parent.mkdir(parents=True, exist_ok=True)
-    log = open(_DAEMON_LOG, "a", encoding="utf-8")
+    daemon_log.parent.mkdir(parents=True, exist_ok=True)
+    log = open(daemon_log, "a", encoding="utf-8")
+    cmd = [sys.executable, "-m", "modules.scheduler", "--start", "--profile", profile]
+    if immediate if immediate is not None else profile == "intraday":
+        cmd.append("--immediate")
     proc = subprocess.Popen(
-        [sys.executable, "-m", "modules.scheduler", "--start"],
+        cmd,
         cwd=str(_PROJECT_ROOT),
         stdout=log,
         stderr=subprocess.STDOUT,
         stdin=subprocess.DEVNULL,
         **_hidden_subprocess_kwargs(new_group=True),
     )
-    _PID_FILE.write_text(str(proc.pid), encoding="utf-8")
-    print(f"MoatX scheduler started, pid={proc.pid}, log={_DAEMON_LOG}")
+    pid_file.write_text(str(proc.pid), encoding="utf-8")
+    print(f"MoatX scheduler[{profile}] started, pid={proc.pid}, log={daemon_log}")
+
+
+def stop_daemon(profile: str = "default") -> None:
+    """Stop a background scheduler profile if it is running."""
+    profile = _normalize_profile(profile)
+    pid_file = _pid_file_for(profile)
+    if not pid_file.exists():
+        print(f"MoatX scheduler[{profile}] stopped (no pid file)")
+        return
+    try:
+        pid = int(pid_file.read_text(encoding="utf-8").strip())
+    except ValueError:
+        pid_file.unlink(missing_ok=True)
+        print(f"MoatX scheduler[{profile}] stopped (removed invalid pid file)")
+        return
+    if _pid_is_running(pid, profile=profile):
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except Exception as exc:
+            print(f"MoatX scheduler[{profile}] stop failed, pid={pid}: {exc}")
+            return
+        for _ in range(20):
+            time.sleep(0.25)
+            if not _pid_is_running(pid, profile=profile):
+                break
+    pid_file.unlink(missing_ok=True)
+    print(f"MoatX scheduler[{profile}] stopped, pid={pid}")
+
+
+def restart_daemon(profile: str = "default", *, immediate: bool | None = None) -> None:
+    """Restart a background scheduler profile."""
+    stop_daemon(profile=profile)
+    start_daemon(profile=profile, immediate=immediate)
 
 
 def main():
@@ -801,7 +1031,12 @@ def main():
     parser.add_argument("--list", action="store_true", help="列出所有任务")
     parser.add_argument("--start", action="store_true", help="启动调度器")
     parser.add_argument("--daemon", action="store_true", help="后台运行")
+    parser.add_argument("--ensure", action="store_true", help="未运行则后台拉起，已运行则直接返回")
+    parser.add_argument("--stop", action="store_true", help="停止后台调度器")
+    parser.add_argument("--restart", action="store_true", help="重启后台调度器")
     parser.add_argument("--status", action="store_true", help="查看后台调度器状态")
+    parser.add_argument("--profile", choices=["default", "intraday"], default="default", help="调度任务集")
+    parser.add_argument("--immediate", action="store_true", help="启动后立即运行该 profile 的关键 interval 任务")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -810,21 +1045,37 @@ def main():
     )
 
     if args.list:
-        print(list_tasks())
+        print(list_tasks(profile=args.profile))
         return
 
     if args.status:
-        print(scheduler_status())
+        print(scheduler_status(profile=args.profile))
+        return
+
+    if args.ensure:
+        start_daemon(profile=args.profile, ensure=True, immediate=args.immediate or None)
+        print(scheduler_status(profile=args.profile))
+        return
+
+    if args.stop:
+        stop_daemon(profile=args.profile)
+        return
+
+    if args.restart:
+        restart_daemon(profile=args.profile, immediate=args.immediate or None)
         return
 
     if args.daemon:
-        start_daemon()
+        start_daemon(profile=args.profile, immediate=args.immediate or None)
         return
 
     if args.start:
-        scheduler = build_scheduler()
+        profile = _normalize_profile(args.profile)
+        task_ids = _profile_task_ids(profile)
+        immediate_task_ids = _profile_immediate_task_ids(profile) if args.immediate else set()
+        scheduler = build_scheduler(task_ids=task_ids, run_immediate_task_ids=immediate_task_ids)
         _logger.info("MoatX 调度器启动于 %s", datetime.now())
-        _logger.info("\n" + list_tasks())
+        _logger.info("\n" + list_tasks(profile=args.profile))
         _logger.info("")
 
         def _handle_sig(signum, frame):

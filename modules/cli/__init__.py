@@ -129,6 +129,13 @@ def main():
     p_sched = p_tool_sub.add_parser("schedule", help="自动化调度")
     p_sched.add_argument("--list", action="store_true", help="列出所有调度任务")
     p_sched.add_argument("--start", action="store_true", help="启动调度器")
+    p_sched.add_argument("--daemon", action="store_true", help="后台启动调度器")
+    p_sched.add_argument("--ensure", action="store_true", help="未运行则后台拉起，已运行则直接返回")
+    p_sched.add_argument("--stop", action="store_true", help="停止后台调度器")
+    p_sched.add_argument("--restart", action="store_true", help="重启后台调度器")
+    p_sched.add_argument("--status", action="store_true", help="查看调度器运行状态")
+    p_sched.add_argument("--profile", choices=["default", "intraday"], default="default", help="调度任务集")
+    p_sched.add_argument("--immediate", action="store_true", help="启动后立即运行该 profile 的关键 interval 任务")
 
     p_signal = p_tool_sub.add_parser("signal", help="交易信号管理")
     _build_signal_parser(p_signal)
@@ -144,6 +151,24 @@ def main():
     p_stock_report.add_argument("symbol", help="股票代码，如 600519 或 002342")
     p_stock_report.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
     p_stock_report.add_argument("--verbose", action="store_true", help="显示数据源降级日志")
+
+    p_quick_decision = p_tool_sub.add_parser("quick-decision", help="极速盘中买/不买判断")
+    p_quick_decision.add_argument("symbols", nargs="*", help="股票代码，如 601899 000063；或 review/evaluate/summary")
+    p_quick_decision.add_argument("--source", choices=["auto", "sina", "tencent"], default="auto", help="行情源")
+    p_quick_decision.add_argument("--timeout", type=float, default=1.2, help="单源请求超时秒数")
+    p_quick_decision.add_argument("--no-tags", action="store_true", help="不读取本地主题图谱")
+    p_quick_decision.add_argument("--no-event-factors", action="store_true", help="不读取新闻事件因子")
+    p_quick_decision.add_argument("--watchlist", action="store_true", help="追加读取短线观察名单")
+    p_quick_decision.add_argument("--watchlist-file", help="观察名单 JSON 路径，默认 data/swing_watchlist_latest.json")
+    p_quick_decision.add_argument("--no-save", action="store_true", help="不写入决策日志")
+    p_quick_decision.add_argument("--review", action="store_true", help="复盘历史 quick-decision 结果")
+    p_quick_decision.add_argument("--limit", type=int, default=20, help="复盘条数")
+    p_quick_decision.add_argument("--horizon", type=int, default=3, help="复盘未来交易日数量")
+    p_quick_decision.add_argument("--horizons", default="1,3,5", help="自动评价 horizon 列表，如 1,3,5")
+    p_quick_decision.add_argument("--save-evaluation", action="store_true", help="复盘时保存评价结果")
+    p_quick_decision.add_argument("--min-samples", type=int, default=1, help="汇总面板最小样本数")
+    p_quick_decision.add_argument("--action", help="按决策动作过滤复盘，如 不买")
+    p_quick_decision.add_argument("--json", dest="as_json", action="store_true", help="JSON 格式输出")
 
     p_fusion = p_tool_sub.add_parser("fusion", help="多策略融合选股")
     _build_fusion_parser(p_fusion)
@@ -218,12 +243,35 @@ def main():
 
             cmd_probe_api(args)
         elif args.tool_action == "schedule":
-            from modules.scheduler import list_tasks, build_scheduler
+            from modules.scheduler import (
+                _normalize_profile,
+                _profile_immediate_task_ids,
+                _profile_task_ids,
+                build_scheduler,
+                list_tasks,
+                restart_daemon,
+                scheduler_status,
+                start_daemon,
+                stop_daemon,
+            )
             if args.list:
-                print(list_tasks())
+                print(list_tasks(profile=args.profile))
+            elif args.status:
+                print(scheduler_status(profile=args.profile))
+            elif args.ensure:
+                start_daemon(profile=args.profile, ensure=True, immediate=args.immediate or None)
+                print(scheduler_status(profile=args.profile))
+            elif args.stop:
+                stop_daemon(profile=args.profile)
+            elif args.restart:
+                restart_daemon(profile=args.profile, immediate=args.immediate or None)
+            elif args.daemon:
+                start_daemon(profile=args.profile, immediate=args.immediate or None)
             elif args.start:
-                sched = build_scheduler()
-                print("MoatX 调度器启动（Ctrl+C 停止）")
+                profile = _normalize_profile(args.profile)
+                immediate_task_ids = _profile_immediate_task_ids(profile) if args.immediate else set()
+                sched = build_scheduler(task_ids=_profile_task_ids(profile), run_immediate_task_ids=immediate_task_ids)
+                print(f"MoatX 调度器启动 [{profile}]（Ctrl+C 停止）")
                 try:
                     sched.start()
                 except KeyboardInterrupt:
@@ -244,6 +292,10 @@ def main():
             from .tool import cmd_stock_report
 
             cmd_stock_report(args)
+        elif args.tool_action == "quick-decision":
+            from .tool import cmd_quick_decision
+
+            cmd_quick_decision(args)
         elif args.tool_action == "fusion":
             from .tool import cmd_fusion
 

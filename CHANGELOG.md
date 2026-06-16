@@ -2,6 +2,33 @@
 
 MoatX 各版本重要变更记录。
 
+## 1.6.0 - 2026-06-16
+
+### 新增
+- 新增极速盘中决策引擎 `quick_decision`：基于实时行情、日线缓存、主题标签和新闻事件因子输出买/观察/不买判断。
+- 新增 CLI 入口：`python -m modules.cli tool quick-decision`，支持指定股票、短线 watchlist 批量判断、JSON 输出和本地记录。
+- 新增 quick decision 持久化闭环：`quick_decision_runs`、`quick_decision_rows`、`quick_decision_evaluations` 三张表，数据库迁移至 `SCHEMA_VERSION=18`。
+- 新增 T+1/T+3/T+5 自动后验评价，支持保存收益、最大回撤、命中结果，并通过唯一键重复更新不重复插入。
+- 新增评价汇总面板：`quick-decision summary/dashboard`，按动作、分数段、主题标签、事件板块统计成功率、平均收益和平均回撤。
+- 新增调度任务 `quick_decision_evaluate`，工作日 15:45 自动执行极速决策后验评价。
+
+### 变更
+- `quick-decision` 默认记录每次判断，可通过 `--no-save` 关闭；`review` 保持只读查看，`evaluate` 负责落库评价。
+- 快速决策接入 `event_news_factors`，只对有效期内的新闻事件因子加分/扣分，过期因子仅提示不参与评分。
+- 调度器状态输出增强，能区分进程不存在、PID 被其他进程复用、调度 profile 不匹配等情况。
+- DataSourceManager 行情聚合保留全码输出约定（如 `600519.SH`），同时内部使用规范化代码匹配多源结果。
+- 行情 CLI 增强字段容错，缺失 `prev_close/change_pct/volume` 时避免格式化或排序异常。
+
+### 修复
+- 修复 DataSourceManager validate 模式下归一化后返回裸码 key，导致既有调用方无法按全码读取的问题。
+- 修复调度 PID 文件指向其他进程时仍只显示 stopped 而无原因的问题。
+
+### 验证
+- `ruff check` 覆盖 quick decision、数据库迁移、CLI、调度器和相关测试文件，全部通过。
+- `pytest tests\test_quick_decision.py tests\test_event_scheduler.py tests\test_datasource_consensus.py -q` 通过：21 passed。
+- CLI 烟测通过：`quick-decision --watchlist --no-save --json`、`quick-decision evaluate --horizons 1,3,5 --save-evaluation --json`、`quick-decision summary --horizon 3 --json`。
+- 真实 `data/warehouse.db` 已迁移至 schema version 18，并创建 quick decision 三张闭环表。
+
 ## 1.5.0 - 2026-06-02
 
 ### 新增

@@ -14,6 +14,7 @@ from .backtest_store import BacktestStore
 from .event_store import EventStore
 from .migrations import run_migrations
 from .price_store import PriceStore
+from .quick_decision_store import QuickDecisionStore
 from .signal_store import SignalStore
 from .task_log import TaskFailureTracker, TaskLogStore
 
@@ -111,6 +112,7 @@ class DatabaseManager:
         self._event: EventStore | None = None
         self._failure: TaskFailureTracker | None = None
         self._source_health: SourceHealthStore | None = None
+        self._quick_decision: QuickDecisionStore | None = None
         self._initialized = True
 
     def price(self) -> PriceStore:
@@ -147,6 +149,11 @@ class DatabaseManager:
         if self._source_health is None:
             self._source_health = SourceHealthStore(self._conn)
         return self._source_health
+
+    def quick_decision(self) -> QuickDecisionStore:
+        if self._quick_decision is None:
+            self._quick_decision = QuickDecisionStore(self._conn)
+        return self._quick_decision
 
     @property
     def conn(self) -> sqlite3.Connection:
